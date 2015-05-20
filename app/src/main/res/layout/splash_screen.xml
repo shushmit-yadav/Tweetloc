@@ -1,0 +1,23 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.brahminno.tweetloc.Splash_screen"
+    android:background="@color/black">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/ic_splash_256" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="By Brahmastra Innovations"
+        android:id="@+id/tvCompanyName"
+        android:layout_below="@+id/imageView"
+        android:layout_centerHorizontal="true"
+        android:textColor="@color/white"/>
+</RelativeLayout>
