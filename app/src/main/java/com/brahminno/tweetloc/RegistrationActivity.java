@@ -3,19 +3,16 @@ package com.brahminno.tweetloc;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.provider.Settings;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
+import android.support.v7.app.ActionBarActivity;
 import android.telephony.TelephonyManager;
 import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,7 +23,12 @@ import java.util.regex.Pattern;
 //Brahmastra Innovations.
 public class RegistrationActivity extends ActionBarActivity {
 
-    TextView tvDeviceId,tvEmail;
+    TextView tvDeviceId,tvEmail,tvMobileNumber;
+    Button btnRegister;
+
+    GPSTracker gps;
+
+    private SQLiteDatabase mydb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,13 +36,29 @@ public class RegistrationActivity extends ActionBarActivity {
         setContentView(R.layout.activity_registration);
         tvDeviceId = (TextView) findViewById(R.id.tvDeviceId);
         tvEmail = (TextView) findViewById(R.id.tvEmail);
+        tvMobileNumber = (TextView) findViewById(R.id.tvMobileNumber);
+        btnRegister = (Button) findViewById(R.id.btnRegister);
+
+        mydb = new SQLiteDatabase(this);
+        //On Button Click Event....
+        btnRegister.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //examinJSONFile();
+                //saveData();
+            }
+        });
         //Check Internet if yes then goto else
         if (!isNetworkAvailable()){
             Toast.makeText(this,"No Internet Connection",Toast.LENGTH_SHORT).show();
         }
         else{
-            LocationManager manager = (LocationManager) getSystemService(LOCATION_SERVICE);
-            if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            //check if gps is enabled...
+            gps = new GPSTracker(this);
+            if (gps.isGPSTeackingEnabled()) {
+
+                Toast.makeText(getApplicationContext(),String.valueOf(gps.latitude),Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(),String.valueOf(gps.longitude),Toast.LENGTH_SHORT).show();
 
                 //Retrieve Device Id...
                 TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
@@ -48,12 +66,13 @@ public class RegistrationActivity extends ActionBarActivity {
 
                 //call method to get email....
                 getEmail();
+
+                //Retrieve User Mobile Number.
+                String number = getMobileNumber();
+                tvMobileNumber.setText(number);
             }
-
-
             else{
-                //call method to open GPS....
-                showGPS();
+                gps.showSettingsAlert();
             }
         }
     }
@@ -106,25 +125,44 @@ public class RegistrationActivity extends ActionBarActivity {
         }
     }
 
-    //Enabling GPS....
-    public void showGPS(){
-        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
-        alertBuilder.setMessage("GPS is disabled on your device").setCancelable(false).setPositiveButton("Enable GPS", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int id) {
-                Intent gpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(gpsIntent);
-            }
-        });
-        alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-            }
-        });
-        AlertDialog alert = alertBuilder.create();
-        alert.show();
+    //This method is for obtaining mobile number...
+    public String getMobileNumber(){
+        TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        String strMobileNumber = manager.getLine1Number();
+        return strMobileNumber;
     }
+
+    //Generate data into JSON format....
+    /*
+    void examinJSONFile(){
+        JSONObject json = null;
+        try{
+            json = new JSONObject();
+            json.put("Device ID",tvDeviceId.getText().toString());
+            json.put("Email ID",tvEmail.getText().toString());
+            Log.i("json...",json.toString());
+        }
+        catch(JSONException je){
+
+        }
+    }
+    */
+    /*
+    void saveData(){
+        Bundle extras = getIntent().getExtras();
+        if(extras != null){
+            int Value = extras.getInt("id");
+            if(mydb.insertInfo(tvMobileNumber.getText().toString(),tvEmail.getText().toString(),tvDeviceId.getText().toString())){
+                Toast.makeText(getApplicationContext(),"Done",Toast.LENGTH_SHORT).show();
+            }
+            else{
+                Toast.makeText(getApplicationContext(),"Not Done",Toast.LENGTH_SHORT).show();
+            }
+
+        }
+    }
+
+    */
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

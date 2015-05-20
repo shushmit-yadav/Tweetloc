@@ -7,6 +7,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+//Brahmastra Innovations...
+//By Shushmit on 20/05/2015
+//This class is a splash screen class.it appears for 5 sec only and then registration page will open.
 
 public class Splash_screen extends ActionBarActivity {
 
