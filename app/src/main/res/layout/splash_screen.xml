@@ -17,7 +17,16 @@
         android:layout_height="wrap_content"
         android:text="By Brahmastra Innovations"
         android:id="@+id/tvCompanyName"
+        android:textColor="@color/white"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tweet Loc"
+        android:id="@+id/tvAppName"
         android:layout_below="@+id/imageView"
-        android:layout_centerHorizontal="true"
-        android:textColor="@color/white"/>
+        android:layout_centerHorizontal="true" />
 </RelativeLayout>

@@ -3,16 +3,21 @@ package com.brahminno.tweetloc;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AlertDialog;
 import android.telephony.TelephonyManager;
 import android.util.Patterns;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,29 +28,52 @@ import java.util.regex.Pattern;
 //Brahmastra Innovations.
 public class RegistrationActivity extends ActionBarActivity {
 
-    TextView tvDeviceId,tvEmail,tvMobileNumber;
+    //TextView tvDeviceId,tvEmail,tvMobileNumber;
+    TextView tvTC;
     Button btnRegister;
+    CheckBox ckBoxTC;
 
     GPSTracker gps;
 
-    private SQLiteDatabase mydb;
+    String number;
+    String primaryEmail;
+    String primaryEmailID;
+    String strNumber;
+    String deviceID;
+
+
+
+    //private SQLiteDatabase mydb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //To hide header...
+        getSupportActionBar().hide();
         setContentView(R.layout.activity_registration);
-        tvDeviceId = (TextView) findViewById(R.id.tvDeviceId);
-        tvEmail = (TextView) findViewById(R.id.tvEmail);
-        tvMobileNumber = (TextView) findViewById(R.id.tvMobileNumber);
+        tvTC = (TextView) findViewById(R.id.tvTC);
+        ckBoxTC = (CheckBox) findViewById(R.id.ckBoxTC);
         btnRegister = (Button) findViewById(R.id.btnRegister);
 
-        mydb = new SQLiteDatabase(this);
+        //mydb = new SQLiteDatabase(this);
         //On Button Click Event....
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //examinJSONFile();
+
+                number = strNumber;
                 //saveData();
+                if (ckBoxTC.isChecked()){
+                    if(number == null){
+                        strNumber = showInputDialog();
+                    }
+                    else{
+
+                    }
+                }
+                else{
+                    Toast.makeText(getApplicationContext(),"Accept Terms and Conditions",Toast.LENGTH_SHORT).show();
+                }
             }
         });
         //Check Internet if yes then goto else
@@ -53,29 +81,29 @@ public class RegistrationActivity extends ActionBarActivity {
             Toast.makeText(this,"No Internet Connection",Toast.LENGTH_SHORT).show();
         }
         else{
+            //Retrieve Device Id...
+            TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            deviceID = getDeviceID(telephonyManager);
+
+            //call method to get email....
+            primaryEmail = getEmail();
+
+            //Retrieve User Mobile Number.
+            number = getMobileNumber();
             //check if gps is enabled...
             gps = new GPSTracker(this);
             if (gps.isGPSTeackingEnabled()) {
 
                 Toast.makeText(getApplicationContext(),String.valueOf(gps.latitude),Toast.LENGTH_SHORT).show();
                 Toast.makeText(getApplicationContext(),String.valueOf(gps.longitude),Toast.LENGTH_SHORT).show();
-
-                //Retrieve Device Id...
-                TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-                tvDeviceId.setText(getDeviceID(telephonyManager));
-
-                //call method to get email....
-                getEmail();
-
-                //Retrieve User Mobile Number.
-                String number = getMobileNumber();
-                tvMobileNumber.setText(number);
             }
             else{
                 gps.showSettingsAlert();
             }
         }
     }
+
+
 
     //Check Internet
     private boolean isNetworkAvailable(){
@@ -98,31 +126,31 @@ public class RegistrationActivity extends ActionBarActivity {
         int phoneType = manager.getPhoneType();
         switch(phoneType){
             case TelephonyManager.PHONE_TYPE_NONE:
-                return  "None" + id;
+                return  "" + id;
 
             case TelephonyManager.PHONE_TYPE_GSM:
-                return "GSM: IMEI" + id;
+                return "" + id;
 
             case TelephonyManager.PHONE_TYPE_CDMA:
-                return "CDMA: MEID/ESN" + id;
+                return "" + id;
 
             default:
-                return "UNKNOWN: ID" +id;
+                return "" +id;
 
         }
     }
 
     //To get Email Id....
-    public void getEmail(){
-        String primaryEmailID;
+    public String getEmail(){
+
         Pattern emailPattern = Patterns.EMAIL_ADDRESS;
         Account[] accounts = AccountManager.get(getApplicationContext()).getAccountsByType("com.google");
         for (Account account : accounts){
             if(emailPattern.matcher(account.name).matches()){
                 primaryEmailID = account.name;
-                tvEmail.setText(primaryEmailID);
             }
         }
+        return primaryEmailID;
     }
 
     //This method is for obtaining mobile number...
@@ -132,21 +160,25 @@ public class RegistrationActivity extends ActionBarActivity {
         return strMobileNumber;
     }
 
-    //Generate data into JSON format....
-    /*
-    void examinJSONFile(){
-        JSONObject json = null;
-        try{
-            json = new JSONObject();
-            json.put("Device ID",tvDeviceId.getText().toString());
-            json.put("Email ID",tvEmail.getText().toString());
-            Log.i("json...",json.toString());
-        }
-        catch(JSONException je){
 
+
+
+    //method to check validation...
+    private boolean validate(){
+        if(number.trim().equals("")){
+            return false;
+        }
+        else if(primaryEmail.trim().equals("")){
+            return false;
+        }
+        else if (deviceID.trim().equals("")){
+            return false;
+        }
+        else {
+            return true;
         }
     }
-    */
+
     /*
     void saveData(){
         Bundle extras = getIntent().getExtras();
@@ -163,6 +195,33 @@ public class RegistrationActivity extends ActionBarActivity {
     }
 
     */
+    //If Mobile Number does not fetch automatically.....
+    public String showInputDialog(){
+
+
+        //get prompt.xml view...
+        LayoutInflater inflater = LayoutInflater.from(RegistrationActivity.this);
+        View promptView = inflater.inflate(R.layout.input_number, null);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(RegistrationActivity.this);
+        alertDialogBuilder.setView(promptView);
+
+        final EditText etNumber = (EditText) promptView.findViewById(R.id.etNumber);
+
+        //set dialog window...
+        alertDialogBuilder.setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                strNumber = etNumber.getText().toString();
+            }
+        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        alertDialogBuilder.show();
+        return strNumber;
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

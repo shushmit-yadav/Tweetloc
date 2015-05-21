@@ -3,22 +3,6 @@
     android:layout_height="match_parent"
     tools:context=".RegistrationActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="Device Id"
-        android:id="@+id/tvDeviceId"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="Email ID"
-        android:id="@+id/tvEmail"
-        android:layout_above="@+id/tvDeviceId"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="44dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -27,14 +11,24 @@
         android:id="@+id/btnRegister"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="113dp" />
+        android:layout_marginBottom="50dp" />
+
+
 
     <TextView
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:text="Terms and Conditions"
+        android:id="@+id/tvTC"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Mobile Number"
-        android:id="@+id/tvMobileNumber"
-        android:layout_above="@+id/tvEmail"
+        android:text="I Agree Terms and Conditions"
+        android:id="@+id/ckBoxTC"
+        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="41dp" />
+        android:layout_marginBottom="120dp"/>
 </RelativeLayout>

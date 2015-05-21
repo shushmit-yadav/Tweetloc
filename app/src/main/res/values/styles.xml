@@ -6,4 +6,15 @@
         <item name="android:textColor">@color/AppColor</item>>
     </style>
 
+    <style name="SplashTheme" parent="android:Theme">
+        <item name="android:windowBackground">@null</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="SplashTheme.FullScreen" parent="android:Theme">
+    <item name="android:windowBackground">@null</item>
+    <item name="android:windowNoTitle">true</item>
+    <item name="android:windowFullscreen">true</item>
+    </style>
+
 </resources>
