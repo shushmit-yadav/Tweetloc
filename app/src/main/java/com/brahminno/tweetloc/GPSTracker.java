@@ -151,6 +151,7 @@ public class GPSTracker extends Service implements LocationListener {
             }
         });
         alertDialog.show();
+        getLocation();
     }
     @Override
     public void onLocationChanged(Location location) {
@@ -178,4 +179,5 @@ public class GPSTracker extends Service implements LocationListener {
     public IBinder onBind(Intent intent) {
         return null;
     }
+
 }

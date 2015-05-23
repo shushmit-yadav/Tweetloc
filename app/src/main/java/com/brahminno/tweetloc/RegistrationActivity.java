@@ -6,14 +6,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
 import android.telephony.TelephonyManager;
 import android.util.Patterns;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -21,6 +20,20 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 
 //This class is for user registration.....
@@ -61,14 +74,17 @@ public class RegistrationActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
 
-                number = strNumber;
+                //number = strNumber;
                 //saveData();
                 if (ckBoxTC.isChecked()){
                     if(number == null){
                         strNumber = showInputDialog();
+                        number = strNumber;
                     }
                     else{
-
+                        //Call AsynTask to perform network operation 
+                        new HttpAsynTask().execute("https://qcapp-prateeksonkar.rhcloud.com/register");
+                        //Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
                     }
                 }
                 else{
@@ -103,8 +119,6 @@ public class RegistrationActivity extends ActionBarActivity {
         }
     }
 
-
-
     //Check Internet
     private boolean isNetworkAvailable(){
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -136,7 +150,6 @@ public class RegistrationActivity extends ActionBarActivity {
 
             default:
                 return "" +id;
-
         }
     }
 
@@ -157,47 +170,12 @@ public class RegistrationActivity extends ActionBarActivity {
     public String getMobileNumber(){
         TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         String strMobileNumber = manager.getLine1Number();
+        Toast.makeText(getApplicationContext(),strMobileNumber,Toast.LENGTH_SHORT).show();
         return strMobileNumber;
     }
 
-
-
-
-    //method to check validation...
-    private boolean validate(){
-        if(number.trim().equals("")){
-            return false;
-        }
-        else if(primaryEmail.trim().equals("")){
-            return false;
-        }
-        else if (deviceID.trim().equals("")){
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
-
-    /*
-    void saveData(){
-        Bundle extras = getIntent().getExtras();
-        if(extras != null){
-            int Value = extras.getInt("id");
-            if(mydb.insertInfo(tvMobileNumber.getText().toString(),tvEmail.getText().toString(),tvDeviceId.getText().toString())){
-                Toast.makeText(getApplicationContext(),"Done",Toast.LENGTH_SHORT).show();
-            }
-            else{
-                Toast.makeText(getApplicationContext(),"Not Done",Toast.LENGTH_SHORT).show();
-            }
-
-        }
-    }
-
-    */
     //If Mobile Number does not fetch automatically.....
     public String showInputDialog(){
-
 
         //get prompt.xml view...
         LayoutInflater inflater = LayoutInflater.from(RegistrationActivity.this);
@@ -223,25 +201,85 @@ public class RegistrationActivity extends ActionBarActivity {
         return strNumber;
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_registration, menu);
-        return true;
+    //post method to post json on server....
+    public   String makePostRequest(String url){
+        InputStream inputStream = null;
+        String result = "";
+
+        try {
+
+            //create HttpClient...
+            HttpClient httpClient = new DefaultHttpClient();
+            //make post reguest to given url..
+            HttpPost httpPost = new HttpPost(url);
+
+            String json = "";
+            //build jsonObject...
+            JSONObject jsonObject = new JSONObject();
+
+            jsonObject.put("Mobile Number",number);
+            jsonObject.put("Email",primaryEmail);
+            jsonObject.put("Device id",deviceID);
+
+            //convert jsonObject to JSON to String...
+            json = jsonObject.toString();
+            //set json to StringEntity..
+            StringEntity stringEntity = new StringEntity(json);
+
+            //set Header to inform server about the type of content..
+            httpPost.setHeader("Content-type","application/json");
+
+            //execute POST request to given url..
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+
+            //recieve response as InputStream...
+            inputStream = httpResponse.getEntity().getContent();
+            //convert inputStream to String...
+            if ((inputStream != null)){
+                result = convertInputStreamToString(inputStream);
+            }
+            else {
+                result = "Did not work";
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //return result..
+        return result;
     }
+    //AsynTask to perform operation in background...
+    private class HttpAsynTask extends AsyncTask<String,Void,String>{
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        @Override
+        protected String doInBackground(String... urls) {
+            return makePostRequest(urls[0]);
         }
 
-        return super.onOptionsItemSelected(item);
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            Toast.makeText(getBaseContext(),result,Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    //Method to convert inputStream to String....
+    private String convertInputStreamToString (InputStream inputStream) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+        String line = "";
+        String strResult = "";
+        while((line = bufferedReader.readLine()) != null){
+            strResult += line;
+        }
+        inputStream.close();
+        return strResult;
     }
 }
