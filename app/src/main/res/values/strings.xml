@@ -4,4 +4,6 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_splash_screen">Splash_screen</string>
+    <string name="title_activity_my_trail">My Trail</string>
+    <string name="action_forget_me">Forget Me</string>
 </resources>

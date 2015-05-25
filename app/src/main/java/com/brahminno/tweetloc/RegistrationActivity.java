@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -53,9 +54,6 @@ public class RegistrationActivity extends ActionBarActivity {
     String primaryEmailID;
     String strNumber;
     String deviceID;
-
-
-
     //private SQLiteDatabase mydb;
 
     @Override
@@ -85,6 +83,8 @@ public class RegistrationActivity extends ActionBarActivity {
                         //Call AsynTask to perform network operation 
                         new HttpAsynTask().execute("https://qcapp-prateeksonkar.rhcloud.com/register");
                         //Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(getBaseContext(),MyTrail.class);
+                        startActivity(intent);
                     }
                 }
                 else{
@@ -100,16 +100,17 @@ public class RegistrationActivity extends ActionBarActivity {
             //Retrieve Device Id...
             TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             deviceID = getDeviceID(telephonyManager);
+            Toast.makeText(getApplicationContext(),deviceID,Toast.LENGTH_SHORT).show();
 
             //call method to get email....
             primaryEmail = getEmail();
+            Toast.makeText(getApplicationContext(),primaryEmail,Toast.LENGTH_SHORT).show();
 
             //Retrieve User Mobile Number.
             number = getMobileNumber();
             //check if gps is enabled...
             gps = new GPSTracker(this);
             if (gps.isGPSTeackingEnabled()) {
-
                 Toast.makeText(getApplicationContext(),String.valueOf(gps.latitude),Toast.LENGTH_SHORT).show();
                 Toast.makeText(getApplicationContext(),String.valueOf(gps.longitude),Toast.LENGTH_SHORT).show();
             }
