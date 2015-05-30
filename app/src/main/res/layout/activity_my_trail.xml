@@ -8,14 +8,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/mapFragment"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="80dp"
         android:name="com.google.android.gms.maps.MapFragment"/>
 
     <Button
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Group"
+        android:layout_height="75dp"
         android:id="@+id/btnGroup"
+        android:background="@drawable/ic_btn_grp_128"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"/>
+
 </RelativeLayout>

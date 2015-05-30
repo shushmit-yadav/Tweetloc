@@ -2,10 +2,15 @@ package com.brahminno.tweetloc;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Shushmit on 20-05-2015.
+ * Brahmastra Innovations Pvt. Ltd.
  */
 public class SQLiteDatabase extends SQLiteOpenHelper {
 
@@ -25,7 +30,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     @Override
     public void onCreate(android.database.sqlite.SQLiteDatabase db) {
 
-        db.execSQL("create table InfoTable" + "(_id integer primary key AUTOINCREMENT,Mobile Number text,Email text,Device_ID text)");
+        db.execSQL("create table " +TABLE_NAME + "(" + COLUMN_NUMBER +" text," + COLUMN_EMAIL + " text," +CLOUMN_DEVICE_ID +" text" + ")");
 
     }
 
@@ -37,15 +42,18 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     }
 
-    public boolean insertInfo(String Mobile_Number,String Email,String Device_ID){
+    void insertInfo(RegistrationInfo info){
         android.database.sqlite.SQLiteDatabase db =this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
 
-        contentValues.put("Mobile_Number",Mobile_Number);
-        contentValues.put("Email",Email);
-        contentValues.put("Device_ID",Device_ID);
+        contentValues.put(COLUMN_NUMBER,info.getMobileNO());
+        contentValues.put(COLUMN_EMAIL,info.getEmailID());
+        contentValues.put(CLOUMN_DEVICE_ID,info.getDeviceID());
 
-        db.insert("InfoTable",null,contentValues);
-        return true;
+        db.insert(TABLE_NAME, null, contentValues);
+
+        db.close();
+        //return true;
     }
+
 }

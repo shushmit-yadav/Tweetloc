@@ -14,7 +14,7 @@ public class Splash_screen extends ActionBarActivity {
     private  static  int SPLASH_TIME_OUT = 5000;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         //Remove title...
 

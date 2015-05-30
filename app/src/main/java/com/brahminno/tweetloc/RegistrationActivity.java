@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.regex.Pattern;
 
 //This class is for user registration.....
@@ -54,7 +56,8 @@ public class RegistrationActivity extends ActionBarActivity {
     String primaryEmailID;
     String strNumber;
     String deviceID;
-    //private SQLiteDatabase mydb;
+    SQLiteDatabase mydb;
+    double latitude,longitude;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +69,7 @@ public class RegistrationActivity extends ActionBarActivity {
         ckBoxTC = (CheckBox) findViewById(R.id.ckBoxTC);
         btnRegister = (Button) findViewById(R.id.btnRegister);
 
-        //mydb = new SQLiteDatabase(this);
+        mydb = new SQLiteDatabase(this);
         //On Button Click Event....
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,9 +85,17 @@ public class RegistrationActivity extends ActionBarActivity {
                     else{
                         //Call AsynTask to perform network operation 
                         new HttpAsynTask().execute("https://qcapp-prateeksonkar.rhcloud.com/register");
+
+                        mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
                         //Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(getBaseContext(),MyTrail.class);
+                        Bundle bundle = new Bundle();
+                        bundle.putDouble("Latitude",latitude);
+                        bundle.putDouble("Longitude",longitude);
+                        intent.putExtras(bundle);
                         startActivity(intent);
+
+                        finish();
                     }
                 }
                 else{
@@ -113,6 +124,8 @@ public class RegistrationActivity extends ActionBarActivity {
             if (gps.isGPSTeackingEnabled()) {
                 Toast.makeText(getApplicationContext(),String.valueOf(gps.latitude),Toast.LENGTH_SHORT).show();
                 Toast.makeText(getApplicationContext(),String.valueOf(gps.longitude),Toast.LENGTH_SHORT).show();
+                latitude = gps.latitude;
+                longitude = gps.longitude;
             }
             else{
                 gps.showSettingsAlert();
