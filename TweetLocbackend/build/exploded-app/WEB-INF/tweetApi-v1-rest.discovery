@@ -1,0 +1,181 @@
+{
+ "kind": "discovery#restDescription",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/JMVvpPfeKkPDAI7YiwWnhzbTGzg\"",
+ "discoveryVersion": "v1",
+ "id": "tweetApi:v1",
+ "name": "tweetApi",
+ "version": "v1",
+ "description": "This is an API",
+ "ownerDomain": "backend.tweetloc.brahminno.com",
+ "ownerName": "backend.tweetloc.brahminno.com",
+ "icons": {
+  "x16": "http://www.google.com/images/icons/product/search-16.gif",
+  "x32": "http://www.google.com/images/icons/product/search-32.gif"
+ },
+ "protocol": "rest",
+ "baseUrl": "https://api-project-577391083228.appspot.com/_ah/api/tweetApi/v1/",
+ "basePath": "/_ah/api/tweetApi/v1/",
+ "rootUrl": "https://api-project-577391083228.appspot.com/_ah/api/",
+ "servicePath": "tweetApi/v1/",
+ "batchPath": "batch",
+ "parameters": {
+  "alt": {
+   "type": "string",
+   "description": "Data format for the response.",
+   "default": "json",
+   "enum": [
+    "json"
+   ],
+   "enumDescriptions": [
+    "Responses with Content-Type of application/json"
+   ],
+   "location": "query"
+  },
+  "fields": {
+   "type": "string",
+   "description": "Selector specifying which fields to include in a partial response.",
+   "location": "query"
+  },
+  "key": {
+   "type": "string",
+   "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+   "location": "query"
+  },
+  "oauth_token": {
+   "type": "string",
+   "description": "OAuth 2.0 token for the current user.",
+   "location": "query"
+  },
+  "prettyPrint": {
+   "type": "boolean",
+   "description": "Returns response with indentations and line breaks.",
+   "default": "true",
+   "location": "query"
+  },
+  "quotaUser": {
+   "type": "string",
+   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+   "location": "query"
+  },
+  "userIp": {
+   "type": "string",
+   "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
+   "location": "query"
+  }
+ },
+ "auth": {
+  "oauth2": {
+   "scopes": {
+    "https://www.googleapis.com/auth/userinfo.email": {
+     "description": "View your email address"
+    }
+   }
+  }
+ },
+ "schemas": {
+  "LocationBean": {
+   "id": "LocationBean",
+   "type": "object",
+   "properties": {
+    "drvice_Id": {
+     "type": "string"
+    },
+    "latitude": {
+     "type": "number",
+     "format": "double"
+    },
+    "longitude": {
+     "type": "number",
+     "format": "double"
+    }
+   }
+  },
+  "LocationBeanCollection": {
+   "id": "LocationBeanCollection",
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "LocationBean"
+     }
+    }
+   }
+  },
+  "RegistrationBean": {
+   "id": "RegistrationBean",
+   "type": "object",
+   "properties": {
+    "device_Id": {
+     "type": "string"
+    },
+    "email_Id": {
+     "type": "string"
+    },
+    "mobile_Number": {
+     "type": "string"
+    }
+   }
+  },
+  "RegistrationBeanCollection": {
+   "id": "RegistrationBeanCollection",
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "RegistrationBean"
+     }
+    }
+   }
+  }
+ },
+ "methods": {
+  "getLocation": {
+   "id": "tweetApi.getLocation",
+   "path": "locationbeancollection",
+   "httpMethod": "GET",
+   "response": {
+    "$ref": "LocationBeanCollection"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "getRegistrationDetail": {
+   "id": "tweetApi.getRegistrationDetail",
+   "path": "registrationbeancollection",
+   "httpMethod": "GET",
+   "response": {
+    "$ref": "RegistrationBeanCollection"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "storeLocation": {
+   "id": "tweetApi.storeLocation",
+   "path": "storeLocation",
+   "httpMethod": "POST",
+   "request": {
+    "$ref": "LocationBean",
+    "parameterName": "resource"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "storeRegistration": {
+   "id": "tweetApi.storeRegistration",
+   "path": "storeRegistration",
+   "httpMethod": "POST",
+   "request": {
+    "$ref": "RegistrationBean",
+    "parameterName": "resource"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  }
+ }
+}

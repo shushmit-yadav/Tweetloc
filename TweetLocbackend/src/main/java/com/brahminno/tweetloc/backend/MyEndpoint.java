@@ -37,10 +37,10 @@ public class MyEndpoint {
         Transaction txn = datastoreService.beginTransaction();
         try{
             Key taskBeanParentKey = KeyFactory.createKey("Details","Registration");
-            Entity locationEntity = new Entity("User Registration Data",registrationBean.getDevice_Id(),taskBeanParentKey);
-            locationEntity.setProperty("Mobile_Nummber",registrationBean.getMobile_Number());
-            locationEntity.setProperty("Email_Id",registrationBean.getEmail_Id());
-            datastoreService.put(locationEntity);
+            Entity registrationEntity = new Entity("User Registration Data",registrationBean.getDevice_Id(),taskBeanParentKey);
+            registrationEntity.setProperty("Mobile_Nummber",registrationBean.getMobile_Number());
+            registrationEntity.setProperty("Email_Id",registrationBean.getEmail_Id());
+            datastoreService.put(registrationEntity);
             txn.commit();
         }
         finally {

@@ -22,6 +22,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
+import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.extensions.android.json.AndroidJsonFactory;
+import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
+import com.google.api.client.googleapis.services.GoogleClientRequestInitializer;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -39,6 +46,49 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.regex.Pattern;
 
+//AsynTask to push registration details on server...
+class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
+    private static TweetApi myTweetApi = null;
+    private Context context;
+    private String Mobile_Number;
+    private String Email_ID;
+    private String Device_Id;
+    public RegistrationAsyncTask(Context context,String Mobile_Number,String Email_ID,String Device_Id){
+        this.Mobile_Number = Mobile_Number;
+        this.Email_ID = Email_ID;
+        this.Device_Id = Device_Id;
+        context = null;
+    }
+
+    @Override
+    protected String doInBackground(Void... params) {
+        if (myTweetApi == null) {
+            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(),new AndroidJsonFactory(),null)
+                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+
+            myTweetApi = builder.build();
+        }
+        try{
+            RegistrationBean registrationBean = new RegistrationBean();
+            registrationBean.setMobileNumber(Mobile_Number);
+            registrationBean.setEmailId(Email_ID);
+            registrationBean.setDeviceId(Device_Id);
+
+            myTweetApi.storeRegistration(registrationBean).execute();
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+
+        return "";
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        //super.onPostExecute(s);
+    }
+}
+//*******************************************************
 //This class is for user registration.....
 //By Shushmit on 20-05-2015.
 //Brahmastra Innovations.
@@ -48,9 +98,7 @@ public class RegistrationActivity extends ActionBarActivity {
     TextView tvTC;
     Button btnRegister;
     CheckBox ckBoxTC;
-
     GPSTracker gps;
-
     String number;
     String primaryEmail;
     String primaryEmailID;
@@ -88,6 +136,11 @@ public class RegistrationActivity extends ActionBarActivity {
 
                         mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
                         //Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
+
+                        //call method to store registration details on server
+                        new RegistrationAsyncTask(getApplicationContext(),number,primaryEmail,deviceID);
+
+                        //call intent to open MyTrail Activity....
                         Intent intent = new Intent(getBaseContext(),MyTrail.class);
                         Bundle bundle = new Bundle();
                         bundle.putDouble("Latitude",latitude);
