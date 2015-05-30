@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/JMVvpPfeKkPDAI7YiwWnhzbTGzg\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/4Dm2j9-p8Ocv6vdEbSiU49V8moU\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -13,9 +13,9 @@
   "x32": "http://www.google.com/images/icons/product/search-32.gif"
  },
  "protocol": "rest",
- "baseUrl": "https://api-project-577391083228.appspot.com/_ah/api/tweetApi/v1/",
+ "baseUrl": "https://brahminno.appspot.com/_ah/api/tweetApi/v1/",
  "basePath": "/_ah/api/tweetApi/v1/",
- "rootUrl": "https://api-project-577391083228.appspot.com/_ah/api/",
+ "rootUrl": "https://brahminno.appspot.com/_ah/api/",
  "servicePath": "tweetApi/v1/",
  "batchPath": "batch",
  "parameters": {

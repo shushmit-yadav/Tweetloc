@@ -131,14 +131,11 @@ public class RegistrationActivity extends ActionBarActivity {
                         number = strNumber;
                     }
                     else{
-                        //Call AsynTask to perform network operation 
-                        new HttpAsynTask().execute("https://qcapp-prateeksonkar.rhcloud.com/register");
-
                         mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
                         //Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
 
                         //call method to store registration details on server
-                        new RegistrationAsyncTask(getApplicationContext(),number,primaryEmail,deviceID);
+                        new RegistrationAsyncTask(getApplicationContext(),number,primaryEmail,deviceID).execute();
 
                         //call intent to open MyTrail Activity....
                         Intent intent = new Intent(getBaseContext(),MyTrail.class);

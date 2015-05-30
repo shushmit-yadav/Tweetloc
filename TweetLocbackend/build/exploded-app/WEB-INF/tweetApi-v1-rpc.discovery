@@ -1,6 +1,6 @@
 {
  "kind": "discovery#rpcDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/JMVvpPfeKkPDAI7YiwWnhzbTGzg\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/4Dm2j9-p8Ocv6vdEbSiU49V8moU\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -13,8 +13,8 @@
   "x32": "http://www.google.com/images/icons/product/search-32.gif"
  },
  "protocol": "rpc",
- "rootUrl": "https://api-project-577391083228.appspot.com/_ah/api/",
- "rpcUrl": "https://api-project-577391083228.appspot.com/_ah/api/rpc",
+ "rootUrl": "https://brahminno.appspot.com/_ah/api/",
+ "rpcUrl": "https://brahminno.appspot.com/_ah/api/rpc",
  "rpcPath": "/_ah/api/rpc",
  "parameters": {
   "alt": {
