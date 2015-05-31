@@ -7,12 +7,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.ImageButton;
 
 
 public class GroupActivity extends ActionBarActivity {
 
-    ImageButton img_btnCreateGroup;
+    Button btnCreateGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,8 +21,8 @@ public class GroupActivity extends ActionBarActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setIcon(R.drawable.ic_hdr_grp_128);
         setContentView(R.layout.activity_group);
-        img_btnCreateGroup = (ImageButton) findViewById(R.id.img_btnCreateGroup);
-        img_btnCreateGroup.setOnClickListener(new View.OnClickListener() {
+        btnCreateGroup = (Button) findViewById(R.id.btnCreateGroup);
+        btnCreateGroup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getApplicationContext(),CreateGroupActivity.class);

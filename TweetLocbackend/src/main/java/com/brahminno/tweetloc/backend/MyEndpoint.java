@@ -70,6 +70,27 @@ public class MyEndpoint {
         }
     }
 
+    //ApiMethod to store Group name details on server.....
+    @ApiMethod(name = "storeGroup")
+    public void storeGroup(GroupBean groupBean){
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        Transaction txn = datastoreService.beginTransaction();
+        try {
+            Key taskBeanParentKey = KeyFactory.createKey("Details","Group");
+            Entity groupEntity = new Entity("User Group Details",groupBean.getDevice_Id(),taskBeanParentKey);
+            groupEntity.setProperty("Group Name",groupBean.getGroup_Name());
+            groupEntity.setProperty("Group Member",groupBean.getGroup_Name());
+            groupEntity.setProperty("Mobile Number",groupBean.getMobile_Number());
+            datastoreService.put(groupEntity);
+            txn.commit();
+        }
+        finally {
+            if(txn.isActive()){
+                txn.rollback();
+            }
+        }
+    }
+
     //ApiMethod to get registration data from server....
     @ApiMethod(name = "getRegistrationDetail")
     public List<RegistrationBean> getRegistrationDetail(){

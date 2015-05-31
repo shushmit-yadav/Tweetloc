@@ -4,22 +4,32 @@
     android:layout_height="match_parent"
     tools:context="com.brahminno.tweetloc.GroupActivity">
 
-    <ImageButton
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/img_btnCreateGroup"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/ic_btn_create_grp_100"
-        android:layout_marginBottom="70dp"
-        android:layout_alignParentBottom="true"/>
+        android:gravity="bottom"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Create Group"
-        android:layout_alignBottom="@+id/img_btnCreateGroup"
-        android:layout_centerHorizontal="true"
-        android:id="@+id/tcCreateGroup"
-        android:clickable="false"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/btnCreateGroup"
+            android:layout_gravity="center"
+            android:background="@drawable/ic_btn_create_grp_100" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Group"
+            android:layout_alignBottom="@+id/img_btnCreateGroup"
+            android:layout_centerHorizontal="true"
+            android:id="@+id/tcCreateGroup"
+            android:textSize="20dp"
+            android:clickable="false"/>
+    </LinearLayout>
+
+
 
 </RelativeLayout>

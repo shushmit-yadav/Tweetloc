@@ -46,7 +46,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.regex.Pattern;
 
-//AsynTask to push registration details on server...
+//AsynTask class to push registration details on server...
 class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
     private static TweetApi myTweetApi = null;
     private Context context;
@@ -98,14 +98,12 @@ public class RegistrationActivity extends ActionBarActivity {
     TextView tvTC;
     Button btnRegister;
     CheckBox ckBoxTC;
-    GPSTracker gps;
     String number;
     String primaryEmail;
     String primaryEmailID;
     String strNumber;
     String deviceID;
     SQLiteDatabase mydb;
-    double latitude,longitude;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,8 +121,6 @@ public class RegistrationActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
 
-                //number = strNumber;
-                //saveData();
                 if (ckBoxTC.isChecked()){
                     if(number == null){
                         strNumber = showInputDialog();
@@ -140,8 +136,7 @@ public class RegistrationActivity extends ActionBarActivity {
                         //call intent to open MyTrail Activity....
                         Intent intent = new Intent(getBaseContext(),MyTrail.class);
                         Bundle bundle = new Bundle();
-                        bundle.putDouble("Latitude",latitude);
-                        bundle.putDouble("Longitude",longitude);
+                        bundle.putString("Device_Id",deviceID);
                         intent.putExtras(bundle);
                         startActivity(intent);
 
@@ -169,20 +164,8 @@ public class RegistrationActivity extends ActionBarActivity {
 
             //Retrieve User Mobile Number.
             number = getMobileNumber();
-            //check if gps is enabled...
-            gps = new GPSTracker(this);
-            if (gps.isGPSTeackingEnabled()) {
-                Toast.makeText(getApplicationContext(),String.valueOf(gps.latitude),Toast.LENGTH_SHORT).show();
-                Toast.makeText(getApplicationContext(),String.valueOf(gps.longitude),Toast.LENGTH_SHORT).show();
-                latitude = gps.latitude;
-                longitude = gps.longitude;
-            }
-            else{
-                gps.showSettingsAlert();
-            }
         }
     }
-
     //Check Internet
     private boolean isNetworkAvailable(){
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -240,7 +223,6 @@ public class RegistrationActivity extends ActionBarActivity {
 
     //If Mobile Number does not fetch automatically.....
     public String showInputDialog(){
-
         //get prompt.xml view...
         LayoutInflater inflater = LayoutInflater.from(RegistrationActivity.this);
         View promptView = inflater.inflate(R.layout.input_number, null);
@@ -263,87 +245,5 @@ public class RegistrationActivity extends ActionBarActivity {
         });
         alertDialogBuilder.show();
         return strNumber;
-    }
-
-    //post method to post json on server....
-    public   String makePostRequest(String url){
-        InputStream inputStream = null;
-        String result = "";
-
-        try {
-
-            //create HttpClient...
-            HttpClient httpClient = new DefaultHttpClient();
-            //make post reguest to given url..
-            HttpPost httpPost = new HttpPost(url);
-
-            String json = "";
-            //build jsonObject...
-            JSONObject jsonObject = new JSONObject();
-
-            jsonObject.put("Mobile Number",number);
-            jsonObject.put("Email",primaryEmail);
-            jsonObject.put("Device id",deviceID);
-
-            //convert jsonObject to JSON to String...
-            json = jsonObject.toString();
-            //set json to StringEntity..
-            StringEntity stringEntity = new StringEntity(json);
-
-            //set Header to inform server about the type of content..
-            httpPost.setHeader("Content-type","application/json");
-
-            //execute POST request to given url..
-            HttpResponse httpResponse = httpClient.execute(httpPost);
-
-            //recieve response as InputStream...
-            inputStream = httpResponse.getEntity().getContent();
-            //convert inputStream to String...
-            if ((inputStream != null)){
-                result = convertInputStreamToString(inputStream);
-            }
-            else {
-                result = "Did not work";
-            }
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //return result..
-        return result;
-    }
-    //AsynTask to perform operation in background...
-    private class HttpAsynTask extends AsyncTask<String,Void,String>{
-
-        @Override
-        protected String doInBackground(String... urls) {
-            return makePostRequest(urls[0]);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-            Toast.makeText(getBaseContext(),result,Toast.LENGTH_SHORT).show();
-        }
-    }
-
-
-    //Method to convert inputStream to String....
-    private String convertInputStreamToString (InputStream inputStream) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-
-        String line = "";
-        String strResult = "";
-        while((line = bufferedReader.readLine()) != null){
-            strResult += line;
-        }
-        inputStream.close();
-        return strResult;
     }
 }
