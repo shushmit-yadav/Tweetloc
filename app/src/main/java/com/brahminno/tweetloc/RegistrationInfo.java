@@ -18,6 +18,9 @@ public class RegistrationInfo {
         this.mobileNO = mobileNO;
         this.emailID = emailID;
     }
+    public RegistrationInfo(String deviceID){
+        this.deviceID = deviceID;
+    }
 
     public String getDeviceID() {
         return deviceID;

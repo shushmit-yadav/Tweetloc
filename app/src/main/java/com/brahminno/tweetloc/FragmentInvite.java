@@ -1,158 +1,107 @@
 package com.brahminno.tweetloc;
 
-
-import android.app.Activity;
-import android.app.FragmentTransaction;
-import android.app.ListFragment;
-import android.content.Context;
+import android.annotation.SuppressLint;
+import android.content.ContentResolver;
+import android.support.annotation.Nullable;
+import android.support.v4.app.LoaderManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Filter;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
+import android.widget.SimpleCursorAdapter;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.widget.Toast;
 
-import com.brahminno.tweetloc.data.ContactItem;
-import com.brahminno.tweetloc.tast.InviteTask;
-
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Created by Shushmit on 28-05-2015.
+ * Brahmastra Innovations
+ * this is a fragment class to show contacts from the android device....
  */
-public class FragmentInvite extends ListFragment {
-    private ContactAdapter mAdapter;
-    private List<ContactItem> contactItemList = new LinkedList<ContactItem>();
+public class FragmentInvite extends Fragment  {
 
-    private LayoutInflater mInflater;
-    public boolean taskRun = false;
-    long currentID = 0;
-    long currentContactID = 0;
-    public FragmentInvite() {}
+    ListView listView;
+
+    @Nullable
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_invite, container, false);
+        listView = (ListView) view.findViewById(R.id.listView);
+        return view;
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mInflater = (LayoutInflater) getActivity().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-        if(!taskRun){
-            FragmentTransaction ft = getFragmentManager().beginTransaction();
-            //InviteTask task = new InviteTask(getActivity(),ft);
-            //task.execute();
-        }
-        taskRun = true;
-        mAdapter = new ContactAdapter(getActivity(), R.layout.fragment_invite,R.id.key, contactItemList);
-        mAdapter .setInflater(mInflater);
-        mAdapter.setLayout(R.layout.fragment_invite);
-        setListAdapter(mAdapter );
-        ListView listView = getListView();
-        getListView().invalidate();
+        ArrayAdapter adapter = new ArrayAdapter(getActivity(), android.R.layout.simple_list_item_1, getContactList());
+        listView.setAdapter(adapter);
     }
 
-    public void setDataList( List<ContactItem> list) {
-        Activity act = getActivity();
-        this.contactItemList = list;
-        if(act != null) {
-            mAdapter = new ContactAdapter(act, R.layout.fragment_invite,R.id.key, list);
-            mAdapter .setInflater(mInflater);
-            mAdapter.setLayout(R.layout.fragment_invite);
-            setListAdapter(mAdapter );
-            getListView().invalidate();
-        }
-    }
-}
-class ContactAdapter extends ArrayAdapter<ContactItem> {
-
-    private static String TAG = ContactAdapter.class.getName();
-    private LayoutInflater inflator = null;
-    List<ContactItem> pairList = null;
-    private int layout;
-    public ContactAdapter(Context context, int resource,
-                          int textViewResourceId, List<ContactItem> objects) {
-        super(context, resource, textViewResourceId, objects);
-        this.pairList = objects;
-    }
-
-    public void setInflater(LayoutInflater mInflater) {
-        this.inflator = mInflater;
-    }
-    public void setLayout(int layout){
-        this.layout = layout;
-    }
-
-    /**
-     * Make a view to hold each row.
-     *
-     * @see android.widget.ListAdapter#getView(int, android.view.View,
-     *      android.view.ViewGroup)
-     */
-    public View getView(final int position, View convertView,
-                        ViewGroup parent) {
-        ViewHolder holder;
-        try {
-            if (convertView == null) {
-                convertView = this.inflator.inflate(
-                        layout, null);
-                holder = new ViewHolder();
-                holder.key = (TextView) convertView
-                        .findViewById(R.id.key);
-                holder.value = (TextView) convertView.findViewById(R.id.value);
-                convertView.setTag(holder);
-            }else {
-                holder = (ViewHolder) convertView.getTag();
+    private ArrayList getContactList(){
+        ArrayList contactList = new ArrayList();
+        /*ContentResolver cr = getActivity().getContentResolver();
+        Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
+                null, null, null, null);
+        if (cur.getCount() > 0) {
+            while (cur.moveToNext()) {
+                String id = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
+                String name = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                if (Integer.parseInt(cur.getString(
+                        cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
+                    Cursor pCur = cr.query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?",
+                            new String[]{id}, null);
+                    while (pCur.moveToNext()) {
+                        String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        String contactName = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
+                        contactList.add(contactName);
+                    }
+                    pCur.close();
+                }
             }
-            ContactItem pair = (ContactItem) getItem(position);
-            String key = pair.mDisplayName;
-            String value = pair.mPhone;
+        }*/
 
-            holder.key.setText(key);
-            holder.value.setText(value);
 
-        } catch (Exception e) {
-            Log.e(TAG, e.toString(), e);
-        }
-        return convertView;
-    }
+        Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        String[] projection    = new String[] {ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER};
 
-    static class ViewHolder {
-        TextView key;
-        TextView value;
-    }
+        Cursor people = getActivity().getContentResolver().query(uri, projection, null, null, null);
 
-    public Filter getFilter() {
-        return null;
-    }
+        int indexName = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+        int indexNumber = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
 
-    public long getItemId(int position) {
-        return 1;
-    }
+        people.moveToFirst();
+        do {
+            String name   = people.getString(indexName);
+            contactList.add(name);
+            String number = people.getString(indexNumber);
+            // Do work...
+        } while (people.moveToNext());
 
-    public int getCount() {
-        return pairList.size();
-    }
+        Collections.sort(contactList, new Comparator<String>() {
+            @Override
+            public int compare(String s1, String s2) {
+                return s1.compareToIgnoreCase(s2);
+            }
+        });
 
-    public ContactItem getItem(int position) {
-        return (ContactItem) super.getItem(position);
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-        return super.getItemViewType(position);
-    }
-
-    @Override
-    public int getViewTypeCount() {
-        return super.getViewTypeCount();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return super.isEmpty();
+        return contactList;
     }
 }
-
 

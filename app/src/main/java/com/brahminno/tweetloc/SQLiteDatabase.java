@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     @Override
     public void onCreate(android.database.sqlite.SQLiteDatabase db) {
 
-        db.execSQL("create table " +TABLE_NAME + "(" + COLUMN_NUMBER +" text," + COLUMN_EMAIL + " text," +CLOUMN_DEVICE_ID +" text" + ")");
+        db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
 
     }
 
@@ -54,6 +55,13 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
         db.close();
         //return true;
+    }
+
+    void deleteInfo(RegistrationInfo info){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_NAME,null,null);
+        Log.i(TABLE_NAME,"Deleted");
+
     }
 
 }

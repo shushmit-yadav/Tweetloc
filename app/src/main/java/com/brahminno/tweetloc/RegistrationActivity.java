@@ -5,10 +5,12 @@ import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
 import android.telephony.TelephonyManager;
@@ -93,8 +95,6 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
 //By Shushmit on 20-05-2015.
 //Brahmastra Innovations.
 public class RegistrationActivity extends ActionBarActivity {
-
-    //TextView tvDeviceId,tvEmail,tvMobileNumber;
     TextView tvTC;
     Button btnRegister;
     CheckBox ckBoxTC;
@@ -104,16 +104,34 @@ public class RegistrationActivity extends ActionBarActivity {
     String strNumber;
     String deviceID;
     SQLiteDatabase mydb;
+    SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Check if user already registered or not.....
+        //sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        //boolean isFirstTime = sharedPreferences.getBoolean("isFirstTime",false);
+        String device = sharedPreferences.getString("deviceId",null);
+        Log.i("RegistrationActivity", "Device id .."+ device);
+        if(device != null){
+            //call intent to open MyTrail Activity....
+            Intent intent = new Intent(getBaseContext(),MyTrail.class);
+            Bundle bundle = new Bundle();
+            bundle.putString("Device_Id",device);
+            intent.putExtras(bundle);
+            startActivity(intent);
+            finish();
+        }
         //To hide header...
         getSupportActionBar().hide();
         setContentView(R.layout.activity_registration);
         tvTC = (TextView) findViewById(R.id.tvTC);
         ckBoxTC = (CheckBox) findViewById(R.id.ckBoxTC);
         btnRegister = (Button) findViewById(R.id.btnRegister);
+
+
 
         mydb = new SQLiteDatabase(this);
         //On Button Click Event....
@@ -127,6 +145,26 @@ public class RegistrationActivity extends ActionBarActivity {
                         number = strNumber;
                     }
                     else{
+                        //Store Details in SharedPreference.....
+
+                        SharedPreferences prefs = getSharedPreferences(
+                                "MyPrefs", Context.MODE_PRIVATE);
+                        prefs.edit().putString("Device Id", deviceID).apply();
+                        prefs.edit().putString("Mobile Number", number).apply();
+                        prefs.edit().putString("Email Id", primaryEmail).apply();
+
+
+                        /*SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPref.edit();
+                        editor.putBoolean("isFirstTime",true);
+                        editor.putString("Mobile NUmber",number);
+                        editor.putString("Email Id", primaryEmail);
+                        editor.putString("Device Id",deviceID);
+                        editor.commit();*/
+
+
+
+                        //Save details to SQLite Database.....
                         mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
                         //Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
 
@@ -179,7 +217,7 @@ public class RegistrationActivity extends ActionBarActivity {
     }
 
     //To get the Unique Device Id...
-    String getDeviceID(TelephonyManager manager){
+    private String getDeviceID(TelephonyManager manager){
         String id = manager.getDeviceId();
         if(id == null){
             id = "Not Available";
