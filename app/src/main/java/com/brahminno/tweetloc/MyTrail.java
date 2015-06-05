@@ -310,12 +310,12 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
             return true;
         }
         if(id == R.id.action_forget_me){
-            forgetMe();
+            //forgetMe();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
-    public void forgetMe(){
-        mydb.deleteInfo(new RegistrationInfo(deviceId));
-    }
+    //public void forgetMe(){
+      //  mydb.deleteInfo(new RegistrationInfo(deviceId));
+    //}
 }

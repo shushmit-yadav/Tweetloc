@@ -29,16 +29,22 @@ public class Splash_screen extends ActionBarActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-
-                //SharedPreferences prefs = getSharedPreferences(
-                //       "MyPrefs", Context.MODE_PRIVATE);
-
-                //String deviceId = prefs.getString("deviceId",null);
-                //Log.i("SplashActivity", "Device id .." + deviceId);
-
-                Intent intent = new Intent(getApplicationContext(), RegistrationActivity.class);
-                startActivity(intent);
-                finish();
+                SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+                String deviceId = prefs.getString("Device Id", null);
+                Log.i("SplashActivity", "Device id .." + deviceId);
+                if(deviceId == null){
+                    Intent intent = new Intent(getApplicationContext(), RegistrationActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+                else{
+                    Intent intent = new Intent(getApplicationContext(),MyTrail.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("Device_Id",deviceId);
+                    intent.putExtras(bundle);
+                    startActivity(intent);
+                    finish();
+                }
 
             }
         }, SPLASH_TIME_OUT);

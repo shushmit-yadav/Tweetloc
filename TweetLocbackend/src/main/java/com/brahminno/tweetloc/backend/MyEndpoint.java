@@ -19,7 +19,10 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Queue;
 
 import javax.inject.Named;
@@ -130,4 +133,30 @@ public class MyEndpoint {
         }
         return locationBean;
     }
+
+    //ApiMethod to delete registration details....
+    /*
+    @ApiMethod(name = "deleteRegistration")
+    public void deleteInformation(){
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        Transaction txn = datastoreService.beginTransaction();
+        try{
+            Key taskBeanParentKey = KeyFactory.createKey("Details","Registration");
+            Query query = new Query(taskBeanParentKey);
+            List<Entity> results = datastoreService.prepare(query).asList(FetchOptions.Builder.withDefaults());
+            for(Entity result : results){
+                datastoreService.delete(result.getKey());
+            }
+            txn.commit();
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            if(txn.isActive()){
+                txn.rollback();
+            }
+        }
+    }
+    */
 }

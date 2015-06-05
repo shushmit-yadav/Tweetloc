@@ -31,9 +31,10 @@ import java.util.Comparator;
  * Brahmastra Innovations
  * this is a fragment class to show contacts from the android device....
  */
-public class FragmentInvite extends Fragment  {
+public class FragmentInvite extends Fragment {
 
     ListView listView;
+    ArrayList<Contact> contactList;
 
     @Nullable
     @Override
@@ -46,39 +47,20 @@ public class FragmentInvite extends Fragment  {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        ArrayAdapter adapter = new ArrayAdapter(getActivity(), android.R.layout.simple_list_item_1, getContactList());
-        listView.setAdapter(adapter);
+        contactList = new ArrayList<Contact>();
+        getContactList();
+        Collections.sort(contactList, new Comparator<Contact>() {
+            public int compare(Contact a, Contact b) {
+                return a.getName().compareTo(b.getName());
+            }
+        });
+        ContactsAdapter contactsAdapter = new ContactsAdapter(getActivity(),contactList );
+        listView.setAdapter(contactsAdapter);
     }
 
-    private ArrayList getContactList(){
-        ArrayList contactList = new ArrayList();
-        /*ContentResolver cr = getActivity().getContentResolver();
-        Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
-                null, null, null, null);
-        if (cur.getCount() > 0) {
-            while (cur.moveToNext()) {
-                String id = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
-                String name = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-                if (Integer.parseInt(cur.getString(
-                        cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
-                    Cursor pCur = cr.query(
-                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                            null,
-                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?",
-                            new String[]{id}, null);
-                    while (pCur.moveToNext()) {
-                        String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        String contactName = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
-                        contactList.add(contactName);
-                    }
-                    pCur.close();
-                }
-            }
-        }*/
-
-
+    private void getContactList() {
         Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
-        String[] projection    = new String[] {ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+        String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                 ContactsContract.CommonDataKinds.Phone.NUMBER};
 
         Cursor people = getActivity().getContentResolver().query(uri, projection, null, null, null);
@@ -88,20 +70,11 @@ public class FragmentInvite extends Fragment  {
 
         people.moveToFirst();
         do {
-            String name   = people.getString(indexName);
-            contactList.add(name);
+            String name = people.getString(indexName);
+            contactList.add(new Contact(name));
             String number = people.getString(indexNumber);
             // Do work...
         } while (people.moveToNext());
-
-        Collections.sort(contactList, new Comparator<String>() {
-            @Override
-            public int compare(String s1, String s2) {
-                return s1.compareToIgnoreCase(s2);
-            }
-        });
-
-        return contactList;
     }
 }
 

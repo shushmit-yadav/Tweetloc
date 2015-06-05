@@ -109,21 +109,6 @@ public class RegistrationActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Check if user already registered or not.....
-        //sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        //boolean isFirstTime = sharedPreferences.getBoolean("isFirstTime",false);
-        String device = sharedPreferences.getString("deviceId",null);
-        Log.i("RegistrationActivity", "Device id .."+ device);
-        if(device != null){
-            //call intent to open MyTrail Activity....
-            Intent intent = new Intent(getBaseContext(),MyTrail.class);
-            Bundle bundle = new Bundle();
-            bundle.putString("Device_Id",device);
-            intent.putExtras(bundle);
-            startActivity(intent);
-            finish();
-        }
         //To hide header...
         getSupportActionBar().hide();
         setContentView(R.layout.activity_registration);
@@ -147,26 +132,15 @@ public class RegistrationActivity extends ActionBarActivity {
                     else{
                         //Store Details in SharedPreference.....
 
-                        SharedPreferences prefs = getSharedPreferences(
-                                "MyPrefs", Context.MODE_PRIVATE);
-                        prefs.edit().putString("Device Id", deviceID).apply();
-                        prefs.edit().putString("Mobile Number", number).apply();
-                        prefs.edit().putString("Email Id", primaryEmail).apply();
-
-
-                        /*SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = sharedPref.edit();
+                        SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).edit();
                         editor.putBoolean("isFirstTime",true);
                         editor.putString("Mobile NUmber",number);
                         editor.putString("Email Id", primaryEmail);
                         editor.putString("Device Id",deviceID);
-                        editor.commit();*/
-
-
+                        editor.commit();
 
                         //Save details to SQLite Database.....
                         mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
-                        //Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
 
                         //call method to store registration details on server
                         new RegistrationAsyncTask(getApplicationContext(),number,primaryEmail,deviceID).execute();

@@ -9,7 +9,7 @@
         app:showAsAction="never" />
 
     <item android:id="@+id/action_forget_me"
-        android:title="Forget Me"
+        android:title="@string/action_forget_me"
         android:orderInCategory="100"
-        android:showAsAction="always"/>
+        android:showAsAction="never"/>
 </menu>

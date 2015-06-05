@@ -14,8 +14,9 @@ public class User_ProfileActivity extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        getSupportActionBar().setIcon(R.drawable.ic_hdr_edit_user_128);
         super.onCreate(savedInstanceState);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.drawable.ic_hdr_edit_user_128);
         setContentView(R.layout.activity_user__profile);
         etName = (EditText) findViewById(R.id.etName);
         btnOk = (Button) findViewById(R.id.btnOk);
