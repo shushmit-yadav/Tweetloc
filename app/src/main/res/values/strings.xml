@@ -5,10 +5,12 @@
     <string name="title_activity_splash_screen">Splash_screen</string>
     <string name="title_activity_my_trail">My Trail</string>
     <string name="action_forget_me">Forget Me</string>
+    <string name="action_invite">Invite Contacts</string>
     <string name="title_activity_group">Groups</string>
     <string name="title_activity_create_group">Create Group</string>
     <string name="title_activity_add_member">Add Member</string>
     <string name="title_activity_add">AddActivity</string>
+    <string name="send_to">Share it!!!</string>
     <string name="title_activity_invite">InviteActivity</string>
     <string name="title_activity_user__profile">User Profile</string>
 </resources>

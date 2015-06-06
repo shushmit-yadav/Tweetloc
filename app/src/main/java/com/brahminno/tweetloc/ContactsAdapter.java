@@ -2,6 +2,7 @@ package com.brahminno.tweetloc;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,18 +51,26 @@ public class ContactsAdapter extends BaseAdapter {
         TextView tvContactsName = (TextView) contactLayout.findViewById(R.id.tvContactsName);
         Button btnInvite = (Button) contactLayout.findViewById(R.id.btnInvite);
 
-        Contact currentContact = inviteContactList.get(position);
+        final Contact currentContact = inviteContactList.get(position);
 
         tvContactsName.setText(currentContact.getName());
         //on Button click event....
         btnInvite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.setType("text/plain");
-                intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
-                //context.startActivityForResult(Intent.createChooser(intent, "Share It!!!"));
-                context.startActivity(intent);
+                //Send Text SMS to that particular number using built-in sms application in android device....
+                Intent smsIntent = new Intent(Intent.ACTION_VIEW);
+                smsIntent.setType("vnd.android-dir/mms-sms");
+                smsIntent.putExtra("address", currentContact.getNumber());
+                smsIntent.putExtra("sms_body","Here is the link to download");
+                try{
+                    context.startActivity(smsIntent);
+                    //context.f
+                    Log.i("Finished Sending SMS...", "");
+                }
+                catch(Exception ex){
+                    ex.printStackTrace();
+                }
             }
         });
 

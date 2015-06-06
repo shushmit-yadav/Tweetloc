@@ -309,6 +309,11 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
             startActivity(intent);
             return true;
         }
+        if(id == R.id.action_invte){
+            //call inviteContacts() method to invite the contacts through installed app in device...
+            inviteContacts();
+            return true;
+        }
         if(id == R.id.action_forget_me){
             //forgetMe();
             return true;
@@ -318,4 +323,12 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
     //public void forgetMe(){
       //  mydb.deleteInfo(new RegistrationInfo(deviceId));
     //}
+
+    //this method is used for inviting contacts through social media android app....
+    public void inviteContacts(){
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
+        startActivity(intent);
+    }
 }

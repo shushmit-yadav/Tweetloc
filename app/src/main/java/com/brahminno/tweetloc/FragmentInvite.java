@@ -58,23 +58,24 @@ public class FragmentInvite extends Fragment {
         listView.setAdapter(contactsAdapter);
     }
 
+    //Method to fetch all contacts from android mobile......
     private void getContactList() {
+        //Set URI....
         Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        //Set Projection
         String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                 ContactsContract.CommonDataKinds.Phone.NUMBER};
-
         Cursor people = getActivity().getContentResolver().query(uri, projection, null, null, null);
-
         int indexName = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
         int indexNumber = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-
         people.moveToFirst();
         do {
             String name = people.getString(indexName);
-            contactList.add(new Contact(name));
             String number = people.getString(indexNumber);
-            // Do work...
-        } while (people.moveToNext());
+            contactList.add(new Contact(name,number));
+
+        }
+        while (people.moveToNext());
     }
 }
 
