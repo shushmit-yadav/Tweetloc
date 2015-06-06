@@ -82,6 +82,22 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
             ex.printStackTrace();
         }
 
+        try{
+            RegistrationBean registerUserValidation = myTweetApi.getRegistrationDetailUsingKey(Device_Id).execute();
+
+            //Store details in shared preferince.....
+            SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).edit();
+            editor.putBoolean("isFirstTime",true);
+            editor.putString("Mobile Number",registerUserValidation.getMobileNumber());
+            editor.putString("Email Id", registerUserValidation.getEmailId());
+            editor.putString("Device Id",registerUserValidation.getDeviceId());
+            editor.commit();
+
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+
         return "";
     }
 
@@ -130,14 +146,15 @@ public class RegistrationActivity extends ActionBarActivity {
                         number = strNumber;
                     }
                     else{
+                        /*
                         //Store Details in SharedPreference.....
-
                         SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).edit();
                         editor.putBoolean("isFirstTime",true);
                         editor.putString("Mobile NUmber",number);
                         editor.putString("Email Id", primaryEmail);
                         editor.putString("Device Id",deviceID);
                         editor.commit();
+                        */
 
                         //Save details to SQLite Database.....
                         mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));

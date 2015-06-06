@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/aUfFtb-6iFLFZv0MFciIsBCUZOg\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/--GqGnFb0K0m6XSSYvgjyXPBjuU\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -149,6 +149,24 @@
   }
  },
  "methods": {
+  "forgetMe": {
+   "id": "tweetApi.forgetMe",
+   "path": "forgetMe/{id}",
+   "httpMethod": "POST",
+   "parameters": {
+    "id": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "id"
+   ],
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
   "getLocation": {
    "id": "tweetApi.getLocation",
    "path": "locationbeancollection",
@@ -166,6 +184,27 @@
    "httpMethod": "GET",
    "response": {
     "$ref": "RegistrationBeanCollection"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "getRegistrationDetailUsingKey": {
+   "id": "tweetApi.getRegistrationDetailUsingKey",
+   "path": "registrationbean/{id}",
+   "httpMethod": "GET",
+   "parameters": {
+    "id": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "id"
+   ],
+   "response": {
+    "$ref": "RegistrationBean"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

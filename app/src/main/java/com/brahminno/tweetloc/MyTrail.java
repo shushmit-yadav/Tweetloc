@@ -42,7 +42,7 @@ class LocationAsyncTask extends AsyncTask<Void, Void, String> {
     private double latitude;
     private double longitude;
 
-    public LocationAsyncTask(Context contect, String Device_Id, double latitude, double longitude) {
+    public LocationAsyncTask(Context context, String Device_Id, double latitude, double longitude) {
         context = null;
         this.Device_Id = Device_Id;
         this.latitude = latitude;
@@ -78,6 +78,42 @@ class LocationAsyncTask extends AsyncTask<Void, Void, String> {
     }
 }
 //AsyncTask ends here....
+
+//This AsynTask is used to delete the information.....
+class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
+    private static TweetApi myTweetApi = null;
+    private Context context;
+    private String Device_Id;
+
+    public ForgetAsyncTask(Context context, String Device_Id) {
+        context = null;
+        this.Device_Id = Device_Id;
+    }
+
+    @Override
+    protected String doInBackground(Void... params) {
+        if (myTweetApi == null) {
+            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
+                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+
+            myTweetApi = builder.build();
+        }
+        try {
+
+            myTweetApi.forgetMe(Device_Id).execute();
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return "";
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        //super.onPostExecute(s);
+    }
+}
+
 //*************************************************************************************
 
 //this is a main class of MyTrail activity where we plot the map and show the location...
@@ -315,14 +351,15 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
             return true;
         }
         if(id == R.id.action_forget_me){
-            //forgetMe();
+            forgetMe();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
-    //public void forgetMe(){
-      //  mydb.deleteInfo(new RegistrationInfo(deviceId));
-    //}
+    public void forgetMe(){
+     // mydb.deleteInfo(new RegistrationInfo(deviceId));
+        new ForgetAsyncTask(getApplicationContext(), deviceId).execute();
+    }
 
     //this method is used for inviting contacts through social media android app....
     public void inviteContacts(){
