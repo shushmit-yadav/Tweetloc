@@ -114,18 +114,18 @@ public class MyEndpoint {
     @ApiMethod(name = "getRegistrationDetailUsingKey")
     public RegistrationBean getRegistrationDetailUsingKey(@Named("id") String id) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        Key keyId = KeyFactory.createKey("User Registration Data",id);
-        Entity registrationDetailUsingKey = null;
+        Key keyId = KeyFactory.createKey("Details", "Registration");
+        Key getDetailKey = KeyFactory.createKey(keyId,"User Registration Data",id);
+        RegistrationBean registration = new RegistrationBean();
         try {
-            registrationDetailUsingKey = datastoreService.get(keyId);
-        } catch (EntityNotFoundException e) {
+            Entity detailsEntity = datastoreService.get(getDetailKey);
+            registration.setDevice_Id(detailsEntity.getKey().getName());
+            registration.setMobile_Number((String) detailsEntity.getProperty("Mobile Number"));
+            registration.setEmail_Id((String) detailsEntity.getProperty("Email_ID"));
+        }
+        catch(EntityNotFoundException e){
             e.printStackTrace();
         }
-        //tweetLocBean.setDevice_Id((String) re.getProperty("Device_Id"));
-        RegistrationBean registration = new RegistrationBean();
-        registration.setDevice_Id(registrationDetailUsingKey.getKey().getName());
-        registration.setMobile_Number((String) registrationDetailUsingKey.getProperty("Mobile Number"));
-        registration.setEmail_Id((String) registrationDetailUsingKey.getProperty("Email_ID"));
         return registration ;
     }
 
@@ -165,7 +165,5 @@ public class MyEndpoint {
                 txn.rollback();
             }
         }
-
-
     }
 }

@@ -55,11 +55,12 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
     private String Mobile_Number;
     private String Email_ID;
     private String Device_Id;
-    public RegistrationAsyncTask(Context context,String Mobile_Number,String Email_ID,String Device_Id){
+    RegistrationBean registerUserValidation;
+    public RegistrationAsyncTask(Context con,String Mobile_Number,String Email_ID,String Device_Id){
         this.Mobile_Number = Mobile_Number;
         this.Email_ID = Email_ID;
         this.Device_Id = Device_Id;
-        context = null;
+        this.context = con;
     }
 
     @Override
@@ -77,22 +78,17 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
             registrationBean.setDeviceId(Device_Id);
 
             myTweetApi.storeRegistration(registrationBean).execute();
-        }
-        catch (Exception ex){
-            ex.printStackTrace();
-        }
 
-        try{
-            RegistrationBean registerUserValidation = myTweetApi.getRegistrationDetailUsingKey(Device_Id).execute();
+
+            //call registration Details Api.....
+            registerUserValidation = myTweetApi.getRegistrationDetailUsingKey(Device_Id).execute();
 
             //Store details in shared preferince.....
-            SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).edit();
-            editor.putBoolean("isFirstTime",true);
-            editor.putString("Mobile Number",registerUserValidation.getMobileNumber());
+            SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", context.MODE_PRIVATE).edit();
+            editor.putString("Mobile Number", registerUserValidation.getMobileNumber());
             editor.putString("Email Id", registerUserValidation.getEmailId());
-            editor.putString("Device Id",registerUserValidation.getDeviceId());
+            editor.putString("Device Id", registerUserValidation.getDeviceId());
             editor.commit();
-
         }
         catch (Exception e){
             e.printStackTrace();
@@ -104,6 +100,7 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
     @Override
     protected void onPostExecute(String s) {
         //super.onPostExecute(s);
+        //Toast.makeText(context,registerUserValidation.getDeviceId().toString(),Toast.LENGTH_SHORT).show();
     }
 }
 //*******************************************************
@@ -185,11 +182,11 @@ public class RegistrationActivity extends ActionBarActivity {
             //Retrieve Device Id...
             TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             deviceID = getDeviceID(telephonyManager);
-            Toast.makeText(getApplicationContext(),deviceID,Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(),deviceID,Toast.LENGTH_SHORT).show();
 
             //call method to get email....
             primaryEmail = getEmail();
-            Toast.makeText(getApplicationContext(),primaryEmail,Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getApplicationContext(),primaryEmail,Toast.LENGTH_SHORT).show();
 
             //Retrieve User Mobile Number.
             number = getMobileNumber();
@@ -246,7 +243,7 @@ public class RegistrationActivity extends ActionBarActivity {
     public String getMobileNumber(){
         TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         String strMobileNumber = manager.getLine1Number();
-        Toast.makeText(getApplicationContext(),strMobileNumber,Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getApplicationContext(),strMobileNumber,Toast.LENGTH_SHORT).show();
         return strMobileNumber;
     }
 

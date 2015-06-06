@@ -17,6 +17,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
+
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.LocationBean;
 import com.google.android.gms.common.ConnectionResult;
@@ -159,6 +161,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         deviceId = bundle.getString("Device_Id", deviceId);
+        Toast.makeText(getApplicationContext(),deviceId,Toast.LENGTH_SHORT).show();
         try {
 
             //call AsyncTask class to push location on server.....
