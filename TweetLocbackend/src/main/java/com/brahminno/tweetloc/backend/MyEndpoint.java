@@ -21,6 +21,8 @@ import com.google.appengine.api.datastore.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Filter;
+import java.util.logging.LogRecord;
 
 import javax.inject.Named;
 
@@ -112,7 +114,7 @@ public class MyEndpoint {
     @ApiMethod(name = "getRegistrationDetailUsingKey")
     public RegistrationBean getRegistrationDetailUsingKey(@Named("id") String id) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        Key keyId = KeyFactory.stringToKey("353322069473289");
+        Key keyId = KeyFactory.createKey("User Registration Data",id);
         Entity registrationDetailUsingKey = null;
         try {
             registrationDetailUsingKey = datastoreService.get(keyId);
@@ -151,7 +153,19 @@ public class MyEndpoint {
     @ApiMethod(name = "forgetMe")
     public void forgetMe(@Named("id") String id){
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        Key keyId = KeyFactory.stringToKey(id);
-        datastoreService.delete(keyId);
+        Transaction txn = datastoreService.beginTransaction();
+        try {
+            Key taskBeanParentKey = KeyFactory.createKey("Details", "Registration");
+            Key taskResult = KeyFactory.createKey(taskBeanParentKey, "User Registration Data", id);
+            datastoreService.delete(taskResult);
+            txn.commit();
+        }
+        finally {
+            if (txn.isActive()){
+                txn.rollback();
+            }
+        }
+
+
     }
 }
