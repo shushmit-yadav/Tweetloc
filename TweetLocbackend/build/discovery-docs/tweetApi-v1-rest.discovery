@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/--GqGnFb0K0m6XSSYvgjyXPBjuU\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/jgKMEZ8gliFKUj1wUKdow15Ld2A\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -81,7 +81,10 @@
      "type": "string"
     },
     "group_Member": {
-     "type": "string"
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
     },
     "group_Name": {
      "type": "string"
@@ -134,18 +137,6 @@
      "type": "string"
     }
    }
-  },
-  "RegistrationBeanCollection": {
-   "id": "RegistrationBeanCollection",
-   "type": "object",
-   "properties": {
-    "items": {
-     "type": "array",
-     "items": {
-      "$ref": "RegistrationBean"
-     }
-    }
-   }
   }
  },
  "methods": {
@@ -173,17 +164,6 @@
    "httpMethod": "GET",
    "response": {
     "$ref": "LocationBeanCollection"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "getRegistrationDetail": {
-   "id": "tweetApi.getRegistrationDetail",
-   "path": "registrationbeancollection",
-   "httpMethod": "GET",
-   "response": {
-    "$ref": "RegistrationBeanCollection"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

@@ -1,12 +1,14 @@
 package com.brahminno.tweetloc;
 
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
+import android.location.LocationProvider;
 import android.os.AsyncTask;
 import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
@@ -23,7 +25,6 @@ import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.LocationBean;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -67,8 +68,7 @@ class LocationAsyncTask extends AsyncTask<Void, Void, String> {
             locationBean.setLongitude(longitude);
 
             myTweetApi.storeLocation(locationBean).execute();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
         return "";
@@ -103,8 +103,7 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
         try {
 
             myTweetApi.forgetMe(Device_Id).execute();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
         return "";
@@ -120,22 +119,23 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
 
 //this is a main class of MyTrail activity where we plot the map and show the location...
 
-public class MyTrail extends ActionBarActivity implements LocationListener{
+public class MyTrail extends ActionBarActivity implements LocationListener {
 
     GoogleMap map;
-    Marker marker = null;
     double latitude, longitude;
     String deviceId;
     Button btnGroup;
     LocationManager locationManager;
-    Context context;
+    String provider;
     SQLiteDatabase mydb;
-    private static final int CHANGE_LOCATION_TIME_SECONDS = 2000;
+    boolean isGPSEnabled;
+    boolean isNetworkEnabled;
 
-    boolean isGPSEnabled = false;
-    boolean isNetworkEnabled = false;
+    MarkerOptions marker;
 
-    Location final_location = null,gps_loaction = null,network_location = null;
+    Location location;
+
+    private int count = 0; //counter to ensure onetimecamerasettouserloc function executes once on location change
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,19 +149,41 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
         setContentView(R.layout.activity_my_trail);
         btnGroup = (Button) findViewById(R.id.btnGroup);
         //check if gps is available or not.....
-        locationManager = (LocationManager) getApplicationContext().getSystemService(context.LOCATION_SERVICE);
-        if(!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+        LocationManager manager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
+        try{
+            //getting GPS Status....
+            isGPSEnabled = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            Log.i("GPS Status...", "" + isGPSEnabled);
+
+            //getting Network Status....
+            isNetworkEnabled = manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            Log.i("Network Status...", "" + isNetworkEnabled);
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+        if (!isGPSEnabled && !isNetworkEnabled) {
+            //if gps and network both will disable.....then show settings to open gps.....
             showGPSSettings();
         }
-        else {
-            getLocation();
+
+        locationManager = (LocationManager) getApplicationContext().getSystemService(getApplicationContext().LOCATION_SERVICE);
+        //set Criteria....
+        Criteria criteria = new Criteria();
+        //get best provider....
+        provider = locationManager.getBestProvider(criteria,true);
+        //getting location status.....
+        location = locationManager.getLastKnownLocation(provider);
+        //if location is not null....
+        if(location != null){
+            onLocationChanged(location);
         }
+        locationManager.requestLocationUpdates(provider,20000,0,this);
         //Intent to recieve data from previous activity class
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         deviceId = bundle.getString("Device_Id", deviceId);
-        Toast.makeText(getApplicationContext(),deviceId,Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), deviceId, Toast.LENGTH_SHORT).show();
         try {
 
             //call AsyncTask class to push location on server.....
@@ -189,66 +211,18 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
 
     }
 
-    public void getLocation(){
-
-        try{
-            //getting GPS Status....
-            isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            //getting Network Status....
-            isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-
-            if(isGPSEnabled){
-                if(locationManager != null) {
-                    gps_loaction = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    if(gps_loaction != null){
-                        latitude = gps_loaction.getLatitude();
-                        longitude = gps_loaction.getLongitude();
-                    }
-                }
-            }
-            if(isNetworkEnabled){
-                if(locationManager != null){
-                    network_location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                    if(network_location != null){
-                        latitude = network_location.getLatitude();
-                        longitude = network_location.getLongitude();
-                    }
-                }
-            }
-            if(gps_loaction != null && network_location != null){
-                if(gps_loaction.getAccuracy() >= network_location.getAccuracy()){
-                    final_location = gps_loaction;
-                }
-                else {
-                    final_location = network_location;
-                }
-            }
-            else{
-                if(gps_loaction != null){
-                    final_location = network_location;
-                }
-                else if(network_location != null){
-                    final_location = gps_loaction;
-                }
-            }
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
     private void initilizeMap() {
         if (map == null) {
             map = ((MapFragment) getFragmentManager().findFragmentById(
                     R.id.mapFragment)).getMap();
         }
-        //MarkerOptions marker = new MarkerOptions().position(new LatLng(latitude, longitude));
-        //map.addMarker(marker);
+        marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+        map.addMarker(marker);
 
         map.setMyLocationEnabled(true);
 
         CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(latitude, longitude)).zoom(10).build();
+                .target(new LatLng(latitude, longitude)).zoom(15).build();
 
 
         map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
@@ -269,7 +243,10 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
         latitude = location.getLatitude();
         longitude = location.getLongitude();
 
-        LatLng latLng = new LatLng(latitude,longitude);
+        if(count == 0){
+            oneTimeCameraSetToUserLoc(location);
+            count = 1;
+        }
 
         //call AsyncTask class to push location on server when location changes.....
         new LocationAsyncTask(getApplicationContext(), deviceId, latitude, longitude).execute();
@@ -278,14 +255,34 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
 
     }
 
-    public void cameraSetToCurrentLocation(Location location){
-        latitude = location.getLatitude();
-        longitude = location.getLongitude();
+    public void oneTimeCameraSetToUserLoc(Location location) {
 
-        LatLng latLng = new LatLng(latitude,longitude);
-        marker = map.addMarker(new MarkerOptions().position(latLng).title("My Location"));
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+
+        LatLng latLng = new LatLng(latitude, longitude);
+        //add marker.....
+        //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+
+
         map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         map.animateCamera(CameraUpdateFactory.zoomTo(15));
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
     private boolean isGooglePlayServicesAvailable() {
@@ -298,7 +295,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
         }
     }
 
-    public void showGPSSettings(){
+    public void showGPSSettings() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("GPS is not available.");
         builder.setMessage("Do you want to activate GPS?");
@@ -308,30 +305,19 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
                 //Launch settings, allowing user to make a change
                 Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
 
-                startActivityForResult(i,0);
+                startActivity(i);
             }
         });
         builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 //No location service, no Activity
+                Toast.makeText(getApplicationContext(),"This app requires GPS for precize location !!!",Toast.LENGTH_SHORT).show();
                 finish();
+
             }
         });
         builder.create().show();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 0){
-            if(resultCode == RESULT_OK){
-                getLocation();
-            }
-            else if(resultCode == RESULT_CANCELED){
-                getLocation();
-            }
-        }
     }
 
     @Override
@@ -343,29 +329,36 @@ public class MyTrail extends ActionBarActivity implements LocationListener{
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if(id == R.id.action_settings){
-            Intent intent = new Intent(getApplicationContext(),User_ProfileActivity.class);
+        if (id == R.id.action_settings) {
+            Intent intent = new Intent(getApplicationContext(), User_ProfileActivity.class);
             startActivity(intent);
             return true;
         }
-        if(id == R.id.action_invte){
+        if (id == R.id.action_invte) {
             //call inviteContacts() method to invite the contacts through installed app in device...
             inviteContacts();
             return true;
         }
-        if(id == R.id.action_forget_me){
+        if (id == R.id.action_forget_me) {
             forgetMe();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
-    public void forgetMe(){
-     // mydb.deleteInfo(new RegistrationInfo(deviceId));
+
+    public void forgetMe() {
+        // mydb.deleteInfo(new RegistrationInfo(deviceId));
         new ForgetAsyncTask(getApplicationContext(), deviceId).execute();
+
+        //Clear all data from shared preference....
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.clear();
+        editor.commit();
     }
 
     //this method is used for inviting contacts through social media android app....
-    public void inviteContacts(){
+    public void inviteContacts() {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");

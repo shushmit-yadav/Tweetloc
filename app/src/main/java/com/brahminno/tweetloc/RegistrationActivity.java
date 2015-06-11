@@ -114,10 +114,9 @@ public class RegistrationActivity extends ActionBarActivity {
     String number;
     String primaryEmail;
     String primaryEmailID;
-    String strNumber;
     String deviceID;
     SQLiteDatabase mydb;
-    SharedPreferences sharedPreferences;
+    String strNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,20 +138,9 @@ public class RegistrationActivity extends ActionBarActivity {
 
                 if (ckBoxTC.isChecked()){
                     if(number == null){
-                        strNumber = showInputDialog();
-                        number = strNumber;
+                        number = showInputDialog();
                     }
                     else{
-                        /*
-                        //Store Details in SharedPreference.....
-                        SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).edit();
-                        editor.putBoolean("isFirstTime",true);
-                        editor.putString("Mobile NUmber",number);
-                        editor.putString("Email Id", primaryEmail);
-                        editor.putString("Device Id",deviceID);
-                        editor.commit();
-                        */
-
                         //Save details to SQLite Database.....
                         mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
 

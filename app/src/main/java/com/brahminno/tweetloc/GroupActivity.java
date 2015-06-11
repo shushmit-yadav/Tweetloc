@@ -8,12 +8,19 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ExpandableListView;
 import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
 
 
 public class GroupActivity extends ActionBarActivity {
 
     Button btnCreateGroup;
+    ExpandableListView groupNameListView;
+    String group_name;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,14 +28,17 @@ public class GroupActivity extends ActionBarActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setIcon(R.drawable.ic_hdr_grp_128);
         setContentView(R.layout.activity_group);
+        groupNameListView = (ExpandableListView) findViewById(R.id.groupNameListView);
         btnCreateGroup = (Button) findViewById(R.id.btnCreateGroup);
         btnCreateGroup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(),CreateGroupActivity.class);
+                Intent intent = new Intent(getApplicationContext(), CreateGroupActivity.class);
                 startActivity(intent);
             }
         });
+
+        Toast.makeText(getApplicationContext(),group_name,Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -49,7 +59,6 @@ public class GroupActivity extends ActionBarActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }

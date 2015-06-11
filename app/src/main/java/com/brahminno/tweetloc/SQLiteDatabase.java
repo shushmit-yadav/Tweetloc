@@ -20,8 +20,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public  static final String COLUMN_NUMBER = "Mobile_Number";
     public  static final String COLUMN_EMAIL = "Email";
     public static final String CLOUMN_DEVICE_ID = "Device_ID";
-
-
+    public static final String GROUP_TABLE = "Group Table";
+    public static final String GROUPS_NAME = "Group Name";
 
 
     public SQLiteDatabase(Context context) {
@@ -31,14 +31,19 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     @Override
     public void onCreate(android.database.sqlite.SQLiteDatabase db) {
 
+        //Create table for storing registration details....
         db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
+
+        //Create table to store groups details........
+        db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text" + ")");
 
     }
 
     @Override
     public void onUpgrade(android.database.sqlite.SQLiteDatabase db, int oldVersion, int newVersion) {
 
-        db.execSQL("DROP TABLE IF EXISTS InfoTable");
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + GROUP_TABLE);
         onCreate(db);
 
     }
@@ -49,12 +54,19 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
         contentValues.put(COLUMN_NUMBER,info.getMobileNO());
         contentValues.put(COLUMN_EMAIL,info.getEmailID());
-        contentValues.put(CLOUMN_DEVICE_ID,info.getDeviceID());
+        contentValues.put(CLOUMN_DEVICE_ID, info.getDeviceID());
 
         db.insert(TABLE_NAME, null, contentValues);
 
         db.close();
         //return true;
+    }
+    void insertGroups(GroupDetails group){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(GROUPS_NAME,group.getGroup_Name());
+        db.insert(GROUP_TABLE, null, contentValues);
+        db.close();
     }
 
     void deleteInfo(RegistrationInfo info){

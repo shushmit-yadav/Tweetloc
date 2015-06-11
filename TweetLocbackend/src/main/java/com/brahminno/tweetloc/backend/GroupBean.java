@@ -8,7 +8,7 @@ import java.util.ArrayList;
  */
 public class GroupBean {
     private String Group_Name;
-    private String Group_Member;
+    private ArrayList<String> Group_Member;
     private String Device_Id;
     private String Mobile_Number;
 
@@ -20,7 +20,7 @@ public class GroupBean {
         return Device_Id;
     }
 
-    public String getGroup_Member() {
+    public ArrayList<String> getGroup_Member() {
         return Group_Member;
     }
 
@@ -36,7 +36,7 @@ public class GroupBean {
         Device_Id = device_Id;
     }
 
-    public void setGroup_Member(String group_Member) {
+    public void setGroup_Member(ArrayList<String> group_Member) {
         Group_Member = group_Member;
     }
 

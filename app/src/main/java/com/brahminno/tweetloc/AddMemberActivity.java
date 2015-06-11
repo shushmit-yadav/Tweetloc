@@ -1,5 +1,6 @@
 package com.brahminno.tweetloc;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
@@ -9,6 +10,7 @@ import android.util.Log;
 public class AddMemberActivity extends ActionBarActivity {
 
     private static final String TAG = "Tab";
+    String Group_Name;
 
     /**
      * Called when the activity is first created.

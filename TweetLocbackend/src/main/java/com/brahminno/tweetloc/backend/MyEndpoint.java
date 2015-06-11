@@ -77,10 +77,12 @@ public class MyEndpoint {
         Transaction txn = datastoreService.beginTransaction();
         try {
             Key taskBeanParentKey = KeyFactory.createKey("Details", "Group");
-            Entity groupEntity = new Entity("User Group Details", groupBean.getDevice_Id(), taskBeanParentKey);
+            Entity groupEntity = new Entity("User Group Details",taskBeanParentKey);
             groupEntity.setProperty("Group Name", groupBean.getGroup_Name());
-            groupEntity.setProperty("Group Member", groupBean.getGroup_Name());
+            groupEntity.setProperty("Group Member", groupBean.getGroup_Member());
             groupEntity.setProperty("Mobile Number", groupBean.getMobile_Number());
+            groupEntity.setProperty("deviceId",groupBean.getDevice_Id());
+
             datastoreService.put(groupEntity);
             txn.commit();
         } finally {
@@ -89,27 +91,6 @@ public class MyEndpoint {
             }
         }
     }
-
-    //ApiMethod to get registration data from server....
-    @ApiMethod(name = "getRegistrationDetail")
-    public List<RegistrationBean> getRegistrationDetail() {
-        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        Key taskBeanParentKey = KeyFactory.createKey("Details", "Registration");
-        Query query = new Query(taskBeanParentKey);
-        List<Entity> result = datastoreService.prepare(query).asList(FetchOptions.Builder.withDefaults());
-
-        ArrayList<RegistrationBean> registrationBean = new ArrayList<>();
-        for (Entity re : result) {
-            RegistrationBean registration = new RegistrationBean();
-            registration.setMobile_Number((String) re.getProperty("Mobile Number"));
-            registration.setEmail_Id((String) re.getProperty("Email_ID"));
-            //tweetLocBean.setDevice_Id((String) re.getProperty("Device_Id"));
-            registration.setDevice_Id(re.getKey().getName());
-            registrationBean.add(registration);
-        }
-        return registrationBean;
-    }
-
     //ApiMethod to get Registration using key....
     @ApiMethod(name = "getRegistrationDetailUsingKey")
     public RegistrationBean getRegistrationDetailUsingKey(@Named("id") String id) {
@@ -128,8 +109,28 @@ public class MyEndpoint {
         }
         return registration ;
     }
+    /*
+    //Group details fetch based on group id
 
-    //ApiMethod to get registration data from server....
+    @ApiMethod(name = "getGRoupDetailUsingKey")
+    public GroupBean getGRoupDetailUsingKey(@Named("id") String id) {
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        Key keyId = KeyFactory.createKey("Details", "Group");
+        Key getDetailKey = KeyFactory.createKey(keyId,"User Group Details",id);
+        RegistrationBean registration = new RegistrationBean();
+        try {
+            Entity detailsEntity = datastoreService.get(getDetailKey);
+            registration.setDevice_Id(detailsEntity.getKey().getName());
+            registration.setMobile_Number((String) detailsEntity.getProperty("Mobile Number"));
+            registration.setEmail_Id((String) detailsEntity.getProperty("Email_ID"));
+        }
+        catch(EntityNotFoundException e){
+            e.printStackTrace();
+        }
+        return registration ;
+    }
+    */
+    //ApiMethod to get location data from server....
     @ApiMethod(name = "getLocation")
     public List<LocationBean> getLocation() {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
