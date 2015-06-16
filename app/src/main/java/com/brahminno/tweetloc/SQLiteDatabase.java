@@ -40,7 +40,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         //Create table to store groups details........
         //db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text" + ")");
         //create table for storing mobile number......
-        //db.execSQL("create table " + TABLE_NUMBER + "(" + COLUMN_NUMBER + " text" + ")");
+        db.execSQL("create table " + TABLE_NUMBER + "(" + COLUMN_NUMBER + " text" + ")");
 
     }
 
@@ -82,7 +82,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     }
 
-    void insertNumberArrayList(String mobile_number){
+    void insertNumberArrayList(List<String> mobile_number){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_NUMBER, String.valueOf(mobile_number));

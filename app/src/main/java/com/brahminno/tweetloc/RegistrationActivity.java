@@ -100,7 +100,7 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
     @Override
     protected void onPostExecute(String s) {
         //super.onPostExecute(s);
-        //Toast.makeText(context,registerUserValidation.getDeviceId().toString(),Toast.LENGTH_SHORT).show();
+       // Toast.makeText(context,registerUserValidation.getMobileNumber().toString(),Toast.LENGTH_SHORT).show();
     }
 }
 //*******************************************************
@@ -138,13 +138,15 @@ public class RegistrationActivity extends ActionBarActivity {
 
                 if (ckBoxTC.isChecked()){
                     if(number == null){
-                        number = showInputDialog();
+                        String Number = showInputDialog();
+                        number = Number;
                     }
                     else{
                         //Save details to SQLite Database.....
-                        mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
+                        //mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
 
                         //call method to store registration details on server
+                        Log.i("Mobile No....",number);
                         new RegistrationAsyncTask(getApplicationContext(),number,primaryEmail,deviceID).execute();
 
                         //call intent to open MyTrail Activity....
@@ -178,6 +180,8 @@ public class RegistrationActivity extends ActionBarActivity {
 
             //Retrieve User Mobile Number.
             number = getMobileNumber();
+            Log.i("Mobile No...",number);
+            Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
         }
     }
     //Check Internet
@@ -231,7 +235,7 @@ public class RegistrationActivity extends ActionBarActivity {
     public String getMobileNumber(){
         TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         String strMobileNumber = manager.getLine1Number();
-        //Toast.makeText(getApplicationContext(),strMobileNumber,Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(),strMobileNumber,Toast.LENGTH_SHORT).show();
         return strMobileNumber;
     }
 

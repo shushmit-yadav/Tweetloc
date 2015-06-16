@@ -29,7 +29,6 @@ import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
 import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBeanCollection;
 import com.brahminno.tweetloc.backend.tweetApi.model.LocationBean;
 import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBeanCollection;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationCallback;
@@ -130,8 +129,8 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
     private static TweetApi myTweetApi = null;
     private Context context;
     private ArrayList<String> number;
-    RegistrationBeanCollection registrationBean;
     SQLiteDatabase myDB;
+    ContactSyncBeanCollection contactSyncBean;
 
 
     public NumberSyncFromServer(Context context, ArrayList<String> number) {
@@ -148,13 +147,20 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             myTweetApi = builder.build();
         }
         try {
-            //registrationBean = myTweetApi.contactSync(number).execute();
+
+           contactSyncBean= myTweetApi.contactSync(number).execute();
+
+            ArrayList<String> MobileNumber = new ArrayList<>();
 
             //get list of number from server.....
-            //ArrayList<ContactSyncBean> mobile_number = (ArrayList<ContactSyncBean>) registrationBean.getItems();
+            ArrayList<ContactSyncBean> mnum = (ArrayList<ContactSyncBean>) contactSyncBean.getItems();
             //save arraylist to sqlite database......
-            //myDB = new SQLiteDatabase(context);
-            //myDB.insertNumberArrayList((mobile_number).toString());
+            myDB = new SQLiteDatabase(context);
+            for (ContactSyncBean num : mnum){
+                MobileNumber.add(num.getMobileNumber());
+            }
+            myDB.insertNumberArrayList(MobileNumber);
+
 
         } catch (Exception ex) {
             ex.printStackTrace();

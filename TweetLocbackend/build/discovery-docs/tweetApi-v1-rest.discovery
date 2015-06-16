@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/2vBMKet63Q5clFrqROHtbcyJWUg\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/UlcrJCP6MDFV92A14nYz9GiGlJw\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -73,6 +73,27 @@
   }
  },
  "schemas": {
+  "ContactSyncBean": {
+   "id": "ContactSyncBean",
+   "type": "object",
+   "properties": {
+    "mobileNumber": {
+     "type": "string"
+    }
+   }
+  },
+  "ContactSyncBeanCollection": {
+   "id": "ContactSyncBeanCollection",
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "ContactSyncBean"
+     }
+    }
+   }
+  },
   "GroupBean": {
    "id": "GroupBean",
    "type": "object",
@@ -137,18 +158,6 @@
      "type": "string"
     }
    }
-  },
-  "StringCollection": {
-   "id": "StringCollection",
-   "type": "object",
-   "properties": {
-    "items": {
-     "type": "array",
-     "items": {
-      "type": "string"
-     }
-    }
-   }
   }
  },
  "methods": {
@@ -168,7 +177,7 @@
     "number"
    ],
    "response": {
-    "$ref": "StringCollection"
+    "$ref": "ContactSyncBeanCollection"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
