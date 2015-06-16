@@ -175,29 +175,33 @@ public class MyEndpoint {
         }
     }
 
+    /*
+
     @ApiMethod(name = "contactSync")
     public ArrayList<ContactSyncBean> contactSync(@Named("number") ArrayList<String> number) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Key registrationBeanParentKey = KeyFactory.createKey("Details", "Registration");
         Query q = new Query("Fetch Contact");
-        //Filter numberFilter = new Filter("Mobile_Number", Query.FilterOperator.EQUAL, number)
-
-
-
-        //q.setFilter("Mobile_Number", Query.FilterOperator.EQUAL, number);
         for(int i = 0; i < number.size(); i++){
             String str = number.get(i);
             FilterPredicate propertyFilter =
                     new FilterPredicate("Mobile Number",FilterOperator.EQUAL,str);
 
             q.setFilter(propertyFilter);
+
+            // Use PreparedQuery interface to retrieve results
+            PreparedQuery pq = datastoreService.prepare(q);
+            for (Entity result : pq.asIterable()) {
+                String Mobile_Number = (String) result.getProperty("Mobile_Number");
+            }
+
         }
 
-        // Use PreparedQuery interface to retrieve results
-        PreparedQuery pq = datastoreService.prepare(q);
+
 
 
     }
+    */
 
 
 }

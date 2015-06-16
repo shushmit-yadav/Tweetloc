@@ -38,9 +38,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
 
         //Create table to store groups details........
-        db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text" + ")");
+        //db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text" + ")");
         //create table for storing mobile number......
-        db.execSQL("create table " + TABLE_NUMBER + "(" + COLUMN_NUMBER + " text" + ")");
+        //db.execSQL("create table " + TABLE_NUMBER + "(" + COLUMN_NUMBER + " text" + ")");
 
     }
 

@@ -148,13 +148,13 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             myTweetApi = builder.build();
         }
         try {
-            registrationBean = myTweetApi.contactSync(number).execute();
+            //registrationBean = myTweetApi.contactSync(number).execute();
 
             //get list of number from server.....
-            ArrayList<ContactSyncBean> mobile_number = (ArrayList<ContactSyncBean>) registrationBean.getItems();
+            //ArrayList<ContactSyncBean> mobile_number = (ArrayList<ContactSyncBean>) registrationBean.getItems();
             //save arraylist to sqlite database......
-            myDB = new SQLiteDatabase(context);
-            myDB.insertNumberArrayList((mobile_number).toString());
+            //myDB = new SQLiteDatabase(context);
+            //myDB.insertNumberArrayList((mobile_number).toString());
 
         } catch (Exception ex) {
             ex.printStackTrace();
