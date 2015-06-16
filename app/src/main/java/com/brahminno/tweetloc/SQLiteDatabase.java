@@ -35,7 +35,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public void onCreate(android.database.sqlite.SQLiteDatabase db) {
 
         //Create table for storing registration details....
-        db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
+        //db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
 
         //Create table to store groups details........
         //db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text" + ")");
@@ -54,6 +54,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     }
 
+    /*
     void insertInfo(RegistrationInfo info){
         android.database.sqlite.SQLiteDatabase db =this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
@@ -67,6 +68,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.close();
         //return true;
     }
+    */
+    /*
     void insertGroups(GroupDetails group){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
@@ -75,12 +78,14 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
+
     void deleteInfo(RegistrationInfo info){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_NAME, null, null);
         Log.i(TABLE_NAME, "Deleted");
 
     }
+    */
 
     void insertNumberArrayList(List<String> mobile_number){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();

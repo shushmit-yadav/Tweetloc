@@ -115,7 +115,7 @@ public class RegistrationActivity extends ActionBarActivity {
     String primaryEmail;
     String primaryEmailID;
     String deviceID;
-    SQLiteDatabase mydb;
+    //SQLiteDatabase mydb;
     String strNumber;
 
     @Override
@@ -130,7 +130,7 @@ public class RegistrationActivity extends ActionBarActivity {
 
 
 
-        mydb = new SQLiteDatabase(this);
+        //mydb = new SQLiteDatabase(this);
         //On Button Click Event....
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
