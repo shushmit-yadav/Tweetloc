@@ -1,21 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
+
+    <ListView
+        android:id="@+id/listViewAddContact"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/btnAddSelectedContact"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:text="Add" />
+        android:layout_centerVertical="true" />
+
+
 
     <Button
         android:id="@+id/btnAddSelectedContact"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add Contact"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
         android:layout_gravity="center_horizontal|bottom"
-        android:gravity="center"/>
+        android:gravity="center"
+        android:text="Add Contact" />
 
-</FrameLayout>
+
+</RelativeLayout>

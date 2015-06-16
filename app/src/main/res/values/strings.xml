@@ -13,4 +13,5 @@
     <string name="send_to">Share it!!!</string>
     <string name="title_activity_invite">InviteActivity</string>
     <string name="title_activity_user__profile">User Profile</string>
+    <string name="action_contactSync">Contact Sync</string>
 </resources>

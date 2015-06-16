@@ -4,12 +4,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -22,9 +25,14 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
+import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
+import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBeanCollection;
 import com.brahminno.tweetloc.backend.tweetApi.model.LocationBean;
+import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
+import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBeanCollection;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -36,6 +44,7 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 //this is a AsyncTask class that push location to server in background.....
 class LocationAsyncTask extends AsyncTask<Void, Void, String> {
@@ -46,7 +55,7 @@ class LocationAsyncTask extends AsyncTask<Void, Void, String> {
     private double longitude;
 
     public LocationAsyncTask(Context context, String Device_Id, double latitude, double longitude) {
-        context = null;
+        this.context = context;
         this.Device_Id = Device_Id;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -115,25 +124,70 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
     }
 }
 
+//this is a AsyncClass to send all contact to server and server returns arraylist of numbers presented in server and save it to app local sqlite database....
+class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
+
+    private static TweetApi myTweetApi = null;
+    private Context context;
+    private ArrayList<String> number;
+    RegistrationBeanCollection registrationBean;
+    SQLiteDatabase myDB;
+
+
+    public NumberSyncFromServer(Context context, ArrayList<String> number) {
+        this.context = context;
+        this.number = number;
+    }
+
+    @Override
+    protected String doInBackground(Void... params) {
+        if (myTweetApi == null) {
+            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
+                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+
+            myTweetApi = builder.build();
+        }
+        try {
+            registrationBean = myTweetApi.contactSync(number).execute();
+
+            //get list of number from server.....
+            ArrayList<ContactSyncBean> mobile_number = (ArrayList<ContactSyncBean>) registrationBean.getItems();
+            //save arraylist to sqlite database......
+            myDB = new SQLiteDatabase(context);
+            myDB.insertNumberArrayList((mobile_number).toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "";
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        super.onPostExecute(s);
+    }
+}
+
 //*************************************************************************************
 
 //this is a main class of MyTrail activity where we plot the map and show the location...
 
-public class MyTrail extends ActionBarActivity implements LocationListener {
+public class MyTrail extends ActionBarActivity implements LocationListener, com.google.android.gms.location.LocationListener{
 
     GoogleMap map;
     double latitude, longitude;
     String deviceId;
     Button btnGroup;
     LocationManager locationManager;
-    String provider;
     SQLiteDatabase mydb;
     boolean isGPSEnabled;
     boolean isNetworkEnabled;
 
+    ArrayList<String> numberList;
+
     MarkerOptions marker;
 
-    Location location;
+    Location final_location,gps_location,network_location;
 
     private int count = 0; //counter to ensure onetimecamerasettouserloc function executes once on location change
 
@@ -147,17 +201,19 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
             finish();
         }
         setContentView(R.layout.activity_my_trail);
+        //initialize arraylist.....
+        numberList = new ArrayList<String>();
         btnGroup = (Button) findViewById(R.id.btnGroup);
         //check if gps is available or not.....
-        LocationManager manager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
         try{
             //getting GPS Status....
-            isGPSEnabled = manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             Log.i("GPS Status...", "" + isGPSEnabled);
 
             //getting Network Status....
-            isNetworkEnabled = manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
             Log.i("Network Status...", "" + isNetworkEnabled);
         }catch (Exception ex){
             ex.printStackTrace();
@@ -166,19 +222,44 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
             //if gps and network both will disable.....then show settings to open gps.....
             showGPSSettings();
         }
-
-        locationManager = (LocationManager) getApplicationContext().getSystemService(getApplicationContext().LOCATION_SERVICE);
-        //set Criteria....
-        Criteria criteria = new Criteria();
-        //get best provider....
-        provider = locationManager.getBestProvider(criteria,true);
-        //getting location status.....
-        location = locationManager.getLastKnownLocation(provider);
-        //if location is not null....
-        if(location != null){
-            onLocationChanged(location);
+         else{
+            Log.i("GPS Status","GPS is already activated!!!!");
         }
-        locationManager.requestLocationUpdates(provider,20000,0,this);
+        //if gps enabled.....
+        if(isGPSEnabled){
+            gps_location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if(gps_location != null){
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,20000,10,this);
+            }
+        }
+        //if Network enabled.....
+        if(isNetworkEnabled){
+            network_location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            if(network_location != null){
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,20000,10,this);
+            }
+        }
+        if(gps_location != null && network_location != null){
+            if(gps_location.getAccuracy() > network_location.getAccuracy()){
+                final_location = gps_location;
+            }
+            else{
+                final_location = network_location;
+            }
+        }
+        else {
+            if (gps_location != null) {
+                final_location = gps_location;
+            } else {
+                final_location = network_location;
+            }
+        }
+
+        if(final_location != null){
+            latitude = final_location.getLatitude();
+            longitude = final_location.getLongitude();
+        }
+
         //Intent to recieve data from previous activity class
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
@@ -192,7 +273,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
             initilizeMap();
 
 
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             ex.printStackTrace();
         }
 
@@ -202,9 +284,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getApplicationContext(), GroupActivity.class);
-                //Bundle bundle = new Bundle();
-                //bundle.putString("Device_Id",deviceId);
-                //intent.putExtras(bundle);
                 startActivity(intent);
             }
         });
@@ -216,6 +295,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
             map = ((MapFragment) getFragmentManager().findFragmentById(
                     R.id.mapFragment)).getMap();
         }
+        Log.i("LatLog","latlog is....." + latitude);
         marker = new MarkerOptions().position(new LatLng(latitude, longitude));
         map.addMarker(marker);
 
@@ -247,7 +327,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
             oneTimeCameraSetToUserLoc(location);
             count = 1;
         }
-
         //call AsyncTask class to push location on server when location changes.....
         new LocationAsyncTask(getApplicationContext(), deviceId, latitude, longitude).execute();
 
@@ -260,12 +339,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
         double latitude = location.getLatitude();
         double longitude = location.getLongitude();
 
-        LatLng latLng = new LatLng(latitude, longitude);
-        //add marker.....
-        //marker = new MarkerOptions().position(new LatLng(latitude, longitude));
-
-
-        map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        map.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(latitude, longitude)));
         map.animateCamera(CameraUpdateFactory.zoomTo(15));
 
     }
@@ -296,6 +370,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
     }
 
     public void showGPSSettings() {
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("GPS is not available.");
         builder.setMessage("Do you want to activate GPS?");
@@ -343,6 +418,13 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
             forgetMe();
             return true;
         }
+        if(id == R.id.action_contactSync){
+            //first fetch all contact number from device.......
+            fetchContact();
+            //After Successfully fetching all contact number, call AsyncTask class to send this contact to server.......
+            new NumberSyncFromServer(getApplicationContext(),numberList).execute();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -363,5 +445,23 @@ public class MyTrail extends ActionBarActivity implements LocationListener {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
         startActivity(intent);
+    }
+    private void fetchContact(){
+        //Set URI....
+        Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        //Set Projection
+        String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER};
+        Cursor people = getApplicationContext().getContentResolver().query(uri, projection, null, null, null);
+        int indexName = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+        int indexNumber = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+        people.moveToFirst();
+        do {
+            //String name = people.getString(indexName);
+            String number = people.getString(indexNumber);
+            numberList.add(number);
+
+        }
+        while (people.moveToNext());
     }
 }

@@ -6,6 +6,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +24,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public static final String CLOUMN_DEVICE_ID = "Device_ID";
     public static final String GROUP_TABLE = "Group Table";
     public static final String GROUPS_NAME = "Group Name";
+    public static final String  TABLE_NUMBER = "Mobile Table";
 
 
     public SQLiteDatabase(Context context) {
@@ -36,6 +39,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
         //Create table to store groups details........
         db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text" + ")");
+        //create table for storing mobile number......
+        db.execSQL("create table " + TABLE_NUMBER + "(" + COLUMN_NUMBER + " text" + ")");
 
     }
 
@@ -44,6 +49,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + GROUP_TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NUMBER);
         onCreate(db);
 
     }
@@ -53,7 +59,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         ContentValues contentValues = new ContentValues();
 
         contentValues.put(COLUMN_NUMBER,info.getMobileNO());
-        contentValues.put(COLUMN_EMAIL,info.getEmailID());
+        contentValues.put(COLUMN_EMAIL, info.getEmailID());
         contentValues.put(CLOUMN_DEVICE_ID, info.getDeviceID());
 
         db.insert(TABLE_NAME, null, contentValues);
@@ -71,9 +77,17 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     void deleteInfo(RegistrationInfo info){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_NAME,null,null);
-        Log.i(TABLE_NAME,"Deleted");
+        db.delete(TABLE_NAME, null, null);
+        Log.i(TABLE_NAME, "Deleted");
 
+    }
+
+    void insertNumberArrayList(String mobile_number){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_NUMBER, String.valueOf(mobile_number));
+        db.insert(TABLE_NUMBER, null, contentValues);
+        db.close();
     }
 
 }

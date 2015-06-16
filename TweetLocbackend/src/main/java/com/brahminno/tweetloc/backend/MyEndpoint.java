@@ -16,8 +16,12 @@ import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.appengine.repackaged.com.google.api.services.datastore.DatastoreV1;
+import com.google.appengine.repackaged.com.google.datastore.v1.CompositeFilter;
+import com.google.appengine.repackaged.com.google.datastore.v1.PropertyFilter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +29,10 @@ import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 
 import javax.inject.Named;
+
+import static com.google.appengine.api.datastore.Query.*;
+import static com.google.appengine.repackaged.com.google.api.services.datastore.client.DatastoreHelper.makeFilter;
+import static com.google.appengine.repackaged.com.google.api.services.datastore.client.DatastoreHelper.makeValue;
 
 /**
  * An endpoint class we are exposing
@@ -40,7 +48,7 @@ public class MyEndpoint {
         try {
             Key taskBeanParentKey = KeyFactory.createKey("Details", "Registration");
             Entity registrationEntity = new Entity("User Registration Data", registrationBean.getDevice_Id(), taskBeanParentKey);
-            registrationEntity.setProperty("Mobile_Nummber", registrationBean.getMobile_Number());
+            registrationEntity.setProperty("Mobile_Number", registrationBean.getMobile_Number());
             registrationEntity.setProperty("Email_Id", registrationBean.getEmail_Id());
             datastoreService.put(registrationEntity);
             txn.commit();
@@ -77,11 +85,11 @@ public class MyEndpoint {
         Transaction txn = datastoreService.beginTransaction();
         try {
             Key taskBeanParentKey = KeyFactory.createKey("Details", "Group");
-            Entity groupEntity = new Entity("User Group Details",taskBeanParentKey);
+            Entity groupEntity = new Entity("User Group Details", taskBeanParentKey);
             groupEntity.setProperty("Group Name", groupBean.getGroup_Name());
             groupEntity.setProperty("Group Member", groupBean.getGroup_Member());
             groupEntity.setProperty("Mobile Number", groupBean.getMobile_Number());
-            groupEntity.setProperty("deviceId",groupBean.getDevice_Id());
+            groupEntity.setProperty("deviceId", groupBean.getDevice_Id());
 
             datastoreService.put(groupEntity);
             txn.commit();
@@ -91,24 +99,25 @@ public class MyEndpoint {
             }
         }
     }
+
     //ApiMethod to get Registration using key....
     @ApiMethod(name = "getRegistrationDetailUsingKey")
     public RegistrationBean getRegistrationDetailUsingKey(@Named("id") String id) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Key keyId = KeyFactory.createKey("Details", "Registration");
-        Key getDetailKey = KeyFactory.createKey(keyId,"User Registration Data",id);
+        Key getDetailKey = KeyFactory.createKey(keyId, "User Registration Data", id);
         RegistrationBean registration = new RegistrationBean();
         try {
             Entity detailsEntity = datastoreService.get(getDetailKey);
             registration.setDevice_Id(detailsEntity.getKey().getName());
-            registration.setMobile_Number((String) detailsEntity.getProperty("Mobile Number"));
+            registration.setMobile_Number((String) detailsEntity.getProperty("Mobile_Number"));
             registration.setEmail_Id((String) detailsEntity.getProperty("Email_ID"));
-        }
-        catch(EntityNotFoundException e){
+        } catch (EntityNotFoundException e) {
             e.printStackTrace();
         }
-        return registration ;
+        return registration;
     }
+
     /*
     //Group details fetch based on group id
 
@@ -143,7 +152,6 @@ public class MyEndpoint {
             LocationBean location = new LocationBean();
             location.setLatitude((Double) re.getProperty("Latitude"));
             location.setLongitude((Double) re.getProperty("Longitude"));
-            //tweetLocBean.setDevice_Id((String) re.getProperty("Device_Id"));
             location.setDrvice_Id(re.getKey().getName());
             locationBean.add(location);
         }
@@ -152,7 +160,7 @@ public class MyEndpoint {
 
     //ApiMethod to delete registration details....
     @ApiMethod(name = "forgetMe")
-    public void forgetMe(@Named("id") String id){
+    public void forgetMe(@Named("id") String id) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Transaction txn = datastoreService.beginTransaction();
         try {
@@ -160,11 +168,36 @@ public class MyEndpoint {
             Key taskResult = KeyFactory.createKey(taskBeanParentKey, "User Registration Data", id);
             datastoreService.delete(taskResult);
             txn.commit();
-        }
-        finally {
-            if (txn.isActive()){
+        } finally {
+            if (txn.isActive()) {
                 txn.rollback();
             }
         }
     }
+
+    @ApiMethod(name = "contactSync")
+    public ArrayList<ContactSyncBean> contactSync(@Named("number") ArrayList<String> number) {
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        Key registrationBeanParentKey = KeyFactory.createKey("Details", "Registration");
+        Query q = new Query("Fetch Contact");
+        //Filter numberFilter = new Filter("Mobile_Number", Query.FilterOperator.EQUAL, number)
+
+
+
+        //q.setFilter("Mobile_Number", Query.FilterOperator.EQUAL, number);
+        for(int i = 0; i < number.size(); i++){
+            String str = number.get(i);
+            FilterPredicate propertyFilter =
+                    new FilterPredicate("Mobile Number",FilterOperator.EQUAL,str);
+
+            q.setFilter(propertyFilter);
+        }
+
+        // Use PreparedQuery interface to retrieve results
+        PreparedQuery pq = datastoreService.prepare(q);
+
+
+    }
+
+
 }
