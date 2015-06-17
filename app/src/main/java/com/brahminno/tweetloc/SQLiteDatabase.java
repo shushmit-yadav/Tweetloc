@@ -22,9 +22,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public  static final String COLUMN_NUMBER = "Mobile_Number";
     public  static final String COLUMN_EMAIL = "Email";
     public static final String CLOUMN_DEVICE_ID = "Device_ID";
-    public static final String GROUP_TABLE = "Group Table";
-    public static final String GROUPS_NAME = "Group Name";
-    public static final String  TABLE_NUMBER = "Mobile Table";
+    public static final String GROUP_TABLE = "Group_Table";
+    public static final String GROUPS_NAME = "Group_Name";
+    public static final String  TABLE_NUMBER = "Mobile_Number_Table";
 
 
     public SQLiteDatabase(Context context) {
@@ -39,8 +39,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
         //Create table to store groups details........
         //db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text" + ")");
-        //create table for storing mobile number......
-        db.execSQL("create table " + TABLE_NUMBER + "(" + COLUMN_NUMBER + " text" + ")");
+        //create table for storing mobile mobNum......
+        db.execSQL("create table " + TABLE_NUMBER + " ( " + COLUMN_NUMBER + " text" + " )");
 
     }
 
@@ -90,9 +90,26 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     void insertNumberArrayList(List<String> mobile_number){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_NUMBER, String.valueOf(mobile_number));
-        db.insert(TABLE_NUMBER, null, contentValues);
+        for(int i = 0; i < mobile_number.size(); i++){
+            contentValues.put(COLUMN_NUMBER, mobile_number.get(i));
+            Log.i("Mobile Number sqlite...",mobile_number.get(i));
+            db.insert(TABLE_NUMBER, null, contentValues);
+        }
+
         db.close();
+    }
+
+    public ArrayList<String> getAllNumbers() {
+        ArrayList<String> list = new ArrayList<String>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res = db.rawQuery("select * from "+ TABLE_NUMBER, null);
+        res.moveToFirst();
+        while (res.isAfterLast() == false) {
+            list.add(res.getString(res.getColumnIndex(COLUMN_NUMBER)));
+            res.moveToNext();
+        }
+        return list;
+
     }
 
 }

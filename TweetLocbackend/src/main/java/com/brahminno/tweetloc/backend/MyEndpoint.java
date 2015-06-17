@@ -192,10 +192,28 @@ public class MyEndpoint {
             for (Entity result : pq.asIterable()) {
                 //String Mobile_Number = (String) result.getProperty("Mobile_Number");
                 ContactSyncBean contact = new ContactSyncBean();
-                contact.setMobileNumber((String) result.getProperty("Mobile_Number"));
+                //contact.setMobileNumber((String) result.getProperty("Mobile_Number"));
                 contactSyncBeans.add(contact);
             }
         }
         return contactSyncBeans;
+    }
+
+    //Api Method to test ArrayList Number.....
+    @ApiMethod(name = "testStoreArrayListTest")
+    public void testStoreArrayListTest(ContactSyncBean contactSyncBean){
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        Transaction txn = datastoreService.beginTransaction();
+        try {
+            Key taskBeanParentKey = KeyFactory.createKey("Details List", "Contact");
+            Entity listEntity = new Entity("User's Contact List", taskBeanParentKey);
+            listEntity.setProperty("NumberList",contactSyncBean.getNumberList());
+            datastoreService.put(listEntity);
+            txn.commit();
+        } finally {
+            if (txn.isActive()) {
+                txn.rollback();
+            }
+        }
     }
 }

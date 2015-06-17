@@ -10,7 +10,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
 import android.telephony.TelephonyManager;
@@ -28,24 +27,7 @@ import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
-import com.google.api.client.googleapis.services.GoogleClientRequestInitializer;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
 import java.util.regex.Pattern;
 
 //AsynTask class to push registration details on server...
@@ -111,12 +93,13 @@ public class RegistrationActivity extends ActionBarActivity {
     TextView tvTC;
     Button btnRegister;
     CheckBox ckBoxTC;
-    String number;
+    String mobNum;
     String primaryEmail;
     String primaryEmailID;
     String deviceID;
     //SQLiteDatabase mydb;
     String strNumber;
+    boolean isValidNum;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,8 +111,6 @@ public class RegistrationActivity extends ActionBarActivity {
         ckBoxTC = (CheckBox) findViewById(R.id.ckBoxTC);
         btnRegister = (Button) findViewById(R.id.btnRegister);
 
-
-
         //mydb = new SQLiteDatabase(this);
         //On Button Click Event....
         btnRegister.setOnClickListener(new View.OnClickListener() {
@@ -137,17 +118,16 @@ public class RegistrationActivity extends ActionBarActivity {
             public void onClick(View v) {
 
                 if (ckBoxTC.isChecked()){
-                    if(number == null){
-                        String Number = showInputDialog();
-                        number = Number;
+                    if(!isValidNum){
+                        mobNum = showInputDialog();
+
                     }
                     else{
                         //Save details to SQLite Database.....
-                        //mydb.insertInfo(new RegistrationInfo(deviceID,number,primaryEmail));
+                        //mydb.insertInfo(new RegistrationInfo(deviceID,mobNum,primaryEmail));
 
                         //call method to store registration details on server
-                        Log.i("Mobile No....",number);
-                        new RegistrationAsyncTask(getApplicationContext(),number,primaryEmail,deviceID).execute();
+                        new RegistrationAsyncTask(getApplicationContext(), mobNum,primaryEmail,deviceID).execute();
 
                         //call intent to open MyTrail Activity....
                         Intent intent = new Intent(getBaseContext(),MyTrail.class);
@@ -179,9 +159,11 @@ public class RegistrationActivity extends ActionBarActivity {
             //Toast.makeText(getApplicationContext(),primaryEmail,Toast.LENGTH_SHORT).show();
 
             //Retrieve User Mobile Number.
-            number = getMobileNumber();
-            Log.i("Mobile No...",number);
-            Toast.makeText(getApplicationContext(),number,Toast.LENGTH_SHORT).show();
+            mobNum = getMobileNumber();
+            Log.i("Mobile No...", mobNum);
+            isValidNum = validPhone(mobNum);
+            Log.i("Valid Number..",""+ isValidNum);
+            Toast.makeText(getApplicationContext(), mobNum,Toast.LENGTH_SHORT).show();
         }
     }
     //Check Internet
@@ -231,7 +213,7 @@ public class RegistrationActivity extends ActionBarActivity {
         return primaryEmailID;
     }
 
-    //This method is for obtaining mobile number...
+    //This method is for obtaining mobile mobNum...
     public String getMobileNumber(){
         TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         String strMobileNumber = manager.getLine1Number();
@@ -254,6 +236,12 @@ public class RegistrationActivity extends ActionBarActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 strNumber = etNumber.getText().toString();
+                Log.i("From Dialog...",strNumber);
+                Log.i("From Dialog is valid...",""+validPhone(strNumber));
+                isValidNum = validPhone(strNumber);
+                if(isValidNum){
+                    mobNum = strNumber;
+                }
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
@@ -263,5 +251,11 @@ public class RegistrationActivity extends ActionBarActivity {
         });
         alertDialogBuilder.show();
         return strNumber;
+    }
+
+    //Regular Expression to check valid mobile mobNum....
+    private boolean validPhone(String phone) {
+        Pattern pattern = Patterns.PHONE;
+        return pattern.matcher(phone).matches();
     }
 }

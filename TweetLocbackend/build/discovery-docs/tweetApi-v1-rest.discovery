@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/UlcrJCP6MDFV92A14nYz9GiGlJw\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/I_PeEF93DqNn16CVe7Ih8OdrRM0\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -77,8 +77,11 @@
    "id": "ContactSyncBean",
    "type": "object",
    "properties": {
-    "mobileNumber": {
-     "type": "string"
+    "numberList": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
     }
    }
   },
@@ -263,6 +266,18 @@
    "httpMethod": "POST",
    "request": {
     "$ref": "RegistrationBean",
+    "parameterName": "resource"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "testStoreArrayListTest": {
+   "id": "tweetApi.testStoreArrayListTest",
+   "path": "testStoreArrayListTest",
+   "httpMethod": "POST",
+   "request": {
+    "$ref": "ContactSyncBean",
     "parameterName": "resource"
    },
    "scopes": [

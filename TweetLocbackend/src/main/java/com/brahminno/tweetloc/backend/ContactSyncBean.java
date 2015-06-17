@@ -7,8 +7,20 @@ import java.util.ArrayList;
  */
 public class ContactSyncBean {
 
-    private String MobileNumber;
+    //private String MobileNumber;
 
+    //this is for testing purpose.....
+    private ArrayList<String> NumberList;
+
+    public ArrayList<String> getNumberList() {
+        return NumberList;
+    }
+
+    public void setNumberList(ArrayList<String> numberList) {
+        NumberList = numberList;
+    }
+
+    /*
     public String getMobileNumber() {
         return MobileNumber;
     }
@@ -16,5 +28,6 @@ public class ContactSyncBean {
     public void setMobileNumber(String mobileNumber) {
         MobileNumber = mobileNumber;
     }
+    */
 
 }

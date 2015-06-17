@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,7 +39,7 @@ public class FragmentAdd extends Fragment {
     ArrayList<String> Group_Member;
     String deviceId, Mobile_Number;
     Context context;
-
+    SQLiteDatabase mydb;
     ListView listViewAddContact;
 
     ArrayList<Contacts_Test> addContactList;
@@ -62,6 +63,11 @@ public class FragmentAdd extends Fragment {
         deviceId = prefs.getString("Device Id", null);
         Mobile_Number = prefs.getString("Mobile Number", null);
 
+        //Initialization of app local sqlite database.....
+        mydb = new SQLiteDatabase(getActivity());
+
+
+
         //Hard Coded to group member...
         // -------------------------------------------------------------------------------------
         Group_Member = new ArrayList<String>();
@@ -73,12 +79,12 @@ public class FragmentAdd extends Fragment {
         btnAddSelectedContact.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Log.i("GroupAsyncTask call...","now");
                 //Call AsyncTask to upload data on server.....
                 new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
             }
         });
-
+        /*
         addContactList = new ArrayList<Contacts_Test>();
         getAddContactList();
         Collections.sort(addContactList, new Comparator<Contacts_Test>() {
@@ -86,6 +92,12 @@ public class FragmentAdd extends Fragment {
                 return a.getName().compareTo(b.getName());
             }
         });
+        AddContactsAdapter addContactsAdapter = new AddContactsAdapter(getActivity(), addContactList);
+        listViewAddContact.setAdapter(addContactsAdapter);
+        */
+
+        addContactList = new ArrayList<Contacts_Test>();
+        mydb.getAllNumbers();
         AddContactsAdapter addContactsAdapter = new AddContactsAdapter(getActivity(), addContactList);
         listViewAddContact.setAdapter(addContactsAdapter);
     }

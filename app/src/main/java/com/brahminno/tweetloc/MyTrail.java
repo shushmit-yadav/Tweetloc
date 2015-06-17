@@ -130,7 +130,7 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
     private Context context;
     private ArrayList<String> number;
     SQLiteDatabase myDB;
-    ContactSyncBeanCollection contactSyncBean;
+    //ContactSyncBeanCollection contactSyncBean;
 
 
     public NumberSyncFromServer(Context context, ArrayList<String> number) {
@@ -140,6 +140,7 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
 
     @Override
     protected String doInBackground(Void... params) {
+        Log.i("NumberSyncFromServer...","is called");
         if (myTweetApi == null) {
             TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
                     .setRootUrl("https://brahminno.appspot.com/_ah/api/");
@@ -147,19 +148,25 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             myTweetApi = builder.build();
         }
         try {
+            //Store  Number ArrayList to server....
+            ContactSyncBean contactSyncBean = new ContactSyncBean();
+            contactSyncBean.setNumberList(number);
+            Log.i("Contact Number",number.get(6));
+            myTweetApi.testStoreArrayListTest(contactSyncBean).execute();
 
-           contactSyncBean= myTweetApi.contactSync(number).execute();
-
+            //contactSyncBean= myTweetApi.contactSync(number).execute();
+            Log.i("Recieved response ...","from server");
             ArrayList<String> MobileNumber = new ArrayList<>();
 
-            //get list of number from server.....
-            ArrayList<ContactSyncBean> mnum = (ArrayList<ContactSyncBean>) contactSyncBean.getItems();
+            //get list of mobNum from server.....
+            //ArrayList<ContactSyncBean> mnum = (ArrayList<ContactSyncBean>) contactSyncBean.getItems();
+
             //save arraylist to sqlite database......
-            myDB = new SQLiteDatabase(context);
-            for (ContactSyncBean num : mnum){
-                MobileNumber.add(num.getMobileNumber());
-            }
-            myDB.insertNumberArrayList(MobileNumber);
+            //myDB = new SQLiteDatabase(context);
+            //for (ContactSyncBean num : mnum){
+              //  MobileNumber.add(num.getMobileNumber());
+            //}
+            //myDB.insertNumberArrayList(MobileNumber);
 
 
         } catch (Exception ex) {
@@ -425,10 +432,11 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             return true;
         }
         if(id == R.id.action_contactSync){
-            //first fetch all contact number from device.......
-            fetchContact();
-            //After Successfully fetching all contact number, call AsyncTask class to send this contact to server.......
-            new NumberSyncFromServer(getApplicationContext(),numberList).execute();
+            //first fetch all contact mobNum from device.......
+            ArrayList<String> number = new ArrayList<>();
+            number = fetchContact();
+            //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
+            new NumberSyncFromServer(getApplicationContext(),number).execute();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -452,7 +460,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
         startActivity(intent);
     }
-    private void fetchContact(){
+    private ArrayList<String> fetchContact(){
         //Set URI....
         Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
         //Set Projection
@@ -469,5 +477,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
 
         }
         while (people.moveToNext());
+        return numberList;
     }
 }

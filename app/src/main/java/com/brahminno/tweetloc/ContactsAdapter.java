@@ -58,7 +58,7 @@ public class ContactsAdapter extends BaseAdapter {
         btnInvite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Send Text SMS to that particular number using built-in sms application in android device....
+                //Send Text SMS to that particular mobNum using built-in sms application in android device....
                 Intent smsIntent = new Intent(Intent.ACTION_VIEW);
                 smsIntent.setType("vnd.android-dir/mms-sms");
                 smsIntent.putExtra("address", currentContact.getNumber());
