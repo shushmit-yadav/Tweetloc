@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 
+import com.google.appengine.api.datastore.Text;
+
 import javax.inject.Named;
 
 import static com.google.appengine.api.datastore.Query.*;
@@ -177,43 +179,28 @@ public class MyEndpoint {
 
 
     @ApiMethod(name = "contactSync")
-    public ArrayList<ContactSyncBean> contactSync(@Named("number") ArrayList<String> number) {
+    public ContactSyncBean contactSync( ContactSyncBean number) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Key registrationBeanParentKey = KeyFactory.createKey("Details", "Registration");
         Query q = new Query("User Registration Data", registrationBeanParentKey);
+        ContactSyncBean contactSyncBean = new ContactSyncBean();
+        ArrayList<String> returnNumber = new ArrayList<>();
 
-        ArrayList<ContactSyncBean> contactSyncBeans = new ArrayList<>();
-        for (int i = 0; i < number.size(); i++) {
-            String str = number.get(i);
-            FilterPredicate propertyFilter = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, str);
+        ArrayList<String> contactSyncBeans = number.getNumber();
+        for (int i = 0; i < contactSyncBeans.size(); i++) {
+            String str = contactSyncBeans.get(i);
+            FilterPredicate propertyFilter = new FilterPredicate("Mobile_Number", FilterOperator.EQUAL, str);
             q.setFilter(propertyFilter);
-            // Use PreparedQuery interface to retrieve results
+            //Use PreparedQuery interface to retrieve results
             PreparedQuery pq = datastoreService.prepare(q);
             for (Entity result : pq.asIterable()) {
-                //String Mobile_Number = (String) result.getProperty("Mobile_Number");
-                ContactSyncBean contact = new ContactSyncBean();
+                //ContactSyncBean contact = new ContactSyncBean();
                 //contact.setMobileNumber((String) result.getProperty("Mobile_Number"));
-                contactSyncBeans.add(contact);
+                returnNumber.add((String) result.getProperty("Mobile_Number"));
             }
-        }
-        return contactSyncBeans;
-    }
 
-    //Api Method to test ArrayList Number.....
-    @ApiMethod(name = "testStoreArrayListTest")
-    public void testStoreArrayListTest(ContactSyncBean contactSyncBean){
-        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        Transaction txn = datastoreService.beginTransaction();
-        try {
-            Key taskBeanParentKey = KeyFactory.createKey("Details List", "Contact");
-            Entity listEntity = new Entity("User's Contact List", taskBeanParentKey);
-            listEntity.setProperty("NumberList",contactSyncBean.getNumberList());
-            datastoreService.put(listEntity);
-            txn.commit();
-        } finally {
-            if (txn.isActive()) {
-                txn.rollback();
-            }
         }
+        contactSyncBean.setNumber(returnNumber);
+        return contactSyncBean;
     }
 }

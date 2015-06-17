@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/I_PeEF93DqNn16CVe7Ih8OdrRM0\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/A0BTVMcSiFxv6uYUhgbzqzVM7xc\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -77,22 +77,13 @@
    "id": "ContactSyncBean",
    "type": "object",
    "properties": {
-    "numberList": {
+    "mobileNumber": {
+     "type": "string"
+    },
+    "number": {
      "type": "array",
      "items": {
       "type": "string"
-     }
-    }
-   }
-  },
-  "ContactSyncBeanCollection": {
-   "id": "ContactSyncBeanCollection",
-   "type": "object",
-   "properties": {
-    "items": {
-     "type": "array",
-     "items": {
-      "$ref": "ContactSyncBean"
      }
     }
    }
@@ -166,21 +157,14 @@
  "methods": {
   "contactSync": {
    "id": "tweetApi.contactSync",
-   "path": "contactSync/{number}",
+   "path": "contactSync",
    "httpMethod": "POST",
-   "parameters": {
-    "number": {
-     "type": "string",
-     "required": true,
-     "repeated": true,
-     "location": "path"
-    }
+   "request": {
+    "$ref": "ContactSyncBean",
+    "parameterName": "resource"
    },
-   "parameterOrder": [
-    "number"
-   ],
    "response": {
-    "$ref": "ContactSyncBeanCollection"
+    "$ref": "ContactSyncBean"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
@@ -266,18 +250,6 @@
    "httpMethod": "POST",
    "request": {
     "$ref": "RegistrationBean",
-    "parameterName": "resource"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "testStoreArrayListTest": {
-   "id": "tweetApi.testStoreArrayListTest",
-   "path": "testStoreArrayListTest",
-   "httpMethod": "POST",
-   "request": {
-    "$ref": "ContactSyncBean",
     "parameterName": "resource"
    },
    "scopes": [

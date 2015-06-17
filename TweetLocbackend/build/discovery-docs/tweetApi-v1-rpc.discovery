@@ -1,6 +1,6 @@
 {
  "kind": "discovery#rpcDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/I_PeEF93DqNn16CVe7Ih8OdrRM0\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/A0BTVMcSiFxv6uYUhgbzqzVM7xc\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -75,22 +75,13 @@
    "id": "ContactSyncBean",
    "type": "object",
    "properties": {
-    "numberList": {
+    "mobileNumber": {
+     "type": "string"
+    },
+    "number": {
      "type": "array",
      "items": {
       "type": "string"
-     }
-    }
-   }
-  },
-  "ContactSyncBeanCollection": {
-   "id": "ContactSyncBeanCollection",
-   "type": "object",
-   "properties": {
-    "items": {
-     "type": "array",
-     "items": {
-      "$ref": "ContactSyncBean"
      }
     }
    }
@@ -165,17 +156,15 @@
   "tweetApi.contactSync": {
    "id": "tweetApi.contactSync",
    "parameters": {
-    "number": {
-     "type": "string",
-     "required": true,
-     "repeated": true
+    "resource": {
+     "$ref": "ContactSyncBean"
     }
    },
    "parameterOrder": [
-    "number"
+    "resource"
    ],
    "returns": {
-    "$ref": "ContactSyncBeanCollection"
+    "$ref": "ContactSyncBean"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
@@ -258,20 +247,6 @@
    "parameters": {
     "resource": {
      "$ref": "RegistrationBean"
-    }
-   },
-   "parameterOrder": [
-    "resource"
-   ],
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
-  "tweetApi.testStoreArrayListTest": {
-   "id": "tweetApi.testStoreArrayListTest",
-   "parameters": {
-    "resource": {
-     "$ref": "ContactSyncBean"
     }
    },
    "parameterOrder": [

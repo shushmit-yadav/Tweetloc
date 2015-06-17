@@ -94,6 +94,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             contentValues.put(COLUMN_NUMBER, mobile_number.get(i));
             Log.i("Mobile Number sqlite...",mobile_number.get(i));
             db.insert(TABLE_NUMBER, null, contentValues);
+            contentValues.clear();
         }
 
         db.close();

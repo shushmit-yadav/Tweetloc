@@ -130,7 +130,7 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
     private Context context;
     private ArrayList<String> number;
     SQLiteDatabase myDB;
-    //ContactSyncBeanCollection contactSyncBean;
+    ContactSyncBean contactSyncBean;
 
 
     public NumberSyncFromServer(Context context, ArrayList<String> number) {
@@ -148,25 +148,25 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             myTweetApi = builder.build();
         }
         try {
-            //Store  Number ArrayList to server....
-            ContactSyncBean contactSyncBean = new ContactSyncBean();
-            contactSyncBean.setNumberList(number);
-            Log.i("Contact Number",number.get(6));
-            myTweetApi.testStoreArrayListTest(contactSyncBean).execute();
-
-            //contactSyncBean= myTweetApi.contactSync(number).execute();
-            Log.i("Recieved response ...","from server");
-            ArrayList<String> MobileNumber = new ArrayList<>();
+            Log.i("Contact Number", number.get(6));
+            ContactSyncBean syncBean = new ContactSyncBean();
+            syncBean.setNumber(number);
+            contactSyncBean= myTweetApi.contactSync(syncBean).execute();
+            Log.i("Recieved response ...", "from server");
+            ArrayList<String> MobileNumber = (ArrayList<String>) contactSyncBean.getNumber();
 
             //get list of mobNum from server.....
             //ArrayList<ContactSyncBean> mnum = (ArrayList<ContactSyncBean>) contactSyncBean.getItems();
 
             //save arraylist to sqlite database......
-            //myDB = new SQLiteDatabase(context);
-            //for (ContactSyncBean num : mnum){
-              //  MobileNumber.add(num.getMobileNumber());
-            //}
-            //myDB.insertNumberArrayList(MobileNumber);
+            myDB = new SQLiteDatabase(context);
+        /*
+            for (ContactSyncBean num : contactSyncBean){
+                MobileNumber.add(num.getMobileNumber());
+            }
+            */
+            Log.i("Contact from server...", MobileNumber.get(1));
+            myDB.insertNumberArrayList(MobileNumber);
 
 
         } catch (Exception ex) {
