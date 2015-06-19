@@ -1,6 +1,8 @@
 package com.brahminno.tweetloc;
 
+import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -13,7 +15,46 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
+import com.brahminno.tweetloc.backend.tweetApi.model.GroupBean;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.extensions.android.json.AndroidJsonFactory;
+
 import java.util.ArrayList;
+
+//This Async class is used for getting all information of groups based on device id.......
+class GroupDetailsAsyncTask extends AsyncTask<Void,Void,String>{
+    private static TweetApi myTweetApi = null;
+    private Context context;
+    private String Mobile_Number;
+    private String Device_Id;
+    private String Group_Name;
+    private ArrayList<String> Group_Members;
+    GroupBean groupBeanDetails;
+
+    public GroupDetailsAsyncTask(Context context,String Device_Id){
+        this.context = context;
+        this.Device_Id = Device_Id;
+    }
+
+    @Override
+    protected String doInBackground(Void... params) {
+        if (myTweetApi == null) {
+            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
+                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+
+            myTweetApi = builder.build();
+        }
+        try{
+            //call group Details Api.....
+            groupBeanDetails = myTweetApi.getGRoupDetailUsingKey(Device_Id).execute();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        return "";
+    }
+}
 
 
 public class GroupActivity extends ActionBarActivity {

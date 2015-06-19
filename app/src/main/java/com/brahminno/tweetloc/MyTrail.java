@@ -154,17 +154,10 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             contactSyncBean= myTweetApi.contactSync(syncBean).execute();
             Log.i("Recieved response ...", "from server");
             ArrayList<String> MobileNumber = (ArrayList<String>) contactSyncBean.getNumber();
-
-            //get list of mobNum from server.....
-            //ArrayList<ContactSyncBean> mnum = (ArrayList<ContactSyncBean>) contactSyncBean.getItems();
+            Log.i("Contact Number", MobileNumber.get(1));
 
             //save arraylist to sqlite database......
             myDB = new SQLiteDatabase(context);
-        /*
-            for (ContactSyncBean num : contactSyncBean){
-                MobileNumber.add(num.getMobileNumber());
-            }
-            */
             Log.i("Contact from server...", MobileNumber.get(1));
             myDB.insertNumberArrayList(MobileNumber);
 
@@ -433,10 +426,10 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         }
         if(id == R.id.action_contactSync){
             //first fetch all contact mobNum from device.......
-            ArrayList<String> number = new ArrayList<>();
-            number = fetchContact();
+            ArrayList<String> numberList = new ArrayList<>();
+            numberList = fetchContact();
             //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
-            new NumberSyncFromServer(getApplicationContext(),number).execute();
+            new NumberSyncFromServer(getApplicationContext(),numberList).execute();
             return true;
         }
         return super.onOptionsItemSelected(item);

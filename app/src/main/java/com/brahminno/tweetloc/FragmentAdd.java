@@ -27,7 +27,7 @@ import java.util.Comparator;
  * Brahmastra Innovations....
  * this class is used for showing numbers in listview which have already installed this app....
  */
-public class FragmentAdd extends Fragment{
+public class FragmentAdd extends Fragment {
 
 
     Button btnAddSelectedContact;
@@ -61,42 +61,39 @@ public class FragmentAdd extends Fragment{
         SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         deviceId = prefs.getString("Device Id", null);
         Mobile_Number = prefs.getString("Mobile Number", null);
-
-        //Hard Coded to group member...
-        // -------------------------------------------------------------------------------------
         Group_Member = new ArrayList<>();
-        //Group_Member.add("Shushmit");
-        //Group_Member.add("Manish");
-        //Group_Member.add("Prateek");
-        //----------------------------------------------------------------------------
-
+        //on button click event.....
         btnAddSelectedContact.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                //get arraylist of members from adapter class....
                 Group_Member = addContactsAdapter.getArrayList();
-                Log.i("Member Number",Group_Member.get(1));
+                Log.i("Member Number", Group_Member.get(1));
                 Log.i("GroupAsyncTask call...", "now");
                 //Call AsyncTask to upload data on server.....
                 new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
             }
         });
-        //Initialization of app local sqlite database.....
-        mydb = new SQLiteDatabase(getActivity());
-        //get arraylist from sqlite database.....
-        mydbMobileNumberArrayList = new ArrayList<>();
-        mydbMobileNumberArrayList = mydb.getAllNumbers();
-        Log.i("Numberlist...", String.valueOf(mydbMobileNumberArrayList.get(1)));
-        contactList = new ArrayList<>();
-        getAddContactList(mydbMobileNumberArrayList);
-        Log.i("Final List...", mydbMobileNumberArrayList.get(1));
-        Collections.sort(contactList, new Comparator<Contacts_Test>() {
-            public int compare(Contacts_Test a, Contacts_Test b) {
-                return a.getName().compareTo(b.getName());
-            }
-        });
-        addContactsAdapter = new AddContactsAdapter(getActivity(), contactList);
-        listViewAddContact.setAdapter(addContactsAdapter);
+        try {
+            //Initialization of app local sqlite database.....
+            mydb = new SQLiteDatabase(getActivity());
+            //get arraylist from sqlite database.....
+            mydbMobileNumberArrayList = new ArrayList<>();
+            mydbMobileNumberArrayList = mydb.getAllNumbers();
+            //Log.i("Numberlist...", String.valueOf(mydbMobileNumberArrayList.get(1)));
+            contactList = new ArrayList<>();
+            getAddContactList(mydbMobileNumberArrayList);
+            //Log.i("Final List...", mydbMobileNumberArrayList.get(1));
+            Collections.sort(contactList, new Comparator<Contacts_Test>() {
+                public int compare(Contacts_Test a, Contacts_Test b) {
+                    return a.getName().compareTo(b.getName());
+                }
+            });
+            addContactsAdapter = new AddContactsAdapter(getActivity(), contactList);
+            listViewAddContact.setAdapter(addContactsAdapter);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     //Method to fetch all contacts from android mobile......

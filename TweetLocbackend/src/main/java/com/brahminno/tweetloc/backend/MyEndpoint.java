@@ -120,27 +120,27 @@ public class MyEndpoint {
         return registration;
     }
 
-    /*
-    //Group details fetch based on group id
 
+    //Group details fetch based on group id
     @ApiMethod(name = "getGRoupDetailUsingKey")
     public GroupBean getGRoupDetailUsingKey(@Named("id") String id) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Key keyId = KeyFactory.createKey("Details", "Group");
         Key getDetailKey = KeyFactory.createKey(keyId,"User Group Details",id);
-        RegistrationBean registration = new RegistrationBean();
+        GroupBean groupBean = new GroupBean();
         try {
-            Entity detailsEntity = datastoreService.get(getDetailKey);
-            registration.setDevice_Id(detailsEntity.getKey().getName());
-            registration.setMobile_Number((String) detailsEntity.getProperty("Mobile Number"));
-            registration.setEmail_Id((String) detailsEntity.getProperty("Email_ID"));
+            Entity groupDetails = datastoreService.get(getDetailKey);
+            groupBean.setDevice_Id(groupDetails.getKey().getName());
+            groupBean.setMobile_Number((String) groupDetails.getProperty("Mobile Number"));
+            groupBean.setGroup_Name((String) groupDetails.getProperty("Group Name"));
+            groupBean.setGroup_Member((ArrayList<String>) groupDetails.getProperty("Group Members"));
         }
         catch(EntityNotFoundException e){
             e.printStackTrace();
         }
-        return registration ;
+        return groupBean ;
     }
-    */
+
     //ApiMethod to get location data from server....
     @ApiMethod(name = "getLocation")
     public List<LocationBean> getLocation() {
