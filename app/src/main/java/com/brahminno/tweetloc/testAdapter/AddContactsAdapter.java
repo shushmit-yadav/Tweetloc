@@ -1,19 +1,15 @@
 package com.brahminno.tweetloc.testAdapter;
 
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.brahminno.tweetloc.Contact;
 import com.brahminno.tweetloc.R;
 
 import java.util.ArrayList;
@@ -24,17 +20,26 @@ import java.util.ArrayList;
 public class AddContactsAdapter extends BaseAdapter {
     private ArrayList<Contacts_Test> addContactList;
     private LayoutInflater addContactInflater;
+    static ArrayList<String> Group_Member;
     Context context;
+    boolean[] itemChecked;
 
-    public AddContactsAdapter(Context context,ArrayList<Contacts_Test> addContactList){
+    public AddContactsAdapter(Context context, ArrayList<Contacts_Test> addContactList) {
         this.addContactList = addContactList;
         addContactInflater = addContactInflater.from(context);
         this.context = context;
+        itemChecked = new boolean[addContactList.size()];
+        Group_Member = new ArrayList<>();
     }
+
+    private class ViewHolder {
+        TextView tvContactsNametest;
+        CheckBox checkBox;
+    }
+
     @Override
     public int getCount() {
         return addContactList.size();
-        //return 5;
     }
 
     @Override
@@ -48,17 +53,46 @@ public class AddContactsAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
         //map to details_contact layout.....
-        LinearLayout addContactLayout = (LinearLayout) addContactInflater.inflate(R.layout.details_contacts2_test,parent,false);
-        TextView tvContactsNametest = (TextView) addContactLayout.findViewById(R.id.tvContactsNametest);
-        CheckBox checkBox = (CheckBox) addContactLayout.findViewById(R.id.checkBox1);
+        if (addContactInflater == null) {
+            addContactInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        }
+        if (convertView == null) {
+            convertView = addContactInflater.inflate(R.layout.details_contacts2_test, null);
+        }
+        ViewHolder vh = new ViewHolder();
+        // LinearLayout addContactLayout = (LinearLayout) addContactInflater.inflate(R.layout.details_contacts2_test,parent,false);
+        vh.tvContactsNametest = (TextView) convertView.findViewById(R.id.tvContactsNametest);
+        vh.checkBox = (CheckBox) convertView.findViewById(R.id.checkBox1);
 
         final Contacts_Test currentContact = addContactList.get(position);
-
-        tvContactsNametest.setText(currentContact.getName());
-
-
-        return addContactLayout;
+        vh.tvContactsNametest.setText(currentContact.getName());
+        vh.checkBox.setTag(position);
+        vh.checkBox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CheckBox c = (CheckBox) v;
+                if (c.isChecked()) {
+                    Log.i("checkbox", "checked");
+                    int position = (int) v.getTag();
+                    Log.i("checkbox", "position .." + position);
+                    Group_Member.add(currentContact.getNumber());
+                    Log.i("ContactList", "group .." + Group_Member);
+                }
+                if (!c.isChecked()) {
+                    int position = (int) v.getTag();
+                    Log.i("uncheckbox", "position .." + position);
+                    Group_Member.remove(currentContact.getNumber());
+                    Log.i("ContactList", "group remove .." + Group_Member);
+                }
+            }
+        });
+        return convertView;
     }
+
+    public static ArrayList<String> getArrayList(){
+        return Group_Member;
+    }
+
 }

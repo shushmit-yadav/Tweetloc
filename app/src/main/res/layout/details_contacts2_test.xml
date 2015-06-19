@@ -16,6 +16,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/checkBox1"
         android:layout_gravity="right"
-        android:layout_alignParentRight="true"/>
+        android:layout_alignParentRight="true"
+        android:onClick="onCheckBoxClicked"/>
 
 </LinearLayout>

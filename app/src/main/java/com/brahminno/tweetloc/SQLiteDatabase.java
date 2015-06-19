@@ -6,7 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
+import com.brahminno.tweetloc.testAdapter.Contacts_Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,12 +19,14 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "TweetLocDB.db";
     public static final String TABLE_NAME = "InfoTable";
-    public  static final String COLUMN_NUMBER = "Mobile_Number";
-    public  static final String COLUMN_EMAIL = "Email";
+    public static final String COLUMN_NUMBER = "Mobile_Number";
+    public static final String COLUMN_NAME = "Contact_Name";
+    public static final String COLUMN_EMAIL = "Email";
     public static final String CLOUMN_DEVICE_ID = "Device_ID";
     public static final String GROUP_TABLE = "Group_Table";
     public static final String GROUPS_NAME = "Group_Name";
     public static final String  TABLE_NUMBER = "Mobile_Number_Table";
+    public static final String TABLE_CONTACT_NUMBER = "Contact_Table";
 
 
     public SQLiteDatabase(Context context) {
@@ -42,6 +44,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         //create table for storing mobile mobNum......
         db.execSQL("create table " + TABLE_NUMBER + " ( " + COLUMN_NUMBER + " text" + " )");
 
+        //create table to store contact.....
+        db.execSQL("create table " + TABLE_CONTACT_NUMBER + " (" + COLUMN_NAME + " text," + COLUMN_NUMBER + " text" + " )");
     }
 
     @Override
@@ -50,6 +54,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + GROUP_TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NUMBER);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACT_NUMBER);
         onCreate(db);
 
     }
@@ -96,21 +101,28 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             db.insert(TABLE_NUMBER, null, contentValues);
             contentValues.clear();
         }
-
         db.close();
     }
 
-    public ArrayList<String> getAllNumbers() {
-        ArrayList<String> list = new ArrayList<String>();
-        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res = db.rawQuery("select * from "+ TABLE_NUMBER, null);
-        res.moveToFirst();
-        while (res.isAfterLast() == false) {
-            list.add(res.getString(res.getColumnIndex(COLUMN_NUMBER)));
-            res.moveToNext();
+    void insertContactArrayList(List<Contacts_Test> contacts_tests){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        for(int i = 0; i < contacts_tests.size(); i++){
+            //contentValues.put();
         }
-        return list;
+    }
 
+    public ArrayList<String> getAllNumbers() {
+        ArrayList<String> list = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select * from "+ TABLE_NUMBER, null);
+        cursor.moveToFirst();
+        while (cursor.isAfterLast() == false) {
+            list.add(cursor.getString(cursor.getColumnIndex(COLUMN_NUMBER)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return list;
     }
 
 }

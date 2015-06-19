@@ -73,7 +73,6 @@ public class ContactsAdapter extends BaseAdapter {
                 }
             }
         });
-
         return contactLayout;
     }
 }

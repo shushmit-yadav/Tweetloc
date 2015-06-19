@@ -11,7 +11,9 @@ public class Contacts_Test {
         this.name = name;
         this.number = number;
     }
-
+    public Contacts_Test(String name){
+        this.name = name;
+    }
     public String getName() {
         return name;
     }
