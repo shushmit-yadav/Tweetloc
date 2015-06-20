@@ -17,6 +17,7 @@ import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -154,11 +155,13 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             contactSyncBean= myTweetApi.contactSync(syncBean).execute();
             Log.i("Recieved response ...", "from server");
             ArrayList<String> MobileNumber = (ArrayList<String>) contactSyncBean.getNumber();
-            Log.i("Contact Number", MobileNumber.get(1));
+            Log.i("Contact Number", MobileNumber.get(0));
 
             //save arraylist to sqlite database......
             myDB = new SQLiteDatabase(context);
-            Log.i("Contact from server...", MobileNumber.get(1));
+            //clear data from app db....
+            myDB.deleteNumberArrayList();
+            Log.i("Contact from server...", MobileNumber.get(0));
             myDB.insertNumberArrayList(MobileNumber);
 
 
@@ -188,6 +191,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     SQLiteDatabase mydb;
     boolean isGPSEnabled;
     boolean isNetworkEnabled;
+    StandardMobileNumberFormat standardMobileNumberFormat;
 
     ArrayList<String> numberList;
 
@@ -466,8 +470,12 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         do {
             //String name = people.getString(indexName);
             String number = people.getString(indexNumber);
-            numberList.add(number);
-
+            TelephonyManager manager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
+            String countryCode = manager.getNetworkCountryIso().toUpperCase();
+            standardMobileNumberFormat = new StandardMobileNumberFormat();
+            String standardNumber = standardMobileNumberFormat.getLocale(number,countryCode);
+            Log.i("standard number...",""+standardNumber);
+            numberList.add(standardNumber);
         }
         while (people.moveToNext());
         return numberList;

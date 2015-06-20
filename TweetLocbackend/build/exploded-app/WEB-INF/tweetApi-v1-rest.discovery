@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/mzugKDLvTNNG5LDWBJ8iYId8lVQ\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/SYX7JAxbs1gnEZ0RwJXEulQsk6o\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -109,6 +109,18 @@
     }
    }
   },
+  "GroupBeanCollection": {
+   "id": "GroupBeanCollection",
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "GroupBean"
+     }
+    }
+   }
+  },
   "LocationBean": {
    "id": "LocationBean",
    "type": "object",
@@ -190,7 +202,7 @@
   },
   "getGRoupDetailUsingKey": {
    "id": "tweetApi.getGRoupDetailUsingKey",
-   "path": "groupbean/{id}",
+   "path": "groupbeancollection/{id}",
    "httpMethod": "GET",
    "parameters": {
     "id": {
@@ -203,7 +215,7 @@
     "id"
    ],
    "response": {
-    "$ref": "GroupBean"
+    "$ref": "GroupBeanCollection"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

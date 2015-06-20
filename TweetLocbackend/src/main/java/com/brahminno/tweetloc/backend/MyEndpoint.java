@@ -23,6 +23,7 @@ import com.google.appengine.repackaged.com.google.api.services.datastore.Datasto
 import com.google.appengine.repackaged.com.google.datastore.v1.CompositeFilter;
 import com.google.appengine.repackaged.com.google.datastore.v1.PropertyFilter;
 
+import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Filter;
@@ -123,22 +124,23 @@ public class MyEndpoint {
 
     //Group details fetch based on group id
     @ApiMethod(name = "getGRoupDetailUsingKey")
-    public GroupBean getGRoupDetailUsingKey(@Named("id") String id) {
+    public ArrayList<GroupBean> getGRoupDetailUsingKey(@Named("id") String id) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        Key keyId = KeyFactory.createKey("Details", "Group");
-        Key getDetailKey = KeyFactory.createKey(keyId,"User Group Details",id);
-        GroupBean groupBean = new GroupBean();
-        try {
-            Entity groupDetails = datastoreService.get(getDetailKey);
-            groupBean.setDevice_Id(groupDetails.getKey().getName());
-            groupBean.setMobile_Number((String) groupDetails.getProperty("Mobile Number"));
-            groupBean.setGroup_Name((String) groupDetails.getProperty("Group Name"));
-            groupBean.setGroup_Member((ArrayList<String>) groupDetails.getProperty("Group Members"));
+        Key registrationBeanParentKey = KeyFactory.createKey("Details", "Group");
+        Query q = new Query("User Group Details", registrationBeanParentKey);
+        FilterPredicate propertyFilter = new FilterPredicate("deviceId", FilterOperator.EQUAL, id);
+        q.setFilter(propertyFilter);
+        //Use PreparedQuery interface to retrieve results
+        ArrayList<GroupBean> groupBeans = new ArrayList<>();
+        PreparedQuery pq = datastoreService.prepare(q);
+        for (Entity result : pq.asIterable()) {
+            GroupBean groupDetails = new GroupBean();
+            //contact.setMobileNumber((String) result.getProperty("Mobile_Number"));
+            groupDetails.setGroup_Name((String) result.getProperty("Group_Name"));
+            groupDetails.setGroup_Member((ArrayList<String>) result.getProperty("Group_Member"));
+            groupBeans.add(groupDetails);
         }
-        catch(EntityNotFoundException e){
-            e.printStackTrace();
-        }
-        return groupBean ;
+        return groupBeans;
     }
 
     //ApiMethod to get location data from server....
@@ -179,7 +181,7 @@ public class MyEndpoint {
 
 
     @ApiMethod(name = "contactSync")
-    public ContactSyncBean contactSync( ContactSyncBean number) {
+    public ContactSyncBean contactSync(ContactSyncBean number) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Key registrationBeanParentKey = KeyFactory.createKey("Details", "Registration");
         Query q = new Query("User Registration Data", registrationBeanParentKey);
@@ -193,12 +195,13 @@ public class MyEndpoint {
             q.setFilter(propertyFilter);
             //Use PreparedQuery interface to retrieve results
             PreparedQuery pq = datastoreService.prepare(q);
+            //Entity entity = pq.asSingleEntity();
+            //returnNumber.add((String) entity.getProperty("Mobile_Number"));
             for (Entity result : pq.asIterable()) {
                 //ContactSyncBean contact = new ContactSyncBean();
                 //contact.setMobileNumber((String) result.getProperty("Mobile_Number"));
                 returnNumber.add((String) result.getProperty("Mobile_Number"));
             }
-
         }
         contactSyncBean.setNumber(returnNumber);
         return contactSyncBean;

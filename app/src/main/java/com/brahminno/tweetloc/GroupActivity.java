@@ -2,9 +2,11 @@ package com.brahminno.tweetloc;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,39 +19,57 @@ import android.widget.Toast;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.GroupBean;
+import com.brahminno.tweetloc.backend.tweetApi.model.GroupBeanCollection;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 //This Async class is used for getting all information of groups based on device id.......
-class GroupDetailsAsyncTask extends AsyncTask<Void,Void,String>{
+class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
     private static TweetApi myTweetApi = null;
     private Context context;
     private String Mobile_Number;
     private String Device_Id;
     private String Group_Name;
     private ArrayList<String> Group_Members;
-    GroupBean groupBeanDetails;
+    List<GroupBean> groupBeanDetails;
+    SQLiteDatabase mydb;
 
-    public GroupDetailsAsyncTask(Context context,String Device_Id){
+    public GroupDetailsAsyncTask(Context context, String Device_Id) {
         this.context = context;
         this.Device_Id = Device_Id;
     }
 
     @Override
     protected String doInBackground(Void... params) {
+        Log.i("doInBackground...","method starts");
         if (myTweetApi == null) {
             TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
                     .setRootUrl("https://brahminno.appspot.com/_ah/api/");
 
             myTweetApi = builder.build();
         }
-        try{
+        try {
+            Log.i("doInBackground...","try block...");
             //call group Details Api.....
-            groupBeanDetails = myTweetApi.getGRoupDetailUsingKey(Device_Id).execute();
-        }
-        catch(Exception ex){
+            groupBeanDetails = myTweetApi.getGRoupDetailUsingKey(Device_Id).execute().getItems();
+            Log.i("doInBackground...", "after getting response from server....");
+            //Retrieve data from collection.....
+            if(groupBeanDetails == null){
+                Log.i("groupBeanDetails...",""+null);
+            }
+            mydb = new SQLiteDatabase(context);
+
+            for (GroupBean result : groupBeanDetails) {
+                Log.i("doInBackground...","foreach loop");
+                mydb.insertGroups(result.getGroupName(),result.getGroupMember());
+            }
+            Log.i("doInBackground...","after foreach loop...");
+
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return "";
@@ -61,7 +81,7 @@ public class GroupActivity extends ActionBarActivity {
 
     Button btnCreateGroup;
     ExpandableListView groupNameListView;
-    String group_name;
+    String deviceId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +91,10 @@ public class GroupActivity extends ActionBarActivity {
         setContentView(R.layout.activity_group);
         groupNameListView = (ExpandableListView) findViewById(R.id.groupNameListView);
         btnCreateGroup = (Button) findViewById(R.id.btnCreateGroup);
+        //get device id from shared preference.....
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        deviceId = prefs.getString("Device Id", null);
+        Log.i("device id is....",deviceId);
         btnCreateGroup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -78,8 +102,9 @@ public class GroupActivity extends ActionBarActivity {
                 startActivity(intent);
             }
         });
-
-        Toast.makeText(getApplicationContext(),group_name,Toast.LENGTH_SHORT).show();
+        Log.i("AsyncTask method...."," starts");
+        //call AsyncMethod to get Groups from server......
+        new GroupDetailsAsyncTask(getApplicationContext(),deviceId).execute();
     }
 
     @Override

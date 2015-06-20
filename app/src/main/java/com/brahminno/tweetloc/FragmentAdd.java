@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,12 +39,16 @@ public class FragmentAdd extends Fragment {
     ArrayList<String> Group_Member;
     String deviceId, Mobile_Number;
     Context context;
+    String countryCode;
     SQLiteDatabase mydb;
     ListView listViewAddContact;
+    TelephonyManager manager;
     AddContactsAdapter addContactsAdapter;
     //Store fetch contact from mobile device...
     ArrayList<Contacts_Test> contactList;
     ArrayList<String> mydbMobileNumberArrayList;
+
+    StandardMobileNumberFormat standardMobileNumberFormat;
 
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -61,19 +66,10 @@ public class FragmentAdd extends Fragment {
         SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         deviceId = prefs.getString("Device Id", null);
         Mobile_Number = prefs.getString("Mobile Number", null);
+        manager = (TelephonyManager) getActivity().getSystemService(getActivity().TELEPHONY_SERVICE);
+        countryCode = manager.getNetworkCountryIso().toUpperCase();
+        standardMobileNumberFormat = new StandardMobileNumberFormat();
         Group_Member = new ArrayList<>();
-        //on button click event.....
-        btnAddSelectedContact.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //get arraylist of members from adapter class....
-                Group_Member = addContactsAdapter.getArrayList();
-                Log.i("Member Number", Group_Member.get(1));
-                Log.i("GroupAsyncTask call...", "now");
-                //Call AsyncTask to upload data on server.....
-                new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
-            }
-        });
         try {
             //Initialization of app local sqlite database.....
             mydb = new SQLiteDatabase(getActivity());
@@ -91,6 +87,24 @@ public class FragmentAdd extends Fragment {
             });
             addContactsAdapter = new AddContactsAdapter(getActivity(), contactList);
             listViewAddContact.setAdapter(addContactsAdapter);
+
+            //on button click event.....
+            btnAddSelectedContact.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try{
+                        //get arraylist of members from adapter class....
+                        Group_Member = addContactsAdapter.getArrayList();
+                        Log.i("Member Number", Group_Member.get(1));
+                    }
+                    catch(Exception ex){
+                        ex.printStackTrace();
+                    }
+                    Log.i("GroupAsyncTask call...", "now");
+                    //Call AsyncTask to upload data on server.....
+                    new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
+                }
+            });
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -112,14 +126,15 @@ public class FragmentAdd extends Fragment {
             //Log.i("Inside...","do While loop");
             String name = people.getString(indexName);
             String number = people.getString(indexNumber);
+            String standardNumber = standardMobileNumberFormat.getLocale(number, countryCode);
             for (int i = 0; i < mydbMobileNumberArrayList.size(); i++) {
                 String num = mydbMobileNumberArrayList.get(i);
                 Log.i("num.....", num);
-                Log.i("number.....", number);
-                if (number.equals(num)) {
+                Log.i("number.....", standardNumber);
+                if (standardNumber.equals(num)) {
                     Log.i("Inside...", "if condition.." + true);
-                    Log.i("number.....", number);
-                    contactList.add(new Contacts_Test(name, number));
+                    Log.i("number.....",""+ standardNumber);
+                    contactList.add(new Contacts_Test(name, standardNumber));
                 }
             }
         }

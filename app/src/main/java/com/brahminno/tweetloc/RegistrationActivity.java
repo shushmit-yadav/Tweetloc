@@ -100,6 +100,9 @@ public class RegistrationActivity extends ActionBarActivity {
     //SQLiteDatabase mydb;
     String strNumber;
     boolean isValidNum;
+    String countryCode;
+    String standardMobileNumber;
+    StandardMobileNumberFormat standardMobileNumberFormat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,6 +115,7 @@ public class RegistrationActivity extends ActionBarActivity {
         btnRegister = (Button) findViewById(R.id.btnRegister);
 
         //mydb = new SQLiteDatabase(this);
+        standardMobileNumberFormat = new StandardMobileNumberFormat();
         //On Button Click Event....
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -126,8 +130,12 @@ public class RegistrationActivity extends ActionBarActivity {
                         //Save details to SQLite Database.....
                         //mydb.insertInfo(new RegistrationInfo(deviceID,mobNum,primaryEmail));
 
+                        //call StandardMobileNumberFormat class to make mobile number in standard format......
+                        standardMobileNumber = standardMobileNumberFormat.getLocale(mobNum,countryCode);
+                        Log.i("standardMobileNumber...",""+standardMobileNumber);
+
                         //call method to store registration details on server
-                        new RegistrationAsyncTask(getApplicationContext(), mobNum,primaryEmail,deviceID).execute();
+                        new RegistrationAsyncTask(getApplicationContext(), standardMobileNumber,primaryEmail,deviceID).execute();
 
                         //call intent to open MyTrail Activity....
                         Intent intent = new Intent(getBaseContext(),MyTrail.class);
@@ -149,6 +157,11 @@ public class RegistrationActivity extends ActionBarActivity {
             Toast.makeText(this,"No Internet Connection",Toast.LENGTH_SHORT).show();
         }
         else{
+            //get country code using telephony manager class.......
+            TelephonyManager manager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
+            countryCode = manager.getNetworkCountryIso().toUpperCase();
+            Toast.makeText(getApplicationContext(),countryCode,Toast.LENGTH_SHORT).show();
+            Log.i("Locale...",countryCode);
             //Retrieve Device Id...
             TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             deviceID = getDeviceID(telephonyManager);
@@ -162,7 +175,7 @@ public class RegistrationActivity extends ActionBarActivity {
             mobNum = getMobileNumber();
             Log.i("Mobile No...", mobNum);
             isValidNum = validPhone(mobNum);
-            Log.i("Valid Number..",""+ isValidNum);
+            Log.i("Valid Number..", "" + isValidNum);
             Toast.makeText(getApplicationContext(), mobNum,Toast.LENGTH_SHORT).show();
         }
     }
