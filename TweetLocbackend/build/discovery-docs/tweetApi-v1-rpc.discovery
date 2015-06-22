@@ -1,6 +1,6 @@
 {
  "kind": "discovery#rpcDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/SYX7JAxbs1gnEZ0RwJXEulQsk6o\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/Q3YJUlWUyhtnpXkaSW0U8lw8nDk\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -77,6 +77,12 @@
    "properties": {
     "mobileNumber": {
      "type": "string"
+    },
+    "name": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
     },
     "number": {
      "type": "array",

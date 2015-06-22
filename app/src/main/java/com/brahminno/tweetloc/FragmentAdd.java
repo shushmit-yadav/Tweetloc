@@ -46,7 +46,8 @@ public class FragmentAdd extends Fragment {
     AddContactsAdapter addContactsAdapter;
     //Store fetch contact from mobile device...
     ArrayList<Contacts_Test> contactList;
-    ArrayList<String> mydbMobileNumberArrayList;
+    ArrayList<String> mydbContactNumberList;
+    ArrayList<String> mydbContactNameList;
 
     StandardMobileNumberFormat standardMobileNumberFormat;
 
@@ -68,17 +69,23 @@ public class FragmentAdd extends Fragment {
         Mobile_Number = prefs.getString("Mobile Number", null);
         manager = (TelephonyManager) getActivity().getSystemService(getActivity().TELEPHONY_SERVICE);
         countryCode = manager.getNetworkCountryIso().toUpperCase();
-        standardMobileNumberFormat = new StandardMobileNumberFormat();
         Group_Member = new ArrayList<>();
         try {
             //Initialization of app local sqlite database.....
             mydb = new SQLiteDatabase(getActivity());
             //get arraylist from sqlite database.....
-            mydbMobileNumberArrayList = new ArrayList<>();
-            mydbMobileNumberArrayList = mydb.getAllNumbers();
+            mydbContactNumberList = new ArrayList<>();
+            mydbContactNumberList = mydb.getAllNumbers();
+            //get all names from database.....
+            mydbContactNameList = new ArrayList<>();
+            mydbContactNameList = mydb.getAllNames();
             //Log.i("Numberlist...", String.valueOf(mydbMobileNumberArrayList.get(1)));
             contactList = new ArrayList<>();
-            getAddContactList(mydbMobileNumberArrayList);
+            for(int i = 0; i < mydbContactNumberList.size(); i++){
+                String contact_Name = mydbContactNameList.get(i);
+                String contact_Number = mydbContactNumberList.get(i);
+                contactList.add(new Contacts_Test(contact_Name,contact_Number));
+            }
             //Log.i("Final List...", mydbMobileNumberArrayList.get(1));
             Collections.sort(contactList, new Comparator<Contacts_Test>() {
                 public int compare(Contacts_Test a, Contacts_Test b) {
@@ -108,36 +115,5 @@ public class FragmentAdd extends Fragment {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    }
-
-    //Method to fetch all contacts from android mobile......
-    private void getAddContactList(ArrayList<String> mydbMobileNumberArrayList) {
-        Log.i("Inside ...", "getAddContactList..." + true);
-        //Set URI....
-        Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
-        //Set Projection
-        String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER};
-        Cursor people = getActivity().getContentResolver().query(uri, projection, null, null, null);
-        int indexName = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-        int indexNumber = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-        people.moveToFirst();
-        do {
-            //Log.i("Inside...","do While loop");
-            String name = people.getString(indexName);
-            String number = people.getString(indexNumber);
-            String standardNumber = standardMobileNumberFormat.getLocale(number, countryCode);
-            for (int i = 0; i < mydbMobileNumberArrayList.size(); i++) {
-                String num = mydbMobileNumberArrayList.get(i);
-                Log.i("num.....", num);
-                Log.i("number.....", standardNumber);
-                if (standardNumber.equals(num)) {
-                    Log.i("Inside...", "if condition.." + true);
-                    Log.i("number.....",""+ standardNumber);
-                    contactList.add(new Contacts_Test(name, standardNumber));
-                }
-            }
-        }
-        while (people.moveToNext());
     }
 }

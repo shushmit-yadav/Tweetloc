@@ -181,17 +181,21 @@ public class MyEndpoint {
 
 
     @ApiMethod(name = "contactSync")
-    public ContactSyncBean contactSync(ContactSyncBean number) {
+    public ContactSyncBean contactSync(ContactSyncBean contacts) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Key registrationBeanParentKey = KeyFactory.createKey("Details", "Registration");
         Query q = new Query("User Registration Data", registrationBeanParentKey);
         ContactSyncBean contactSyncBean = new ContactSyncBean();
         ArrayList<String> returnNumber = new ArrayList<>();
+        ArrayList<String> returnName = new ArrayList<>();
 
-        ArrayList<String> contactSyncBeans = number.getNumber();
-        for (int i = 0; i < contactSyncBeans.size(); i++) {
-            String str = contactSyncBeans.get(i);
-            FilterPredicate propertyFilter = new FilterPredicate("Mobile_Number", FilterOperator.EQUAL, str);
+        ArrayList<String> contactSyncBeansNumber = contacts.getNumber();
+
+        ArrayList<String> contactSyncBeansName = contacts.getName();
+        for (int i = 0; i < contactSyncBeansNumber.size(); i++) {
+            String contact_Number = contactSyncBeansNumber.get(i);
+            String contact_Name = contactSyncBeansName.get(i);
+            FilterPredicate propertyFilter = new FilterPredicate("Mobile_Number", FilterOperator.EQUAL, contact_Number);
             q.setFilter(propertyFilter);
             //Use PreparedQuery interface to retrieve results
             PreparedQuery pq = datastoreService.prepare(q);
@@ -201,9 +205,11 @@ public class MyEndpoint {
                 //ContactSyncBean contact = new ContactSyncBean();
                 //contact.setMobileNumber((String) result.getProperty("Mobile_Number"));
                 returnNumber.add((String) result.getProperty("Mobile_Number"));
+                returnName.add(contact_Name);
             }
         }
         contactSyncBean.setNumber(returnNumber);
+        contactSyncBean.setName(returnName);
         return contactSyncBean;
     }
 }

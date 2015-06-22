@@ -129,14 +129,14 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
 
     private static TweetApi myTweetApi = null;
     private Context context;
-    private ArrayList<String> number;
     SQLiteDatabase myDB;
     ContactSyncBean contactSyncBean;
+    FetchContacts contacts;
 
 
-    public NumberSyncFromServer(Context context, ArrayList<String> number) {
+    public NumberSyncFromServer(Context context, FetchContacts contacts) {
         this.context = context;
-        this.number = number;
+        this.contacts = contacts;
     }
 
     @Override
@@ -149,20 +149,24 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             myTweetApi = builder.build();
         }
         try {
-            Log.i("Contact Number", number.get(6));
+            Log.i("Contact Number", contacts.getNumber().get(1));
+            Log.i("Contact Name",contacts.getName().get(1));
             ContactSyncBean syncBean = new ContactSyncBean();
-            syncBean.setNumber(number);
+            syncBean.setNumber(contacts.getNumber());
+            syncBean.setName(contacts.getName());
             contactSyncBean= myTweetApi.contactSync(syncBean).execute();
             Log.i("Recieved response ...", "from server");
             ArrayList<String> MobileNumber = (ArrayList<String>) contactSyncBean.getNumber();
+            ArrayList<String> MobileName = (ArrayList<String>) contactSyncBean.getName();
             Log.i("Contact Number", MobileNumber.get(0));
+            Log.i("Contact Name", MobileName.get(0));
 
             //save arraylist to sqlite database......
             myDB = new SQLiteDatabase(context);
             //clear data from app db....
             myDB.deleteNumberArrayList();
             Log.i("Contact from server...", MobileNumber.get(0));
-            myDB.insertNumberArrayList(MobileNumber);
+            myDB.insertNumberArrayList(MobileNumber,MobileName);
 
 
         } catch (Exception ex) {
@@ -192,9 +196,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     boolean isGPSEnabled;
     boolean isNetworkEnabled;
     StandardMobileNumberFormat standardMobileNumberFormat;
-
-    ArrayList<String> numberList;
-
     MarkerOptions marker;
 
     Location final_location,gps_location,network_location;
@@ -211,8 +212,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             finish();
         }
         setContentView(R.layout.activity_my_trail);
-        //initialize arraylist.....
-        numberList = new ArrayList<String>();
         btnGroup = (Button) findViewById(R.id.btnGroup);
         //check if gps is available or not.....
         LocationManager locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
@@ -430,10 +429,9 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         }
         if(id == R.id.action_contactSync){
             //first fetch all contact mobNum from device.......
-            ArrayList<String> numberList = new ArrayList<>();
-            numberList = fetchContact();
+            FetchContacts contacts = fetchContact();
             //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
-            new NumberSyncFromServer(getApplicationContext(),numberList).execute();
+            new NumberSyncFromServer(getApplicationContext(),contacts).execute();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -457,27 +455,60 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
         startActivity(intent);
     }
-    private ArrayList<String> fetchContact(){
+    private FetchContacts fetchContact(){
         //Set URI....
         Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
         //Set Projection
         String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                 ContactsContract.CommonDataKinds.Phone.NUMBER};
+        FetchContacts contacts = new FetchContacts();
+        ArrayList<String> nameList = new ArrayList<>();
+        ArrayList<String> numberList = new ArrayList<>();
         Cursor people = getApplicationContext().getContentResolver().query(uri, projection, null, null, null);
         int indexName = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
         int indexNumber = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
         people.moveToFirst();
         do {
-            //String name = people.getString(indexName);
+            String name = people.getString(indexName);
             String number = people.getString(indexNumber);
             TelephonyManager manager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
             String countryCode = manager.getNetworkCountryIso().toUpperCase();
             standardMobileNumberFormat = new StandardMobileNumberFormat();
             String standardNumber = standardMobileNumberFormat.getLocale(number,countryCode);
             Log.i("standard number...",""+standardNumber);
+            nameList.add(name);
             numberList.add(standardNumber);
         }
         while (people.moveToNext());
-        return numberList;
+        contacts.setName(nameList);
+        contacts.setNumber(numberList);
+        return contacts;
+    }
+}
+
+/**
+ * Created by Shushmit Yadav.
+ * Brahmastra Innovations Pvt. Ltd.
+ * this class is used for model of contacts......
+*/
+//this is a fetch contacts class to fetch numbers with name....
+class FetchContacts{
+    private ArrayList<String> name;
+    private ArrayList<String> number;
+
+    public ArrayList<String> getName() {
+        return name;
+    }
+
+    public ArrayList<String> getNumber() {
+        return number;
+    }
+
+    public void setName(ArrayList<String> name) {
+        this.name = name;
+    }
+
+    public void setNumber(ArrayList<String> number) {
+        this.number = number;
     }
 }

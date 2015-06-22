@@ -26,7 +26,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public static final String GROUP_TABLE = "Group_Table";
     public static final String GROUPS_NAME = "Group_Name";
     public static final String GROUP_MEMBERS = "Group_Members";
-    public static final String  TABLE_NUMBER = "Mobile_Number_Table";
+    public static final String  CONTACTS_NUMBER = "Contacts_Table";
 
 
     public SQLiteDatabase(Context context) {
@@ -37,12 +37,17 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public void onCreate(android.database.sqlite.SQLiteDatabase db) {
 
         //Create table for storing registration details....
-        //db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
-
+        Log.i("Before table...","created"+TABLE_NAME);
+        db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
+        Log.i("After table...", "created" + TABLE_NAME);
         //Create table to store groups details........
-        db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text," + GROUP_MEMBERS + " test" + " ) ");
+        Log.i("Before table...","created"+GROUP_TABLE);
+        db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text," + GROUP_MEMBERS + " text" + ")");
+        Log.i("After table...", "created" + GROUP_TABLE);
         //create table for storing mobile mobNum......
-        db.execSQL("create table " + TABLE_NUMBER + " ( " + COLUMN_NUMBER + " text" + " )");
+        Log.i("Before table...","created"+CONTACTS_NUMBER);
+        db.execSQL("create table " + CONTACTS_NUMBER + "(" + COLUMN_NUMBER + " text," + COLUMN_NAME + " text" + ")");
+        Log.i("After table...", "created" + CONTACTS_NUMBER);
     }
 
     @Override
@@ -50,7 +55,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + GROUP_TABLE);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NUMBER);
+        db.execSQL("DROP TABLE IF EXISTS " + CONTACTS_NUMBER);
         onCreate(db);
 
     }
@@ -64,34 +69,51 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    void insertNumberArrayList(List<String> mobile_number){
+    void insertNumberArrayList(List<String> mobile_number,List<String> mobile_name){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         for(int i = 0; i < mobile_number.size(); i++){
             contentValues.put(COLUMN_NUMBER, mobile_number.get(i));
+            contentValues.put(COLUMN_NAME, mobile_name.get(i));
+            contentValues.get(COLUMN_NAME);
             Log.i("Mobile Number sqlite...",mobile_number.get(i));
-            db.insert(TABLE_NUMBER, null, contentValues);
+            Log.i("Mobile Name sqlite...",mobile_name.get(i));
+            db.insert(CONTACTS_NUMBER, null, contentValues);
+            //db.insert(CONTACTS_NUMBER,null,contentValues);
             contentValues.clear();
         }
         db.close();
     }
 
     public ArrayList<String> getAllNumbers() {
-        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> numberlist = new ArrayList<>();
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select * from "+ TABLE_NUMBER, null);
+        Cursor cursor = db.rawQuery("select * from "+ CONTACTS_NUMBER, null);
         cursor.moveToFirst();
         while (cursor.isAfterLast() == false) {
-            list.add(cursor.getString(cursor.getColumnIndex(COLUMN_NUMBER)));
+            numberlist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NUMBER)));
             cursor.moveToNext();
         }
         cursor.close();
-        return list;
+        return numberlist;
+    }
+
+    public ArrayList<String> getAllNames(){
+        ArrayList<String> namelist = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select * from "+ CONTACTS_NUMBER, null);
+        cursor.moveToFirst();
+        while (cursor.isAfterLast() == false) {
+            namelist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return namelist;
     }
 
     public void deleteNumberArrayList(){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("DELETE FROM Mobile_Number_Table ");
+        db.execSQL("DELETE FROM Contacts_Table");
         db.close();
     }
 }
