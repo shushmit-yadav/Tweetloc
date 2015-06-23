@@ -19,24 +19,14 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
-import com.google.appengine.repackaged.com.google.api.services.datastore.DatastoreV1;
-import com.google.appengine.repackaged.com.google.datastore.v1.CompositeFilter;
-import com.google.appengine.repackaged.com.google.datastore.v1.PropertyFilter;
 
-import java.lang.reflect.Array;
-import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Filter;
-import java.util.logging.LogRecord;
-
-import com.google.appengine.api.datastore.Text;
 
 import javax.inject.Named;
 
-import static com.google.appengine.api.datastore.Query.*;
-import static com.google.appengine.repackaged.com.google.api.services.datastore.client.DatastoreHelper.makeFilter;
-import static com.google.appengine.repackaged.com.google.api.services.datastore.client.DatastoreHelper.makeValue;
+import static com.google.appengine.api.datastore.Query.FilterOperator;
+import static com.google.appengine.api.datastore.Query.FilterPredicate;
 
 /**
  * An endpoint class we are exposing
@@ -86,7 +76,7 @@ public class MyEndpoint {
     @ApiMethod(name = "storeGroup")
     public void storeGroup(GroupBean groupBean) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        Transaction txn = datastoreService.beginTransaction();
+        //Transaction txn = datastoreService.beginTransaction();
         try {
             Key taskBeanParentKey = KeyFactory.createKey("Details", "Group");
             Entity groupEntity = new Entity("User Group Details", taskBeanParentKey);
@@ -94,13 +84,24 @@ public class MyEndpoint {
             groupEntity.setProperty("Group Member", groupBean.getGroup_Member());
             groupEntity.setProperty("Mobile Number", groupBean.getMobile_Number());
             groupEntity.setProperty("deviceId", groupBean.getDevice_Id());
-
             datastoreService.put(groupEntity);
-            txn.commit();
-        } finally {
+            //creating group member details entity....
+            for (int i = 0; i < groupBean.getGroup_Member().size(); i++) {
+                Key newtaskBeanParentKey = KeyFactory.createKey("Group Member Details", "Group Member");
+                Entity groupMemberEntity = new Entity("User Group Member Details", newtaskBeanParentKey);
+                groupMemberEntity.setProperty("MobileNumber_Member", groupBean.getGroup_Member().get(i));
+                groupMemberEntity.setProperty("MobileNumber_Admin", groupBean.getMobile_Number());
+                groupMemberEntity.setProperty("Group Name", groupBean.getGroup_Name());
+                groupMemberEntity.setProperty("isAccepted", "false");
+                datastoreService.put(groupMemberEntity);
+            }
+            //txn.commit();
+        }/* finally {
             if (txn.isActive()) {
                 txn.rollback();
             }
+        }*/ catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -124,7 +125,7 @@ public class MyEndpoint {
 
 
     //Group details fetch based on group id
-    @ApiMethod(name = "getGRoupDetailUsingKey")
+    /*@ApiMethod(name = "getGRoupDetailUsingKey")
     public ArrayList<GroupBean> getGRoupDetailUsingKey(@Named("id") String id) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         Key registrationBeanParentKey = KeyFactory.createKey("Details", "Group");
@@ -142,7 +143,7 @@ public class MyEndpoint {
             groupBeans.add(groupDetails);
         }
         return groupBeans;
-    }
+    }*/
 
     //ApiMethod to get location data from server....
     @ApiMethod(name = "getLocation")
@@ -207,5 +208,46 @@ public class MyEndpoint {
         contactSyncBean.setNumber(returnNumber);
         contactSyncBean.setName(returnName);
         return contactSyncBean;
+    }
+
+    @ApiMethod(name = "groupMemberSync")
+    public ArrayList<GroupMemberSyncBean> groupMemberSync(@Named("mobileNumber") String mobileNumber) {
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        Key groupMemberBeanParentKey = KeyFactory.createKey("Group Member Details", "Group Member");
+        Query queryGroupMemberDetails = new Query("User Group Member Details", groupMemberBeanParentKey);
+        Key groupBeanParentKey = KeyFactory.createKey("Details", "Group");
+        Query queryGroupDetails = new Query("User Group Details", groupBeanParentKey);
+        //create object of GroupMemberSyncBean class....
+        ArrayList<GroupMemberSyncBean> groupMemberList = new ArrayList<>();
+
+        FilterPredicate propertyFilter = new FilterPredicate("MobileNumber_Member", FilterOperator.EQUAL, mobileNumber);
+        queryGroupMemberDetails.setFilter(propertyFilter);
+        ArrayList<String> returnGroupAdminNumber = new ArrayList<>();
+        ArrayList<String> returnGroupName = new ArrayList<>();
+        //Use PreparedQuery interface to retrieve results
+        PreparedQuery pq = datastoreService.prepare(queryGroupMemberDetails);
+        for (Entity result : pq.asIterable()) {
+            returnGroupAdminNumber.add((String) result.getProperty("MobileNumber_Admin"));
+            returnGroupName.add((String) result.getProperty("Group Name"));
+        }
+        int count=0;
+        for(int i = 0; i < returnGroupAdminNumber.size(); i++){
+            //FilterPredicate groupPropertyFilterNumber = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, returnGroupAdminNumber.get(i));
+            FilterPredicate groupPropertyFilterNumber = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, "+918004517260");
+            FilterPredicate groupPropertyFilterName = new FilterPredicate("Group Name", FilterOperator.EQUAL, "again new group");
+            Query.CompositeFilter groupPropertyFilterjoin  =  Query.CompositeFilterOperator.and(groupPropertyFilterNumber, groupPropertyFilterName);
+            queryGroupDetails.setFilter(groupPropertyFilterjoin);
+            //Use PreparedQuery interface to retrieve results
+            PreparedQuery preparedQuery = datastoreService.prepare(queryGroupMemberDetails);
+            for (Entity result : preparedQuery.asIterable()) {
+                count++;
+                GroupMemberSyncBean groupMemberSyncBean = new GroupMemberSyncBean();
+                groupMemberSyncBean.setGroupName(returnGroupName.get(i)+"count value is "+returnGroupAdminNumber.size());
+                groupMemberSyncBean.setGroupAdminNumber(returnGroupAdminNumber.get(i));
+                groupMemberSyncBean.setGroupMember((ArrayList<String>) result.getProperty("Group Member"));
+                groupMemberList.add(groupMemberSyncBean);
+            }
+        }
+        return groupMemberList;
     }
 }

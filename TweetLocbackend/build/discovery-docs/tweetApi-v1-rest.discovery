@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/Q3YJUlWUyhtnpXkaSW0U8lw8nDk\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/QMmZbTr0ppIHJlgQFR3ZoGD4_AM\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -115,14 +115,32 @@
     }
    }
   },
-  "GroupBeanCollection": {
-   "id": "GroupBeanCollection",
+  "GroupMemberSyncBean": {
+   "id": "GroupMemberSyncBean",
+   "type": "object",
+   "properties": {
+    "groupAdminNumber": {
+     "type": "string"
+    },
+    "groupMember": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "groupName": {
+     "type": "string"
+    }
+   }
+  },
+  "GroupMemberSyncBeanCollection": {
+   "id": "GroupMemberSyncBeanCollection",
    "type": "object",
    "properties": {
     "items": {
      "type": "array",
      "items": {
-      "$ref": "GroupBean"
+      "$ref": "GroupMemberSyncBean"
      }
     }
    }
@@ -206,27 +224,6 @@
     "https://www.googleapis.com/auth/userinfo.email"
    ]
   },
-  "getGRoupDetailUsingKey": {
-   "id": "tweetApi.getGRoupDetailUsingKey",
-   "path": "groupbeancollection/{id}",
-   "httpMethod": "GET",
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true,
-     "location": "path"
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "response": {
-    "$ref": "GroupBeanCollection"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
   "getLocation": {
    "id": "tweetApi.getLocation",
    "path": "locationbeancollection",
@@ -254,6 +251,27 @@
    ],
    "response": {
     "$ref": "RegistrationBean"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "groupMemberSync": {
+   "id": "tweetApi.groupMemberSync",
+   "path": "groupMemberSync/{mobileNumber}",
+   "httpMethod": "POST",
+   "parameters": {
+    "mobileNumber": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "mobileNumber"
+   ],
+   "response": {
+    "$ref": "GroupMemberSyncBeanCollection"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

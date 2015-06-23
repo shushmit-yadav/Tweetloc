@@ -1,6 +1,5 @@
 package com.brahminno.tweetloc;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -28,7 +27,6 @@ import android.widget.Toast;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBeanCollection;
 import com.brahminno.tweetloc.backend.tweetApi.model.LocationBean;
 import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
 import com.google.android.gms.common.ConnectionResult;
@@ -182,7 +180,7 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             for(int i = 0; i < Mob_Num.size(); i++){
                 Log.i("Inside for loop..",""+Mob_Num.get(i));
                 //boolean result = myDB.deleteRow(MobileNumber.get(i));
-                //Log.i("Result of deletion..."," "+MobileNumber.get(i)+"-->"+result);
+                Log.i("Result of insertion.."," "+MobileNumber.get(i)+"-->"+MobileName.get(i));
                 if(!MobileNumber.contains(Mob_Num.get(i))){
                     Log.i("Inside If loop...",""+!MobileNumber.contains(Mob_Num.get(i)));
                     myDB.insertIntoInvite(Mob_Name.get(i),Mob_Num.get(i));

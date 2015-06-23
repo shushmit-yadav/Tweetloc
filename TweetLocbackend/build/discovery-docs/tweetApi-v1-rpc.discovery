@@ -1,6 +1,6 @@
 {
  "kind": "discovery#rpcDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/Q3YJUlWUyhtnpXkaSW0U8lw8nDk\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/QMmZbTr0ppIHJlgQFR3ZoGD4_AM\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -113,14 +113,32 @@
     }
    }
   },
-  "GroupBeanCollection": {
-   "id": "GroupBeanCollection",
+  "GroupMemberSyncBean": {
+   "id": "GroupMemberSyncBean",
+   "type": "object",
+   "properties": {
+    "groupAdminNumber": {
+     "type": "string"
+    },
+    "groupMember": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "groupName": {
+     "type": "string"
+    }
+   }
+  },
+  "GroupMemberSyncBeanCollection": {
+   "id": "GroupMemberSyncBeanCollection",
    "type": "object",
    "properties": {
     "items": {
      "type": "array",
      "items": {
-      "$ref": "GroupBean"
+      "$ref": "GroupMemberSyncBean"
      }
     }
    }
@@ -203,25 +221,6 @@
     "https://www.googleapis.com/auth/userinfo.email"
    ]
   },
-  "tweetApi.getGRoupDetailUsingKey": {
-   "id": "tweetApi.getGRoupDetailUsingKey",
-   "allowGet": true,
-   "parameters": {
-    "id": {
-     "type": "string",
-     "required": true
-    }
-   },
-   "parameterOrder": [
-    "id"
-   ],
-   "returns": {
-    "$ref": "GroupBeanCollection"
-   },
-   "scopes": [
-    "https://www.googleapis.com/auth/userinfo.email"
-   ]
-  },
   "tweetApi.getLocation": {
    "id": "tweetApi.getLocation",
    "allowGet": true,
@@ -246,6 +245,24 @@
    ],
    "returns": {
     "$ref": "RegistrationBean"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "tweetApi.groupMemberSync": {
+   "id": "tweetApi.groupMemberSync",
+   "parameters": {
+    "mobileNumber": {
+     "type": "string",
+     "required": true
+    }
+   },
+   "parameterOrder": [
+    "mobileNumber"
+   ],
+   "returns": {
+    "$ref": "GroupMemberSyncBeanCollection"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

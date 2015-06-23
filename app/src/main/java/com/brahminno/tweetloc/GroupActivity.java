@@ -19,7 +19,6 @@ import android.widget.Toast;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.GroupBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.GroupBeanCollection;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
@@ -55,19 +54,6 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
         try {
             Log.i("doInBackground...", "try block...");
             //call group Details Api.....
-            groupBeanDetails = myTweetApi.getGRoupDetailUsingKey(Device_Id).execute().getItems();
-            Log.i("doInBackground...", "after getting response from server....");
-            //Retrieve data from collection.....
-            if (groupBeanDetails == null) {
-                Log.i("groupBeanDetails...", "" + null);
-            }
-            mydb = new SQLiteDatabase(context);
-
-            for (GroupBean result : groupBeanDetails) {
-                Log.i("doInBackground...", "foreach loop");
-                mydb.insertGroups(result.getGroupName(), result.getGroupMember());
-            }
-            Log.i("doInBackground...", "after foreach loop...");
 
         } catch (Exception ex) {
             ex.printStackTrace();

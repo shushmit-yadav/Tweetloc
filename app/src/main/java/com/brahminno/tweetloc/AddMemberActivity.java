@@ -18,7 +18,6 @@ import android.view.MenuItem;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBeanCollection;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
