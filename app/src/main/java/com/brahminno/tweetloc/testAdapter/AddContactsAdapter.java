@@ -35,6 +35,7 @@ public class AddContactsAdapter extends BaseAdapter {
 
     private class ViewHolder {
         TextView tvContactsNametest;
+        TextView tvContactsNumbertest;
         CheckBox checkBox;
     }
 
@@ -65,10 +66,12 @@ public class AddContactsAdapter extends BaseAdapter {
         ViewHolder vh = new ViewHolder();
         // LinearLayout addContactLayout = (LinearLayout) addContactInflater.inflate(R.layout.details_contacts2_test,parent,false);
         vh.tvContactsNametest = (TextView) convertView.findViewById(R.id.tvContactsNametest);
+        vh.tvContactsNumbertest = (TextView) convertView.findViewById(R.id.tvContactsNumbertest);
         vh.checkBox = (CheckBox) convertView.findViewById(R.id.checkBox1);
 
         final Contacts_Test currentContact = addContactList.get(position);
         vh.tvContactsNametest.setText(currentContact.getName());
+        vh.tvContactsNumbertest.setText(currentContact.getNumber());
         vh.checkBox.setTag(position);
         vh.checkBox.setOnClickListener(new View.OnClickListener() {
             @Override

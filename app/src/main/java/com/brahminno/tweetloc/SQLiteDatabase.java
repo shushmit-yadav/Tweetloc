@@ -145,26 +145,6 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     }
 
     //store all contacts into INVITE TABLE into app db....
-    /*public void insertIntoInvite(FetchContacts contacts){
-        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        ArrayList<String> name  = contacts.getName();
-        ArrayList<String> number = contacts.getNumber();
-        Log.i("Array size","in insertIntoInvite "+name.size()+" "+ number.size());
-        for(int i = 0; i < number.size(); i++){
-            String contact_name = name.get(i);
-            String contact_number = number.get(i);
-            contentValues.put(COLUMN_NAME,contact_name);
-            contentValues.put(COLUMN_NUMBER,contact_number);
-            db.insert(INVITE_NUMBER_TABLE, null, contentValues);
-            Log.i("following contact...", "inserted into invite table" + contact_name + "--> " + contact_number);
-            //we have to clear the content values. if we will not clear it then it append the data....
-            contentValues.clear();
-        }
-        Log.i("Invite Contacts....", "saved successfully");
-        db.close();
-    }*/
-
     public void insertIntoInvite(String contactName, String contactNumber) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
@@ -184,16 +164,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    /*public void deleteAddContactFromInvite(ArrayList<String> number){
+    public void deleteInviteTableItems(){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        for(int i = 0; i < number.size(); i++){
-            //db.execSQL("DELETE FROM Invite_Contacts_Table WHERE Mobile_Number = "+ number.get(i));
-            db.delete(INVITE_NUMBER_TABLE,COLUMN_NUMBER+ "=" + number.get(i),null);
-        }
+        db.execSQL("DELETE FROM Invite_Contacts_Table");
         db.close();
-    }*/
-    /*public boolean deleteRow(String number) {
-        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(INVITE_NUMBER_TABLE, COLUMN_NUMBER + "=" + number, null) > 0;
-    }*/
+    }
 }

@@ -172,6 +172,11 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             //myDB.deleteAddContactFromInvite(MobileNumber);
             Log.i("Contact size..",""+MobileNumber.size());
             Log.i("Value contains..",""+MobileNumber.contains(contacts.getNumber().get(1)));
+
+            //first delete items from Invite_Contacts_Table and then store in.....
+            myDB.deleteInviteTableItems();
+
+            //below codes are using to store contacts in Invite_Contacts_Table........
             ArrayList<String> Mob_Num = contacts.getNumber();
             ArrayList<String> Mob_Name = contacts.getName();
             for(int i = 0; i < Mob_Num.size(); i++){

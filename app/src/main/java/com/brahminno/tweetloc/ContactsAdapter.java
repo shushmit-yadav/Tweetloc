@@ -49,11 +49,13 @@ public class ContactsAdapter extends BaseAdapter {
         //map to details_contact layout.....
         RelativeLayout contactLayout = (RelativeLayout) contactInflater.inflate(R.layout.details_contact,parent,false);
         TextView tvContactsName = (TextView) contactLayout.findViewById(R.id.tvContactsName);
+        TextView tvContactsNumber = (TextView) contactLayout.findViewById(R.id.tvContactsNumber);
         Button btnInvite = (Button) contactLayout.findViewById(R.id.btnInvite);
 
         final Contact currentContact = inviteContactList.get(position);
 
         tvContactsName.setText(currentContact.getName());
+        tvContactsNumber.setText(currentContact.getNumber());
         //on Button click event....
         btnInvite.setOnClickListener(new View.OnClickListener() {
             @Override
