@@ -127,9 +127,6 @@ public class RegistrationActivity extends ActionBarActivity {
 
                     }
                     else{
-                        //Save details to SQLite Database.....
-                        //mydb.insertInfo(new RegistrationInfo(deviceID,mobNum,primaryEmail));
-
                         //call StandardMobileNumberFormat class to make mobile number in standard format......
                         standardMobileNumber = standardMobileNumberFormat.getLocale(mobNum,countryCode);
                         Log.i("standardMobileNumber...",""+standardMobileNumber);

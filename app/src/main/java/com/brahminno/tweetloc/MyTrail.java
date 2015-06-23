@@ -218,6 +218,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     MarkerOptions marker;
     TelephonyManager telephonyManager;
     String countryCode;
+    boolean isContactSyncFromServer = false;
 
     Location final_location,gps_location,network_location;
 
@@ -234,8 +235,31 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         }
         setContentView(R.layout.activity_my_trail);
         btnGroup = (Button) findViewById(R.id.btnGroup);
+        //this method is used to get countryCode isung telephonyManager....
         telephonyManager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
         countryCode = telephonyManager.getNetworkCountryIso().toUpperCase();
+        //call NumberSyncFromServer class to sync all contact automatically from server....
+        //first we fetch all contacts from mobile device and then we execute Async Class.....
+        //first we check that app install first time on device or not...
+        //get value from shared preference.......
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        isContactSyncFromServer = prefs.getBoolean("isContactSyncFromServer", false);
+        if(!isContactSyncFromServer){
+            SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", getApplicationContext().MODE_PRIVATE).edit();
+            editor.putBoolean("isContactSyncFromServer",true);
+            editor.commit();
+            FetchContacts contacts = fetchContact();
+            try{
+                //save all contacts to loacal app db....
+                mydb = new SQLiteDatabase(this);
+                //mydb.insertIntoInvite(contacts);
+            }
+            catch (Exception ex){
+                ex.printStackTrace();
+            }
+            //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
+            new NumberSyncFromServer(getApplicationContext(),contacts).execute();
+        }
         //check if gps is available or not.....
         LocationManager locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
