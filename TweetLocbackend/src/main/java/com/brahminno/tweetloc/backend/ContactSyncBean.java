@@ -13,6 +13,8 @@ public class ContactSyncBean {
 
     private ArrayList<String> name;
 
+
+
     public ArrayList<String> getNumber() {
         return number;
     }

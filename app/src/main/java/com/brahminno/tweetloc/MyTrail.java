@@ -1,5 +1,6 @@
 package com.brahminno.tweetloc;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -160,15 +161,28 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             ArrayList<String> MobileName = (ArrayList<String>) contactSyncBean.getName();
             Log.i("Contact Number", MobileNumber.get(0));
             Log.i("Contact Name", MobileName.get(0));
+            Log.i("ContactList size...",""+MobileNumber.size());
 
             //save arraylist to sqlite database......
             myDB = new SQLiteDatabase(context);
             //clear data from app db....
             myDB.deleteNumberArrayList();
             Log.i("Contact from server...", MobileNumber.get(0));
-            myDB.insertNumberArrayList(MobileNumber,MobileName);
-
-
+            myDB.insertNumberArrayList(MobileNumber, MobileName);
+            //myDB.deleteAddContactFromInvite(MobileNumber);
+            Log.i("Contact size..",""+MobileNumber.size());
+            Log.i("Value contains..",""+MobileNumber.contains(contacts.getNumber().get(1)));
+            ArrayList<String> Mob_Num = contacts.getNumber();
+            ArrayList<String> Mob_Name = contacts.getName();
+            for(int i = 0; i < Mob_Num.size(); i++){
+                Log.i("Inside for loop..",""+Mob_Num.get(i));
+                //boolean result = myDB.deleteRow(MobileNumber.get(i));
+                //Log.i("Result of deletion..."," "+MobileNumber.get(i)+"-->"+result);
+                if(!MobileNumber.contains(Mob_Num.get(i))){
+                    Log.i("Inside If loop...",""+!MobileNumber.contains(Mob_Num.get(i)));
+                    myDB.insertIntoInvite(Mob_Name.get(i),Mob_Num.get(i));
+                }
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -197,6 +211,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     boolean isNetworkEnabled;
     StandardMobileNumberFormat standardMobileNumberFormat;
     MarkerOptions marker;
+    TelephonyManager telephonyManager;
+    String countryCode;
 
     Location final_location,gps_location,network_location;
 
@@ -213,6 +229,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         }
         setContentView(R.layout.activity_my_trail);
         btnGroup = (Button) findViewById(R.id.btnGroup);
+        telephonyManager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
+        countryCode = telephonyManager.getNetworkCountryIso().toUpperCase();
         //check if gps is available or not.....
         LocationManager locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
@@ -430,6 +448,15 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         if(id == R.id.action_contactSync){
             //first fetch all contact mobNum from device.......
             FetchContacts contacts = fetchContact();
+
+            try{
+                //save all contacts to loacal app db....
+                mydb = new SQLiteDatabase(this);
+                //mydb.insertIntoInvite(contacts);
+            }
+            catch (Exception ex){
+                ex.printStackTrace();
+            }
             //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
             new NumberSyncFromServer(getApplicationContext(),contacts).execute();
             return true;
@@ -471,13 +498,14 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         do {
             String name = people.getString(indexName);
             String number = people.getString(indexNumber);
-            TelephonyManager manager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
-            String countryCode = manager.getNetworkCountryIso().toUpperCase();
             standardMobileNumberFormat = new StandardMobileNumberFormat();
             String standardNumber = standardMobileNumberFormat.getLocale(number,countryCode);
-            Log.i("standard number...",""+standardNumber);
-            nameList.add(name);
-            numberList.add(standardNumber);
+            Log.i("standard number...", "" + standardNumber);
+            if(standardNumber != null){
+                nameList.add(name);
+                numberList.add(standardNumber);
+                Log.i("Inside sync...","contacts"+name +"-->" + standardNumber);
+            }
         }
         while (people.moveToNext());
         contacts.setName(nameList);
@@ -490,8 +518,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
  * Created by Shushmit Yadav.
  * Brahmastra Innovations Pvt. Ltd.
  * this class is used for model of contacts......
+ * this is a fetch contacts class to fetch numbers with name....
 */
-//this is a fetch contacts class to fetch numbers with name....
 class FetchContacts{
     private ArrayList<String> name;
     private ArrayList<String> number;

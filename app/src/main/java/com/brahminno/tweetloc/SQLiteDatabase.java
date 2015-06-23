@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.brahminno.tweetloc.testAdapter.Contacts_Test;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +27,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public static final String GROUP_TABLE = "Group_Table";
     public static final String GROUPS_NAME = "Group_Name";
     public static final String GROUP_MEMBERS = "Group_Members";
-    public static final String  CONTACTS_NUMBER = "Contacts_Table";
+    public static final String CONTACTS_NUMBER = "Contacts_Table";
+    public static final String INVITE_NUMBER_TABLE = "Invite_Contacts_Table";
 
 
     public SQLiteDatabase(Context context) {
@@ -37,17 +39,18 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public void onCreate(android.database.sqlite.SQLiteDatabase db) {
 
         //Create table for storing registration details....
-        Log.i("Before table...","created"+TABLE_NAME);
+        Log.i("Before table...", "created" + TABLE_NAME);
         db.execSQL("create table " + TABLE_NAME + "(" + COLUMN_NUMBER + " text," + COLUMN_EMAIL + " text," + CLOUMN_DEVICE_ID + " text" + ")");
         Log.i("After table...", "created" + TABLE_NAME);
         //Create table to store groups details........
-        Log.i("Before table...","created"+GROUP_TABLE);
+        Log.i("Before table...", "created" + GROUP_TABLE);
         db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text," + GROUP_MEMBERS + " text" + ")");
         Log.i("After table...", "created" + GROUP_TABLE);
         //create table for storing mobile mobNum......
-        Log.i("Before table...","created"+CONTACTS_NUMBER);
+        Log.i("Before table...", "created" + CONTACTS_NUMBER);
         db.execSQL("create table " + CONTACTS_NUMBER + "(" + COLUMN_NUMBER + " text," + COLUMN_NAME + " text" + ")");
         Log.i("After table...", "created" + CONTACTS_NUMBER);
+        db.execSQL("create table " + INVITE_NUMBER_TABLE + "(" + COLUMN_NAME + " text," + COLUMN_NUMBER + " text" + ")");
     }
 
     @Override
@@ -56,11 +59,12 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + GROUP_TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + CONTACTS_NUMBER);
+        db.execSQL("DROP TABLE IF EXISTS " + INVITE_NUMBER_TABLE);
         onCreate(db);
 
     }
 
-    void insertGroups(String Group_Name,List<String> Group_Members){
+    void insertGroups(String Group_Name, List<String> Group_Members) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(GROUPS_NAME, Group_Name);
@@ -69,26 +73,29 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    void insertNumberArrayList(List<String> mobile_number,List<String> mobile_name){
+    void insertNumberArrayList(List<String> mobile_number, List<String> mobile_name) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        for(int i = 0; i < mobile_number.size(); i++){
+        for (int i = 0; i < mobile_number.size(); i++) {
             contentValues.put(COLUMN_NUMBER, mobile_number.get(i));
             contentValues.put(COLUMN_NAME, mobile_name.get(i));
             contentValues.get(COLUMN_NAME);
-            Log.i("Mobile Number sqlite...",mobile_number.get(i));
-            Log.i("Mobile Name sqlite...",mobile_name.get(i));
+            Log.i("Mobile Number sqlite...", mobile_number.get(i));
+            Log.i("Mobile Name sqlite...", mobile_name.get(i));
             db.insert(CONTACTS_NUMBER, null, contentValues);
-            //db.insert(CONTACTS_NUMBER,null,contentValues);
             contentValues.clear();
+            Log.i("calling deleteInvite...", "called" + mobile_number.get(i));
+            //deleteFromInvite(mobile_number.get(i));
+            //db.execSQL("DELETE FROM " + INVITE_NUMBER_TABLE + " WHERE Mobile_Number = " + "+919654023769");
+            Log.i("Value deleted....", "from invite table" + mobile_number.get(i));
         }
         db.close();
     }
 
-    public ArrayList<String> getAllNumbers() {
+    public ArrayList<String> getAllNumbersFromContactTable() {
         ArrayList<String> numberlist = new ArrayList<>();
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select * from "+ CONTACTS_NUMBER, null);
+        Cursor cursor = db.rawQuery("select * from " + CONTACTS_NUMBER, null);
         cursor.moveToFirst();
         while (cursor.isAfterLast() == false) {
             numberlist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NUMBER)));
@@ -98,10 +105,10 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         return numberlist;
     }
 
-    public ArrayList<String> getAllNames(){
+    public ArrayList<String> getAllNamesFromContactTable() {
         ArrayList<String> namelist = new ArrayList<>();
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("select * from "+ CONTACTS_NUMBER, null);
+        Cursor cursor = db.rawQuery("select * from " + CONTACTS_NUMBER, null);
         cursor.moveToFirst();
         while (cursor.isAfterLast() == false) {
             namelist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
@@ -111,9 +118,82 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         return namelist;
     }
 
-    public void deleteNumberArrayList(){
+    public ArrayList<String> getAllNumbersInviteTable() {
+        ArrayList<String> numberlist = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select * from " + INVITE_NUMBER_TABLE, null);
+        cursor.moveToFirst();
+        while (cursor.isAfterLast() == false) {
+            numberlist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NUMBER)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return numberlist;
+    }
+
+    public ArrayList<String> getAllNamesFromInviteTable() {
+        ArrayList<String> namelist = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select * from " + INVITE_NUMBER_TABLE, null);
+        cursor.moveToFirst();
+        while (cursor.isAfterLast() == false) {
+            namelist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return namelist;
+    }
+
+    //store all contacts into INVITE TABLE into app db....
+    /*public void insertIntoInvite(FetchContacts contacts){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        ArrayList<String> name  = contacts.getName();
+        ArrayList<String> number = contacts.getNumber();
+        Log.i("Array size","in insertIntoInvite "+name.size()+" "+ number.size());
+        for(int i = 0; i < number.size(); i++){
+            String contact_name = name.get(i);
+            String contact_number = number.get(i);
+            contentValues.put(COLUMN_NAME,contact_name);
+            contentValues.put(COLUMN_NUMBER,contact_number);
+            db.insert(INVITE_NUMBER_TABLE, null, contentValues);
+            Log.i("following contact...", "inserted into invite table" + contact_name + "--> " + contact_number);
+            //we have to clear the content values. if we will not clear it then it append the data....
+            contentValues.clear();
+        }
+        Log.i("Invite Contacts....", "saved successfully");
+        db.close();
+    }*/
+
+    public void insertIntoInvite(String contactName, String contactNumber) {
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        Log.i("Array size", "in insertIntoInvite " + contactName + " " + contactNumber);
+        contentValues.put(COLUMN_NAME, contactName);
+        contentValues.put(COLUMN_NUMBER, contactNumber);
+        db.insert(INVITE_NUMBER_TABLE, null, contentValues);
+        Log.i("following contact...", "inserted into invite table" + contactName + "--> " + contactNumber);
+        //we have to clear the content values. if we will not clear it then it append the data....
+        Log.i("Invite Contacts....", "saved successfully");
+        db.close();
+    }
+
+    public void deleteNumberArrayList() {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM Contacts_Table");
         db.close();
     }
+
+    /*public void deleteAddContactFromInvite(ArrayList<String> number){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        for(int i = 0; i < number.size(); i++){
+            //db.execSQL("DELETE FROM Invite_Contacts_Table WHERE Mobile_Number = "+ number.get(i));
+            db.delete(INVITE_NUMBER_TABLE,COLUMN_NUMBER+ "=" + number.get(i),null);
+        }
+        db.close();
+    }*/
+    /*public boolean deleteRow(String number) {
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(INVITE_NUMBER_TABLE, COLUMN_NUMBER + "=" + number, null) > 0;
+    }*/
 }

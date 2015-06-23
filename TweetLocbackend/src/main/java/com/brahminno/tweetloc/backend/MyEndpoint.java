@@ -23,6 +23,7 @@ import com.google.appengine.repackaged.com.google.api.services.datastore.Datasto
 import com.google.appengine.repackaged.com.google.datastore.v1.CompositeFilter;
 import com.google.appengine.repackaged.com.google.datastore.v1.PropertyFilter;
 
+import java.lang.reflect.Array;
 import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.List;
@@ -188,7 +189,6 @@ public class MyEndpoint {
         ContactSyncBean contactSyncBean = new ContactSyncBean();
         ArrayList<String> returnNumber = new ArrayList<>();
         ArrayList<String> returnName = new ArrayList<>();
-
         ArrayList<String> contactSyncBeansNumber = contacts.getNumber();
 
         ArrayList<String> contactSyncBeansName = contacts.getName();
@@ -199,11 +199,7 @@ public class MyEndpoint {
             q.setFilter(propertyFilter);
             //Use PreparedQuery interface to retrieve results
             PreparedQuery pq = datastoreService.prepare(q);
-            //Entity entity = pq.asSingleEntity();
-            //returnNumber.add((String) entity.getProperty("Mobile_Number"));
             for (Entity result : pq.asIterable()) {
-                //ContactSyncBean contact = new ContactSyncBean();
-                //contact.setMobileNumber((String) result.getProperty("Mobile_Number"));
                 returnNumber.add((String) result.getProperty("Mobile_Number"));
                 returnName.add(contact_Name);
             }

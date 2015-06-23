@@ -75,10 +75,10 @@ public class FragmentAdd extends Fragment {
             mydb = new SQLiteDatabase(getActivity());
             //get arraylist from sqlite database.....
             mydbContactNumberList = new ArrayList<>();
-            mydbContactNumberList = mydb.getAllNumbers();
+            mydbContactNumberList = mydb.getAllNumbersFromContactTable();
             //get all names from database.....
             mydbContactNameList = new ArrayList<>();
-            mydbContactNameList = mydb.getAllNames();
+            mydbContactNameList = mydb.getAllNamesFromContactTable();
             //Log.i("Numberlist...", String.valueOf(mydbMobileNumberArrayList.get(1)));
             contactList = new ArrayList<>();
             for(int i = 0; i < mydbContactNumberList.size(); i++){

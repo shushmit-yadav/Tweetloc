@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -35,6 +36,9 @@ public class FragmentInvite extends Fragment {
 
     ListView listView;
     ArrayList<Contact> contactList;
+    SQLiteDatabase mydb;
+    ArrayList<String> mydbNameList;
+    ArrayList<String> mydbNumberList;
 
     @Nullable
     @Override
@@ -47,8 +51,21 @@ public class FragmentInvite extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        //initialize SQLiteDatabase....
+        mydb = new SQLiteDatabase(getActivity());
+        mydbNameList = new ArrayList<>();
+        mydbNameList = mydb.getAllNamesFromInviteTable();
+        mydbNumberList = new ArrayList<>();
+        mydbNumberList = mydb.getAllNumbersInviteTable();
+        Log.i("size of array...",""+mydbNumberList.size());
         contactList = new ArrayList<Contact>();
-        getContactList();
+        for(int i =0; i < mydbNumberList.size(); i++){
+            String name = mydbNameList.get(i);
+            String number = mydbNumberList.get(i);
+            Log.i("Contacts in Invite...",""+name + "--->" + number);
+            contactList.add(new Contact(name,number));
+        }
+
         Collections.sort(contactList, new Comparator<Contact>() {
             public int compare(Contact a, Contact b) {
                 return a.getName().compareTo(b.getName());
@@ -56,26 +73,6 @@ public class FragmentInvite extends Fragment {
         });
         ContactsAdapter contactsAdapter = new ContactsAdapter(getActivity(),contactList );
         listView.setAdapter(contactsAdapter);
-    }
-
-    //Method to fetch all contacts from android mobile......
-    private void getContactList() {
-        //Set URI....
-        Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
-        //Set Projection
-        String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER};
-        Cursor people = getActivity().getContentResolver().query(uri, projection, null, null, null);
-        int indexName = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-        int indexNumber = people.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-        people.moveToFirst();
-        do {
-            String name = people.getString(indexName);
-            String number = people.getString(indexNumber);
-            contactList.add(new Contact(name,number));
-
-        }
-        while (people.moveToNext());
     }
 }
 
