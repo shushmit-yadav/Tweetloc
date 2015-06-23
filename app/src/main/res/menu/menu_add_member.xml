@@ -10,4 +10,10 @@
         android:orderInCategory="100"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_invte"
+        android:title="@string/action_invite"
+        android:orderInCategory="100"
+        android:showAsAction="never"/>
+
 </menu>

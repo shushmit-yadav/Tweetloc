@@ -131,7 +131,18 @@ public class CreateGroupActivity extends ActionBarActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
+        if(id == R.id.action_invte){
+            inviteContacts();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    //this method is used for inviting contacts through social media android app....
+    public void inviteContacts() {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
+        startActivity(intent);
     }
 }

@@ -45,7 +45,7 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... params) {
-        Log.i("doInBackground...","method starts");
+        Log.i("doInBackground...", "method starts");
         if (myTweetApi == null) {
             TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
                     .setRootUrl("https://brahminno.appspot.com/_ah/api/");
@@ -53,21 +53,21 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
             myTweetApi = builder.build();
         }
         try {
-            Log.i("doInBackground...","try block...");
+            Log.i("doInBackground...", "try block...");
             //call group Details Api.....
             groupBeanDetails = myTweetApi.getGRoupDetailUsingKey(Device_Id).execute().getItems();
             Log.i("doInBackground...", "after getting response from server....");
             //Retrieve data from collection.....
-            if(groupBeanDetails == null){
-                Log.i("groupBeanDetails...",""+null);
+            if (groupBeanDetails == null) {
+                Log.i("groupBeanDetails...", "" + null);
             }
             mydb = new SQLiteDatabase(context);
 
             for (GroupBean result : groupBeanDetails) {
-                Log.i("doInBackground...","foreach loop");
-                mydb.insertGroups(result.getGroupName(),result.getGroupMember());
+                Log.i("doInBackground...", "foreach loop");
+                mydb.insertGroups(result.getGroupName(), result.getGroupMember());
             }
-            Log.i("doInBackground...","after foreach loop...");
+            Log.i("doInBackground...", "after foreach loop...");
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -94,7 +94,7 @@ public class GroupActivity extends ActionBarActivity {
         //get device id from shared preference.....
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         deviceId = prefs.getString("Device Id", null);
-        Log.i("device id is....",deviceId);
+        Log.i("device id is....", deviceId);
         btnCreateGroup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -102,9 +102,9 @@ public class GroupActivity extends ActionBarActivity {
                 startActivity(intent);
             }
         });
-        Log.i("AsyncTask method...."," starts");
+        Log.i("AsyncTask method....", " starts");
         //call AsyncMethod to get Groups from server......
-        new GroupDetailsAsyncTask(getApplicationContext(),deviceId).execute();
+        new GroupDetailsAsyncTask(getApplicationContext(), deviceId).execute();
     }
 
     @Override
@@ -125,6 +125,19 @@ public class GroupActivity extends ActionBarActivity {
         if (id == R.id.action_settings) {
             return true;
         }
+        if (id == R.id.action_invte) {
+            //call inviteContacts() method to invite the contacts through installed app in device...
+            inviteContacts();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    //this method is used for inviting contacts through social media android app....
+    public void inviteContacts() {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
+        startActivity(intent);
     }
 }
