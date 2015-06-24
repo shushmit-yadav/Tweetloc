@@ -12,6 +12,16 @@ public class GroupBean {
     private String Device_Id;
     private String Mobile_Number;
 
+    private String CompositeGroupKey;
+
+    public String getCompositeGroupKey() {
+        return CompositeGroupKey;
+    }
+
+    public void setCompositeGroupKey(String compositeGroupKey) {
+        CompositeGroupKey = compositeGroupKey;
+    }
+
     public String getGroup_Name() {
         return Group_Name;
     }

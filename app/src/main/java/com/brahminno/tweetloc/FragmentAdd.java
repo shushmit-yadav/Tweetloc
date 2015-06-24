@@ -48,6 +48,7 @@ public class FragmentAdd extends Fragment {
     ArrayList<Contacts_Test> contactList;
     ArrayList<String> mydbContactNumberList;
     ArrayList<String> mydbContactNameList;
+    String compositeGroupKey;
 
     StandardMobileNumberFormat standardMobileNumberFormat;
 
@@ -56,6 +57,7 @@ public class FragmentAdd extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_add, container, false);
         btnAddSelectedContact = (Button) rootView.findViewById(R.id.btnAddSelectedContact);
         listViewAddContact = (ListView) rootView.findViewById(R.id.listViewAddContact);
+        //get string value from intent using bundle.....
         Bundle bundle = getActivity().getIntent().getExtras();
         Group_Name = bundle.getString("Group Name");
         return rootView;
@@ -69,6 +71,9 @@ public class FragmentAdd extends Fragment {
         Mobile_Number = prefs.getString("Mobile Number", null);
         manager = (TelephonyManager) getActivity().getSystemService(getActivity().TELEPHONY_SERVICE);
         countryCode = manager.getNetworkCountryIso().toUpperCase();
+        //get value in compositeGroupKey.....
+        compositeGroupKey = Group_Name+"-"+Mobile_Number+"-"+deviceId;
+        Log.i("compositeGroupKey....",""+compositeGroupKey);
         Group_Member = new ArrayList<>();
         try {
             //Initialization of app local sqlite database.....
@@ -102,6 +107,7 @@ public class FragmentAdd extends Fragment {
                     try{
                         //get arraylist of members from adapter class....
                         Group_Member = addContactsAdapter.getArrayList();
+                        Group_Member.add(Mobile_Number);
                         Log.i("Member Number", Group_Member.get(1));
                     }
                     catch(Exception ex){
@@ -109,7 +115,7 @@ public class FragmentAdd extends Fragment {
                     }
                     Log.i("GroupAsyncTask call...", "now");
                     //Call AsyncTask to upload data on server.....
-                    new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
+                    new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number,compositeGroupKey).execute();
                 }
             });
         } catch (Exception ex) {

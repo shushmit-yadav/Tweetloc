@@ -31,13 +31,15 @@ class GroupAsyncTask extends AsyncTask<Void,Void,String>{
     private String Group_Name;
     private ArrayList<String> Group_Member ;
     private String Mobile_Number;
+    private String compositeGroupKey;
 
-    public GroupAsyncTask(Context context,String Device_Id,String Group_Name,ArrayList<String> Group_Member,String Mobile_Number){
+    public GroupAsyncTask(Context context,String Device_Id,String Group_Name,ArrayList<String> Group_Member,String Mobile_Number,String compositeGroupKey){
         this.context = context;
         this.Device_Id = Device_Id;
         this.Group_Name = Group_Name;
         this.Group_Member = Group_Member;
         this.Mobile_Number = Mobile_Number;
+        this.compositeGroupKey = compositeGroupKey;
     }
 
     @Override
@@ -55,6 +57,7 @@ class GroupAsyncTask extends AsyncTask<Void,Void,String>{
             groupBean.setGroupMember(Group_Member);
             groupBean.setDeviceId(Device_Id);
             groupBean.setMobileNumber(Mobile_Number);
+            groupBean.setCompositeGroupKey(compositeGroupKey);
 
             myTweetApi.storeGroup(groupBean).execute();
         }
@@ -73,7 +76,6 @@ public class CreateGroupActivity extends ActionBarActivity {
     EditText etGroupName;
     Button btnCreate;
     String Group_Name;
-    ArrayList<String> Group_Member;
     String deviceId,Mobile_Number;
 
     //SQLiteDatabase mydb;

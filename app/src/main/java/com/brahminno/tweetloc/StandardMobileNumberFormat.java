@@ -741,7 +741,8 @@ public class StandardMobileNumberFormat {
         }
 
         mobileNumber = mobileNumber.trim();
-        mobileNumber = mobileNumber.replace(" ", "");
+        mobileNumber = mobileNumber.replaceAll(" ", "");
+        mobileNumber = mobileNumber.replaceAll("-","");
         try{
             Log.i("After trim", mobileNumber);
         }

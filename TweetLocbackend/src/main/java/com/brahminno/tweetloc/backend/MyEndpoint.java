@@ -84,7 +84,21 @@ public class MyEndpoint {
             groupEntity.setProperty("Group Member", groupBean.getGroup_Member());
             groupEntity.setProperty("Mobile Number", groupBean.getMobile_Number());
             groupEntity.setProperty("deviceId", groupBean.getDevice_Id());
+            groupEntity.setProperty("CompositeGroupKey",groupBean.getCompositeGroupKey());
             datastoreService.put(groupEntity);
+            // Group Admin details in user Group Member entity
+
+            /*Key newAdmintaskBeanParentKey = KeyFactory.createKey("Group Member Details", "Group Member");
+            Entity admingroupMemberEntity = new Entity("User Group Member Details", newAdmintaskBeanParentKey);
+            admingroupMemberEntity.setProperty("MobileNumber_Member",groupBean.getMobile_Number() );
+            admingroupMemberEntity.setProperty("MobileNumber_Admin", groupBean.getMobile_Number());
+            admingroupMemberEntity.setProperty("Group Name", groupBean.getGroup_Name());
+            admingroupMemberEntity.setProperty("compositeGroupKey",groupBean.getCompositeGroupKey());
+            admingroupMemberEntity.setProperty("isAccepted", "false");
+            datastoreService.put(admingroupMemberEntity);*/
+
+
+
             //creating group member details entity....
             for (int i = 0; i < groupBean.getGroup_Member().size(); i++) {
                 Key newtaskBeanParentKey = KeyFactory.createKey("Group Member Details", "Group Member");
@@ -92,6 +106,7 @@ public class MyEndpoint {
                 groupMemberEntity.setProperty("MobileNumber_Member", groupBean.getGroup_Member().get(i));
                 groupMemberEntity.setProperty("MobileNumber_Admin", groupBean.getMobile_Number());
                 groupMemberEntity.setProperty("Group Name", groupBean.getGroup_Name());
+                groupMemberEntity.setProperty("compositeGroupKey",groupBean.getCompositeGroupKey());
                 groupMemberEntity.setProperty("isAccepted", "false");
                 datastoreService.put(groupMemberEntity);
             }
@@ -223,28 +238,39 @@ public class MyEndpoint {
         FilterPredicate propertyFilter = new FilterPredicate("MobileNumber_Member", FilterOperator.EQUAL, mobileNumber);
         queryGroupMemberDetails.setFilter(propertyFilter);
         ArrayList<String> returnGroupAdminNumber = new ArrayList<>();
+        ArrayList<String> isAccepted = new ArrayList<>();
         ArrayList<String> returnGroupName = new ArrayList<>();
+        ArrayList<String> returnCompositeGroupKey = new ArrayList<>();
         //Use PreparedQuery interface to retrieve results
         PreparedQuery pq = datastoreService.prepare(queryGroupMemberDetails);
         for (Entity result : pq.asIterable()) {
             returnGroupAdminNumber.add((String) result.getProperty("MobileNumber_Admin"));
             returnGroupName.add((String) result.getProperty("Group Name"));
+            returnCompositeGroupKey.add((String) result.getProperty("compositeGroupKey"));
+            isAccepted.add((String) result.getProperty("isAccepted"));
+
         }
         int count=0;
         for(int i = 0; i < returnGroupAdminNumber.size(); i++){
+            FilterPredicate groupPropertyFilterCompositeKey = new FilterPredicate("CompositeGroupKey", FilterOperator.EQUAL, returnCompositeGroupKey.get(i));
             //FilterPredicate groupPropertyFilterNumber = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, returnGroupAdminNumber.get(i));
-            FilterPredicate groupPropertyFilterNumber = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, "+918004517260");
-            FilterPredicate groupPropertyFilterName = new FilterPredicate("Group Name", FilterOperator.EQUAL, "again new group");
-            Query.CompositeFilter groupPropertyFilterjoin  =  Query.CompositeFilterOperator.and(groupPropertyFilterNumber, groupPropertyFilterName);
-            queryGroupDetails.setFilter(groupPropertyFilterjoin);
+            //FilterPredicate groupPropertyFilterNumber = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, "+918004517260");
+            //FilterPredicate groupPropertyFilterName = new FilterPredicate("Group Name", FilterOperator.EQUAL, "again new group");
+            //Query.CompositeFilter groupPropertyFilterjoin  =  Query.CompositeFilterOperator.and(groupPropertyFilterNumber, groupPropertyFilterName);
+            queryGroupDetails.setFilter(groupPropertyFilterCompositeKey);
             //Use PreparedQuery interface to retrieve results
-            PreparedQuery preparedQuery = datastoreService.prepare(queryGroupMemberDetails);
+            PreparedQuery preparedQuery = datastoreService.prepare(queryGroupDetails);
             for (Entity result : preparedQuery.asIterable()) {
                 count++;
                 GroupMemberSyncBean groupMemberSyncBean = new GroupMemberSyncBean();
-                groupMemberSyncBean.setGroupName(returnGroupName.get(i)+"count value is "+returnGroupAdminNumber.size());
+                //groupMemberSyncBean.setGroupName(returnGroupName.get(i)+"count value is "+returnGroupAdminNumber.size());
+                //groupMemberSyncBean.setGroupAdminNumber(returnGroupAdminNumber.get(i));
+                //groupMemberSyncBean.setGroupMember((ArrayList<String>) result.getProperty("Group Member"));
+                groupMemberSyncBean.setCompositeGroupKey((String) result.getProperty("CompositeGroupKey"));
+                groupMemberSyncBean.setGroupName((String) result.getProperty("Group Name"));
                 groupMemberSyncBean.setGroupAdminNumber(returnGroupAdminNumber.get(i));
                 groupMemberSyncBean.setGroupMember((ArrayList<String>) result.getProperty("Group Member"));
+                groupMemberSyncBean.setIsAccepted(isAccepted.get(i));
                 groupMemberList.add(groupMemberSyncBean);
             }
         }

@@ -19,6 +19,8 @@ import android.widget.Toast;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.GroupBean;
+import com.brahminno.tweetloc.backend.tweetApi.model.GroupMemberSyncBean;
+import com.brahminno.tweetloc.backend.tweetApi.model.GroupMemberSyncBeanCollection;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
@@ -26,20 +28,19 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-//This Async class is used for getting all information of groups based on device id.......
+//This Async class is used for getting all information of groups based on Mobile num.......
 class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
     private static TweetApi myTweetApi = null;
     private Context context;
     private String Mobile_Number;
-    private String Device_Id;
     private String Group_Name;
     private ArrayList<String> Group_Members;
-    List<GroupBean> groupBeanDetails;
+    List<GroupMemberSyncBean> groupBeanDetails;
     SQLiteDatabase mydb;
 
-    public GroupDetailsAsyncTask(Context context, String Device_Id) {
+    public GroupDetailsAsyncTask(Context context, String Mobile_Number) {
         this.context = context;
-        this.Device_Id = Device_Id;
+        this.Mobile_Number = Mobile_Number;
     }
 
     @Override
@@ -54,7 +55,13 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
         try {
             Log.i("doInBackground...", "try block...");
             //call group Details Api.....
-
+            groupBeanDetails = myTweetApi.groupMemberSync(Mobile_Number).execute().getItems();
+            mydb = new SQLiteDatabase(context);
+            for (GroupMemberSyncBean result : groupBeanDetails){
+                Log.i("Inside for loop...","values");
+                //store data to local app db.........
+                mydb.insertGroups(result.getGroupName(),result.getGroupAdminNumber(),result.getIsAccepted(),result.getGroupMember());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -68,6 +75,7 @@ public class GroupActivity extends ActionBarActivity {
     Button btnCreateGroup;
     ExpandableListView groupNameListView;
     String deviceId;
+    String Mobile_Number;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +88,9 @@ public class GroupActivity extends ActionBarActivity {
         //get device id from shared preference.....
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         deviceId = prefs.getString("Device Id", null);
+        Mobile_Number = prefs.getString("Mobile Number",null);
         Log.i("device id is....", deviceId);
+        Log.i("Mobile number is....", Mobile_Number);
         btnCreateGroup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -90,7 +100,7 @@ public class GroupActivity extends ActionBarActivity {
         });
         Log.i("AsyncTask method....", " starts");
         //call AsyncMethod to get Groups from server......
-        new GroupDetailsAsyncTask(getApplicationContext(), deviceId).execute();
+        new GroupDetailsAsyncTask(getApplicationContext(), Mobile_Number).execute();
     }
 
     @Override

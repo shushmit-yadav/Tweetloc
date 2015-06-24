@@ -25,8 +25,10 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public static final String COLUMN_EMAIL = "Email";
     public static final String CLOUMN_DEVICE_ID = "Device_ID";
     public static final String GROUP_TABLE = "Group_Table";
-    public static final String GROUPS_NAME = "Group_Name";
-    public static final String GROUP_MEMBERS = "Group_Members";
+    public static final String COLUMN_GROUPS_NAME = "Group_Name";
+    public static final String COLUMN_GROUP_ADMIN_NUMBER = "Group_Admin_Number";
+    public static final String COLUMN_GROUP_MEMBERS = "Group_Members";
+    public static final String COLUMN_IS_ACCEPTED = "Is_Accepted";
     public static final String CONTACTS_NUMBER = "Contacts_Table";
     public static final String INVITE_NUMBER_TABLE = "Invite_Contacts_Table";
 
@@ -44,7 +46,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         Log.i("After table...", "created" + TABLE_NAME);
         //Create table to store groups details........
         Log.i("Before table...", "created" + GROUP_TABLE);
-        db.execSQL("create table " + GROUP_TABLE + "(" + GROUPS_NAME + " text," + GROUP_MEMBERS + " text" + ")");
+        db.execSQL("create table " + GROUP_TABLE + "(" + COLUMN_GROUPS_NAME + " text,"+COLUMN_GROUP_ADMIN_NUMBER +" text," +COLUMN_IS_ACCEPTED + " text,"+ COLUMN_GROUP_MEMBERS + " text" + ")");
         Log.i("After table...", "created" + GROUP_TABLE);
         //create table for storing mobile mobNum......
         Log.i("Before table...", "created" + CONTACTS_NUMBER);
@@ -64,12 +66,16 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     }
 
-    void insertGroups(String Group_Name, List<String> Group_Members) {
+    public void insertGroups(String Group_Name, String GroupMember_Admin,String isAccepted,List<String> Group_Members) {
+        Log.i("Inside insertGroups...","table");
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(GROUPS_NAME, Group_Name);
-        contentValues.put(GROUP_MEMBERS, String.valueOf(Group_Members));
+        contentValues.put(COLUMN_GROUPS_NAME, Group_Name);
+        contentValues.put(COLUMN_GROUP_ADMIN_NUMBER,GroupMember_Admin);
+        contentValues.put(COLUMN_IS_ACCEPTED,isAccepted);
+        contentValues.put(COLUMN_GROUP_MEMBERS, String.valueOf(Group_Members));
         db.insert(GROUP_TABLE, null, contentValues);
+        Log.i("Value inserted....","succussfully"+Group_Name+"-->"+GroupMember_Admin+"-->"+isAccepted+"-->"+Group_Members);
         db.close();
     }
 
