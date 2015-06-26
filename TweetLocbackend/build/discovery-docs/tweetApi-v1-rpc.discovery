@@ -1,6 +1,6 @@
 {
  "kind": "discovery#rpcDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/V-KIULz7t-p5i5RZZpvXLWK3gxA\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/Ec2twgWdXjXZHXo8dLEQVwez09U\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -71,6 +71,45 @@
   }
  },
  "schemas": {
+  "AcceptanceStatusBean": {
+   "id": "AcceptanceStatusBean",
+   "type": "object",
+   "properties": {
+    "groupMemberNumberList": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "groupName": {
+     "type": "string"
+    },
+    "groupNameList": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "isAccepted": {
+     "type": "string"
+    },
+    "mobileNumber_Member": {
+     "type": "string"
+    }
+   }
+  },
+  "AcceptanceStatusBeanCollection": {
+   "id": "AcceptanceStatusBeanCollection",
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "AcceptanceStatusBean"
+     }
+    }
+   }
+  },
   "ContactSyncBean": {
    "id": "ContactSyncBean",
    "type": "object",
@@ -272,6 +311,23 @@
    ],
    "returns": {
     "$ref": "GroupMemberSyncBeanCollection"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "tweetApi.processAcceptanceStatusRequest": {
+   "id": "tweetApi.processAcceptanceStatusRequest",
+   "parameters": {
+    "resource": {
+     "$ref": "AcceptanceStatusBean"
+    }
+   },
+   "parameterOrder": [
+    "resource"
+   ],
+   "returns": {
+    "$ref": "AcceptanceStatusBeanCollection"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

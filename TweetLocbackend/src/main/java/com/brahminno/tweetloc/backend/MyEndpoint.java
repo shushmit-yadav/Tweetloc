@@ -268,4 +268,38 @@ public class MyEndpoint {
         }
         return groupMemberList;
     }
+
+    @ApiMethod(name = "processAcceptanceStatusRequest")
+    public ArrayList<AcceptanceStatusBean> processAcceptanceStatusRequest(AcceptanceStatusBean acceptanceStatusBean){
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        Key acceptanceBeanKey = KeyFactory.createKey("Group Member Details", "Group Member");
+        Query acceptanceStatusQuery = new Query("User Group Member Details", acceptanceBeanKey);
+
+        ArrayList<AcceptanceStatusBean> acceptanceStatusNumberList = new ArrayList<>();
+
+        ArrayList<String> groupNameFromMobile = acceptanceStatusBean.getGroupNameList();
+        ArrayList<String> groupMemberNumberFromMobile = acceptanceStatusBean.getGroupMemberNumberList();
+        //ArrayList<String> groupNameFromMobile = new ArrayList<>();
+        //groupNameFromMobile = groupNameList;
+        //ArrayList<String> groupMemberNumberFromMobile = new ArrayList<>();
+        //groupMemberNumberFromMobile = groupMemberMobileNumberList;
+        for(int i = 0; i < groupMemberNumberFromMobile.size(); i++){
+            String groupName = groupNameFromMobile.get(i);
+            String groupMemberNumber = groupMemberNumberFromMobile.get(i);
+            FilterPredicate filterUsingGroupName = new FilterPredicate("Group Name", FilterOperator.EQUAL, groupNameFromMobile.get(i));
+            FilterPredicate filterUsingGroupMemberNumber = new FilterPredicate("MobileNumber_Member", FilterOperator.EQUAL, groupMemberNumberFromMobile.get(i));
+            Query.CompositeFilter groupAcceptanceFilterjoin  =  Query.CompositeFilterOperator.and(filterUsingGroupName, filterUsingGroupMemberNumber);
+            acceptanceStatusQuery.setFilter(groupAcceptanceFilterjoin);
+            //prepared query to get all result from above query.......
+            PreparedQuery preparedQuery = datastoreService.prepare(acceptanceStatusQuery);
+            for(Entity result : preparedQuery.asIterable()){
+                AcceptanceStatusBean acceptanceBean = new AcceptanceStatusBean();
+                acceptanceBean.setIsAccepted((String) result.getProperty("isAccepted"));
+                acceptanceBean.setGroupName((String) result.getProperty("Group Name"));
+                acceptanceBean.setMobileNumber_Member((String) result.getProperty("MobileNumber_Member"));
+                acceptanceStatusNumberList.add(acceptanceBean);
+            }
+        }
+        return acceptanceStatusNumberList;
+    }
 }
