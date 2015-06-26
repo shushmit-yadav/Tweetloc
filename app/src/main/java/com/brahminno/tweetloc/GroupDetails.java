@@ -16,15 +16,15 @@ public class GroupDetails {
 
     private String groupName;
 
-    public ArrayList<String> getGroupMembers() {
+    public ArrayList<ContactNameWithNumber> getGroupMembers() {
         return groupMembers;
     }
 
-    public void setGroupMembers(ArrayList<String> groupMembers) {
+    public void setGroupMembers(ArrayList<ContactNameWithNumber> groupMembers) {
         this.groupMembers = groupMembers;
     }
 
-    private ArrayList<String> groupMembers;
+    private ArrayList<ContactNameWithNumber> groupMembers;
 
 
 }

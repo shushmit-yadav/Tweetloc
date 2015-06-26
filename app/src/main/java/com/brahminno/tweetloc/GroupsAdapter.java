@@ -86,11 +86,14 @@ public class GroupsAdapter extends BaseExpandableListAdapter {
         ViewHolder holder = new ViewHolder();
         holder.childPosition = childPosition;
         holder.groupPosition = groupPosition;
+        //final ContactNameWithNumber currentContact = groupDetails.
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.group_members_name, parent,false);
         }
-        TextView tvGroupMembers = (TextView) convertView.findViewById(R.id.tvGroupMembersName);
-        tvGroupMembers.setText(groupDetails.get(groupPosition).getGroupMembers().get(childPosition));
+        TextView tvGroupMembersName = (TextView) convertView.findViewById(R.id.tvGroupMembersName);
+        TextView tvGroupMembersNumber = (TextView) convertView.findViewById(R.id.tvGroupMemberNumber);
+        tvGroupMembersName.setText(groupDetails.get(groupPosition).getGroupMembers().get(childPosition).getContact_name());
+        tvGroupMembersNumber.setText(groupDetails.get(groupPosition).getGroupMembers().get(childPosition).getContact_number());
         convertView.setTag(holder);
         return convertView;
     }

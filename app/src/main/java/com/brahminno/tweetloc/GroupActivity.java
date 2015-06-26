@@ -81,6 +81,7 @@ class AcceptStatusAsyncTask extends AsyncTask<Void,Void,String>{
     private Context context;
     private static TweetApi myTweetApi = null;
     List<AcceptanceStatusBean> acceptanceStatusBean;
+    SQLiteDatabase mydb;
 
     public AcceptStatusAsyncTask(Context context,GetGroupData getGroupData){
         this.getGroupData = getGroupData;
@@ -102,10 +103,12 @@ class AcceptStatusAsyncTask extends AsyncTask<Void,Void,String>{
             acceptanceStatus.setGroupMemberNumberList(getGroupData.getGroupMemberNumberList());
             acceptanceStatusBean = myTweetApi.processAcceptanceStatusRequest(acceptanceStatus).execute().getItems();
             Log.i("Size of ...","acceptanceStatusBean..."+acceptanceStatusBean.size());
+            mydb = new SQLiteDatabase(context);
             for(int i = 0; i < acceptanceStatusBean.size(); i++){
                 Log.i("isAccepted.."," "+acceptanceStatusBean.get(i).getIsAccepted());
                 Log.i("Group Name.."," "+acceptanceStatusBean.get(i).getGroupName());
                 Log.i("GroupMember Number.."," "+acceptanceStatusBean.get(i).getMobileNumberMember());
+                mydb.updateGroupTableWithSyncInfo(acceptanceStatusBean.get(i).getIsAccepted(),acceptanceStatusBean.get(i).getGroupName(),acceptanceStatusBean.get(i).getMobileNumberMember());
             }
         }
         catch (Exception ex){
@@ -126,7 +129,7 @@ public class GroupActivity extends ActionBarActivity {
     String Mobile_Number;
     SQLiteDatabase mydb;
     ArrayList<GroupDetails> groupDetailsArrayList;
-    ArrayList<String> groupMembersList;
+    ArrayList<ContactNameWithNumber> groupMembersList;
     ArrayList<String> groupNames;
     GetGroupData getGroupData;
 
@@ -229,6 +232,9 @@ public class GroupActivity extends ActionBarActivity {
         Log.i("Size of groupName.."," "+getGroupData.getGroupNameList().size());
         Log.i("Size of groupMember..", " " + getGroupData.getGroupMemberNumberList().size());
         //call AsyncMethod to Sync status from server in background.....
-        new AcceptStatusAsyncTask(getApplicationContext(),getGroupData).execute();
+        if(getGroupData.getGroupNameList().size() > 0 && getGroupData.getGroupMemberNumberList().size() > 0){
+            new AcceptStatusAsyncTask(getApplicationContext(),getGroupData).execute();
+        }
+
     }
 }
