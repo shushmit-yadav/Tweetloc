@@ -177,10 +177,12 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             //below codes are using to store contacts in Invite_Contacts_Table........
             ArrayList<String> Mob_Num = contacts.getNumber();
             ArrayList<String> Mob_Name = contacts.getName();
+            Log.i("size from local..","" +Mob_Num.size());
+            Log.i("size from server..", "" + MobileNumber.size());
             for(int i = 0; i < Mob_Num.size(); i++){
                 Log.i("Inside for loop..",""+Mob_Num.get(i));
                 //boolean result = myDB.deleteRow(MobileNumber.get(i));
-                Log.i("Result of insertion.."," "+MobileNumber.get(i)+"-->"+MobileName.get(i));
+                Log.i("Result of insertion.."," "+Mob_Num.get(i)+"-->"+Mob_Name.get(i));
                 if(!MobileNumber.contains(Mob_Num.get(i))){
                     Log.i("Inside If loop...",""+!MobileNumber.contains(Mob_Num.get(i)));
                     myDB.insertIntoInvite(Mob_Name.get(i),Mob_Num.get(i));
@@ -217,6 +219,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     TelephonyManager telephonyManager;
     String countryCode;
     boolean isContactSyncFromServer = false;
+    FetchContacts contacts;
 
     Location final_location,gps_location,network_location;
 
@@ -242,11 +245,14 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         //get value from shared preference.......
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         isContactSyncFromServer = prefs.getBoolean("isContactSyncFromServer", false);
+        contacts = new FetchContacts();
         if(!isContactSyncFromServer){
             SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", getApplicationContext().MODE_PRIVATE).edit();
             editor.putBoolean("isContactSyncFromServer",true);
             editor.commit();
-            FetchContacts contacts = fetchContact();
+            contacts = fetchContact();
+            Log.i("size of contacts1..",""+contacts.getNumber().size());
+            Log.i("size of contacts2..",""+contacts.getName().size());
             try{
                 //save all contacts to loacal app db....
                 mydb = new SQLiteDatabase(this);
@@ -259,7 +265,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             new NumberSyncFromServer(getApplicationContext(),contacts).execute();
         }
         //check if gps is available or not.....
-        LocationManager locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
+        locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
         try{
             //getting GPS Status....
@@ -325,6 +331,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             new LocationAsyncTask(getApplicationContext(), deviceId, latitude, longitude).execute();
 
             initilizeMap();
+            new DrawMarkerAsyncTask(getApplicationContext(),latitude,longitude);
 
 
         }
@@ -349,17 +356,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             map = ((MapFragment) getFragmentManager().findFragmentById(
                     R.id.mapFragment)).getMap();
         }
-        Log.i("LatLog","latlog is....." + latitude);
-        marker = new MarkerOptions().position(new LatLng(latitude, longitude));
-        map.addMarker(marker);
-
+        Log.i("LatLog", "latlog is....." + latitude);
         map.setMyLocationEnabled(true);
-
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(latitude, longitude)).zoom(15).build();
-
-
-        map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         map.getUiSettings().setZoomControlsEnabled(true);
         map.getUiSettings().setCompassEnabled(true);
         map.getUiSettings().setMyLocationButtonEnabled(true);
@@ -385,6 +383,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         new LocationAsyncTask(getApplicationContext(), deviceId, latitude, longitude).execute();
 
         map.clear();
+        new DrawMarkerAsyncTask(getApplicationContext(),latitude,longitude);
 
     }
 
@@ -474,7 +473,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         }
         if(id == R.id.action_contactSync){
             //first fetch all contact mobNum from device.......
-            FetchContacts contacts = fetchContact();
+            contacts = fetchContact();
 
             try{
                 //save all contacts to loacal app db....
@@ -565,5 +564,36 @@ class FetchContacts{
 
     public void setNumber(ArrayList<String> number) {
         this.number = number;
+    }
+}
+
+//this class is used to redraw marker into map.......
+class DrawMarkerAsyncTask extends AsyncTask<Void,Void,String>{
+
+    double latitude,longitude;
+    MarkerOptions marker;
+    GoogleMap map;
+    private Context context;
+
+    public DrawMarkerAsyncTask(Context context,double latitude,double longitude){
+        this.context = context;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    @Override
+    protected String doInBackground(Void... params) {
+        Log.i("LatLog", "latlog is....." + latitude);
+        marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+        map.addMarker(marker);
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(latitude, longitude)).zoom(15).build();
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        return "";
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        super.onPostExecute(s);
     }
 }

@@ -1,6 +1,7 @@
 package com.brahminno.tweetloc;
 
 import android.content.Context;
+import android.database.DataSetObserver;
 import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -16,38 +18,33 @@ import java.util.List;
  */
 public class GroupsAdapter extends BaseExpandableListAdapter {
 
-    private Context context;
-    // header titles...
-    private List<String> listGroupsName;
+    private LayoutInflater inflater;
+    private ArrayList<GroupDetails> groupDetails;
 
-    // child data in format of header title, child title
-    private HashMap<String, List<String>> listGroupMembersName;
-
-    public GroupsAdapter(Context context, List<String> listGroupsName,
-                                 HashMap<String, List<String>> listGroupMembersName) {
-        this.context = context;
-        this.listGroupsName = listGroupsName;
-        this.listGroupMembersName = listGroupMembersName;
+    public GroupsAdapter(Context context,ArrayList<GroupDetails> groupDetails){
+        this.inflater = LayoutInflater.from(context);
+        this.groupDetails = groupDetails;
     }
+
+
     @Override
     public int getGroupCount() {
-        return this.listGroupsName.size();
+        return groupDetails.size();
     }
 
     @Override
     public int getChildrenCount(int groupPosition) {
-        return 0;
+        return groupDetails.get(groupPosition).getGroupMembers().size();
     }
 
     @Override
     public Object getGroup(int groupPosition) {
-        return this.listGroupsName.get(groupPosition);
+        return groupDetails.get(groupPosition).getGroupName();
     }
 
     @Override
     public Object getChild(int groupPosition, int childPosition) {
-        return this.listGroupMembersName.get(this.listGroupsName.get(groupPosition))
-                .get(childPosition);
+        return groupDetails.get(groupPosition).getGroupMembers().get(childPosition);
     }
 
     @Override
@@ -62,30 +59,49 @@ public class GroupsAdapter extends BaseExpandableListAdapter {
 
     @Override
     public boolean hasStableIds() {
-        return false;
+        return true;
+    }
+    //view Holder class......
+    protected class ViewHolder {
+        protected int childPosition;
+        protected int groupPosition;
+        //protected Button button;
     }
 
     @Override
     public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-        String groupTitle = (String) getGroup(groupPosition);
+        ViewHolder holder = new ViewHolder();
+        holder.groupPosition = groupPosition;
         if(convertView == null){
-            LayoutInflater inflater = (LayoutInflater) this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.group_name,null);
+            convertView = inflater.inflate(R.layout.group_name, parent,false);
         }
-        TextView group_name = (TextView) convertView.findViewById(R.id.tvGroupName);
-
-        group_name.setTypeface(null, Typeface.BOLD);
-        group_name.setText(groupTitle);
+        TextView tvGroupName = (TextView) convertView.findViewById(R.id.tvGroupName);
+        tvGroupName.setText(getGroup(groupPosition).toString());
+        convertView.setTag(holder);
         return convertView;
     }
 
     @Override
     public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
-        return null;
+        ViewHolder holder = new ViewHolder();
+        holder.childPosition = childPosition;
+        holder.groupPosition = groupPosition;
+        if (convertView == null) {
+            convertView = inflater.inflate(R.layout.group_members_name, parent,false);
+        }
+        TextView tvGroupMembers = (TextView) convertView.findViewById(R.id.tvGroupMembersName);
+        tvGroupMembers.setText(groupDetails.get(groupPosition).getGroupMembers().get(childPosition));
+        convertView.setTag(holder);
+        return convertView;
     }
 
     @Override
     public boolean isChildSelectable(int groupPosition, int childPosition) {
-        return false;
+        return true;
+    }
+
+    @Override
+    public void registerDataSetObserver(DataSetObserver observer) {
+        super.registerDataSetObserver(observer);
     }
 }

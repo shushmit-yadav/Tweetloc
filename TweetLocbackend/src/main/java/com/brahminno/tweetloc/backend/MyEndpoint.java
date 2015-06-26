@@ -86,28 +86,20 @@ public class MyEndpoint {
             groupEntity.setProperty("deviceId", groupBean.getDevice_Id());
             groupEntity.setProperty("CompositeGroupKey",groupBean.getCompositeGroupKey());
             datastoreService.put(groupEntity);
-            // Group Admin details in user Group Member entity
-
-            /*Key newAdmintaskBeanParentKey = KeyFactory.createKey("Group Member Details", "Group Member");
-            Entity admingroupMemberEntity = new Entity("User Group Member Details", newAdmintaskBeanParentKey);
-            admingroupMemberEntity.setProperty("MobileNumber_Member",groupBean.getMobile_Number() );
-            admingroupMemberEntity.setProperty("MobileNumber_Admin", groupBean.getMobile_Number());
-            admingroupMemberEntity.setProperty("Group Name", groupBean.getGroup_Name());
-            admingroupMemberEntity.setProperty("compositeGroupKey",groupBean.getCompositeGroupKey());
-            admingroupMemberEntity.setProperty("isAccepted", "false");
-            datastoreService.put(admingroupMemberEntity);*/
-
-
 
             //creating group member details entity....
             for (int i = 0; i < groupBean.getGroup_Member().size(); i++) {
+                String isAdmin = "false";
+                if(groupBean.getMobile_Number().equals(groupBean.getGroup_Member().get(i))){
+                    isAdmin = "true";
+                }
                 Key newtaskBeanParentKey = KeyFactory.createKey("Group Member Details", "Group Member");
                 Entity groupMemberEntity = new Entity("User Group Member Details", newtaskBeanParentKey);
                 groupMemberEntity.setProperty("MobileNumber_Member", groupBean.getGroup_Member().get(i));
                 groupMemberEntity.setProperty("MobileNumber_Admin", groupBean.getMobile_Number());
                 groupMemberEntity.setProperty("Group Name", groupBean.getGroup_Name());
                 groupMemberEntity.setProperty("compositeGroupKey",groupBean.getCompositeGroupKey());
-                groupMemberEntity.setProperty("isAccepted", "false");
+                groupMemberEntity.setProperty("isAccepted", isAdmin);
                 datastoreService.put(groupMemberEntity);
             }
             //txn.commit();

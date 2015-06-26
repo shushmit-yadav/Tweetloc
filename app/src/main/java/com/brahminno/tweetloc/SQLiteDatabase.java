@@ -46,7 +46,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         Log.i("After table...", "created" + TABLE_NAME);
         //Create table to store groups details........
         Log.i("Before table...", "created" + GROUP_TABLE);
-        db.execSQL("create table " + GROUP_TABLE + "(" + COLUMN_GROUPS_NAME + " text,"+COLUMN_GROUP_ADMIN_NUMBER +" text," +COLUMN_IS_ACCEPTED + " text,"+ COLUMN_GROUP_MEMBERS + " text" + ")");
+        db.execSQL("create table " + GROUP_TABLE + "(" + COLUMN_GROUPS_NAME + " text," + COLUMN_GROUP_ADMIN_NUMBER + " text," + COLUMN_IS_ACCEPTED + " text," + COLUMN_GROUP_MEMBERS + " text" + ")");
         Log.i("After table...", "created" + GROUP_TABLE);
         //create table for storing mobile mobNum......
         Log.i("Before table...", "created" + CONTACTS_NUMBER);
@@ -66,20 +66,20 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     }
 
-    public void insertGroups(String Group_Name, String GroupMember_Admin,String isAccepted,List<String> Group_Members) {
-        Log.i("Inside insertGroups...","table");
+    public void insertGroups(String Group_Name, String GroupMember_Admin, String isAccepted, String Group_Members) {
+        Log.i("Inside insertGroups...", "table");
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_GROUPS_NAME, Group_Name);
-        contentValues.put(COLUMN_GROUP_ADMIN_NUMBER,GroupMember_Admin);
-        contentValues.put(COLUMN_IS_ACCEPTED,isAccepted);
-        contentValues.put(COLUMN_GROUP_MEMBERS, String.valueOf(Group_Members));
+        contentValues.put(COLUMN_GROUP_ADMIN_NUMBER, GroupMember_Admin);
+        contentValues.put(COLUMN_IS_ACCEPTED, isAccepted);
+        contentValues.put(COLUMN_GROUP_MEMBERS, Group_Members);
         db.insert(GROUP_TABLE, null, contentValues);
-        Log.i("Value inserted....","succussfully"+Group_Name+"-->"+GroupMember_Admin+"-->"+isAccepted+"-->"+Group_Members);
+        Log.i("Value inserted....", "succussfully" + Group_Name + "-->" + GroupMember_Admin + "-->" + isAccepted + "-->" + Group_Members);
         db.close();
     }
 
-    void insertNumberArrayList(List<String> mobile_number, List<String> mobile_name) {
+    public void insertNumberArrayList(List<String> mobile_number, List<String> mobile_name) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         for (int i = 0; i < mobile_number.size(); i++) {
@@ -141,6 +141,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         ArrayList<String> namelist = new ArrayList<>();
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("select * from " + INVITE_NUMBER_TABLE, null);
+        Log.i("Cursor size...",""+cursor.getCount());
         cursor.moveToFirst();
         while (cursor.isAfterLast() == false) {
             namelist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
@@ -170,9 +171,46 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void deleteInviteTableItems(){
+    public void deleteInviteTableItems() {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM Invite_Contacts_Table");
         db.close();
+    }
+    //delete all data from Group_Table before saving new data......
+    public void deleteGroupTableItems() {
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM Group_Table");
+        db.close();
+    }
+
+    //get all distinct group names from local database.......
+    public ArrayList<String> getUniqueGroupNamesFromGroupTable(){
+        ArrayList<String> uniqueGroupNames = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(true, GROUP_TABLE, new String[]{COLUMN_GROUPS_NAME}, null, null, COLUMN_GROUPS_NAME, null, null, null);
+        Log.i("Groups return from ....", "app db.." + cursor.getCount());
+        cursor.moveToFirst();
+        if(cursor.getCount() > 0){
+            do{
+                uniqueGroupNames.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUPS_NAME)));
+            }
+            while(cursor.moveToNext());
+        }
+        cursor.close();
+        return uniqueGroupNames;
+    }
+
+    public ArrayList<String> getAllMembersUsingGroupNames(String groupName){
+        ArrayList<String> groupMembersUsingGroupName = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM " + GROUP_TABLE + " WHERE Group_Name = '" + groupName + "'", null);
+        Log.i("Cursor count....", "getAllMembersUsingGroupNames" + cursor.getCount());
+        cursor.moveToFirst();
+        do{
+            groupMembersUsingGroupName.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUP_MEMBERS)));
+        }
+        while(cursor.moveToNext());
+        cursor.close();
+        return groupMembersUsingGroupName;
     }
 }

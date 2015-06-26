@@ -10,22 +10,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.widget.Button;
 import android.widget.ExpandableListView;
-import android.widget.ImageButton;
-import android.widget.ListView;
-import android.widget.Toast;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
-import com.brahminno.tweetloc.backend.tweetApi.model.GroupBean;
 import com.brahminno.tweetloc.backend.tweetApi.model.GroupMemberSyncBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.GroupMemberSyncBeanCollection;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 //This Async class is used for getting all information of groups based on Mobile num.......
@@ -57,10 +50,21 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
             //call group Details Api.....
             groupBeanDetails = myTweetApi.groupMemberSync(Mobile_Number).execute().getItems();
             mydb = new SQLiteDatabase(context);
-            for (GroupMemberSyncBean result : groupBeanDetails){
-                Log.i("Inside for loop...","values");
-                //store data to local app db.........
-                mydb.insertGroups(result.getGroupName(),result.getGroupAdminNumber(),result.getIsAccepted(),result.getGroupMember());
+            //delete GROUP_TABLE Items....
+            mydb.deleteGroupTableItems();
+            for (GroupMemberSyncBean result : groupBeanDetails) {
+                Log.i("Inside for loop...", "values");
+                for (int i = 0; i < result.getGroupMember().size(); i++) {
+                    String isAccepted = "unknown";
+                    if (result.getGroupAdminNumber().equals(result.getGroupMember().get(i))) {
+                        isAccepted = "true";
+                    }
+                    if (Mobile_Number.equals(result.getGroupMember().get(i))) {
+                        isAccepted = result.getIsAccepted();
+                    }
+                    //store data to local app db.........
+                    mydb.insertGroups(result.getGroupName(), result.getGroupAdminNumber(), isAccepted, result.getGroupMember().get(i));
+                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -73,9 +77,14 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
 public class GroupActivity extends ActionBarActivity {
 
     Button btnCreateGroup;
-    ExpandableListView groupNameListView;
+    ExpandableListView groupListView;
+    GroupsAdapter groupsAdapter;
     String deviceId;
     String Mobile_Number;
+    SQLiteDatabase mydb;
+    ArrayList<GroupDetails> groupDetailsArrayList;
+    ArrayList<String> groupMembersList;
+    ArrayList<String> groupNames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,12 +92,12 @@ public class GroupActivity extends ActionBarActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setIcon(R.drawable.ic_hdr_grp_128);
         setContentView(R.layout.activity_group);
-        groupNameListView = (ExpandableListView) findViewById(R.id.groupNameListView);
+        groupListView = (ExpandableListView) findViewById(R.id.groupNameListView);
         btnCreateGroup = (Button) findViewById(R.id.btnCreateGroup);
         //get device id from shared preference.....
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         deviceId = prefs.getString("Device Id", null);
-        Mobile_Number = prefs.getString("Mobile Number",null);
+        Mobile_Number = prefs.getString("Mobile Number", null);
         Log.i("device id is....", deviceId);
         Log.i("Mobile number is....", Mobile_Number);
         btnCreateGroup.setOnClickListener(new View.OnClickListener() {
@@ -101,8 +110,33 @@ public class GroupActivity extends ActionBarActivity {
         Log.i("AsyncTask method....", " starts");
         //call AsyncMethod to get Groups from server......
         new GroupDetailsAsyncTask(getApplicationContext(), Mobile_Number).execute();
-    }
 
+        //Object of mydb....
+        mydb = new SQLiteDatabase(this);
+        groupNames = new ArrayList<>();
+        groupDetailsArrayList = new ArrayList<>();
+        groupMembersList = new ArrayList<>();
+        groupNames = mydb.getUniqueGroupNamesFromGroupTable();
+        for (int i = 0; i < groupNames.size(); i++) {
+            //create object of GroupDetails class.....
+            GroupDetails details = new GroupDetails();
+            details.setGroupName(groupNames.get(i));
+
+            Log.i("Group Name...", groupNames.get(i));
+            //groupMembersList = new ArrayList<>();
+            groupMembersList = mydb.getAllMembersUsingGroupNames(groupNames.get(i));
+            details.setGroupMembers(groupMembersList);
+            //for loop to check group members .........
+            for (int j = 0; j < groupMembersList.size(); j++) {
+                Log.i("Group Name...", "with member " + groupNames.get(i) + "-->" + groupMembersList.get(j));
+            }
+            groupDetailsArrayList.add(details);
+        }
+        //set data to adapter.......
+        groupsAdapter = new GroupsAdapter(getApplicationContext(),groupDetailsArrayList);
+        //set adapter to expandable listview....
+        groupListView.setAdapter(groupsAdapter);
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
