@@ -14,4 +14,10 @@
         android:title="@string/action_invite"
         android:orderInCategory="100"
         android:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_syncAcceptanceStatus"
+        android:title="@string/action_syncAcceptanceStatus"
+        android:orderInCategory="100"
+        android:showAsAction="never"/>
 </menu>

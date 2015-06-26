@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.ExpandableListView;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
+import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
 import com.brahminno.tweetloc.backend.tweetApi.model.GroupMemberSyncBean;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
@@ -73,6 +74,48 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
     }
 }
 
+//this Async class is used for Sync all member's status in a group........
+class AcceptStatusAsyncTask extends AsyncTask<Void,Void,String>{
+
+    GetGroupData getGroupData;
+    private Context context;
+    private static TweetApi myTweetApi = null;
+    List<AcceptanceStatusBean> acceptanceStatusBean;
+
+    public AcceptStatusAsyncTask(Context context,GetGroupData getGroupData){
+        this.getGroupData = getGroupData;
+        this.context = context;
+    }
+
+    @Override
+    protected String doInBackground(Void... params) {
+
+        if (myTweetApi == null) {
+            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
+                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+
+            myTweetApi = builder.build();
+        }
+        try{
+            AcceptanceStatusBean acceptanceStatus = new AcceptanceStatusBean();
+            acceptanceStatus.setGroupNameList(getGroupData.getGroupNameList());
+            acceptanceStatus.setGroupMemberNumberList(getGroupData.getGroupMemberNumberList());
+            acceptanceStatusBean = myTweetApi.processAcceptanceStatusRequest(acceptanceStatus).execute().getItems();
+            Log.i("Size of ...","acceptanceStatusBean..."+acceptanceStatusBean.size());
+            for(int i = 0; i < acceptanceStatusBean.size(); i++){
+                Log.i("isAccepted.."," "+acceptanceStatusBean.get(i).getIsAccepted());
+                Log.i("Group Name.."," "+acceptanceStatusBean.get(i).getGroupName());
+                Log.i("GroupMember Number.."," "+acceptanceStatusBean.get(i).getMobileNumberMember());
+            }
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+
+        return null;
+    }
+}
+
 
 public class GroupActivity extends ActionBarActivity {
 
@@ -85,6 +128,7 @@ public class GroupActivity extends ActionBarActivity {
     ArrayList<GroupDetails> groupDetailsArrayList;
     ArrayList<String> groupMembersList;
     ArrayList<String> groupNames;
+    GetGroupData getGroupData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,6 +204,10 @@ public class GroupActivity extends ActionBarActivity {
             inviteContacts();
             return true;
         }
+        if(id == R.id.action_syncAcceptanceStatus){
+            syncAcceptanceGroupMember();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -169,5 +217,18 @@ public class GroupActivity extends ActionBarActivity {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
         startActivity(intent);
+    }
+
+    //methos to sync group member status from server.....
+    public void syncAcceptanceGroupMember(){
+        mydb = new SQLiteDatabase(this);
+        getGroupData = new GetGroupData();
+        getGroupData = mydb.getAllMobileNumberForSyncAccpt();
+        ArrayList<String> groupNameList = new ArrayList<>();
+        ArrayList<String> groupMemberNumberList = new ArrayList<>();
+        Log.i("Size of groupName.."," "+getGroupData.getGroupNameList().size());
+        Log.i("Size of groupMember..", " " + getGroupData.getGroupMemberNumberList().size());
+        //call AsyncMethod to Sync status from server in background.....
+        new AcceptStatusAsyncTask(getApplicationContext(),getGroupData).execute();
     }
 }

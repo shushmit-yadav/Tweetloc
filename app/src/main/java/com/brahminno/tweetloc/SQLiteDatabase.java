@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
 import com.brahminno.tweetloc.testAdapter.Contacts_Test;
 
 import java.lang.reflect.Array;
@@ -212,5 +213,48 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         while(cursor.moveToNext());
         cursor.close();
         return groupMembersUsingGroupName;
+    }
+
+    //get all group names and group member's number for acceptanceSync.....
+    public GetGroupData getAllMobileNumberForSyncAccpt(){
+        ArrayList<String> groupMemberNumberList = new ArrayList<>();
+        ArrayList<String> groupNameList = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM " + GROUP_TABLE + " WHERE Is_Accepted = 'unknown'", null);
+        Log.i("Cursor count....", "getAllMembersUsingGroupNames" + cursor.getCount());
+        cursor.moveToFirst();
+        do{
+            groupMemberNumberList.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUP_MEMBERS)));
+            groupNameList.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUPS_NAME)));
+        }
+        while(cursor.moveToNext());
+        cursor.close();
+        GetGroupData getGroupData = new GetGroupData();
+        getGroupData.setGroupNameList(groupNameList);
+        getGroupData.setGroupMemberNumberList(groupMemberNumberList);
+        return getGroupData;
+    }
+}
+
+
+//this class is used for returning arrayList of groupName and groupMobileNumber....
+class GetGroupData{
+    private ArrayList<String> groupNameList;
+    private ArrayList<String> groupMemberNumberList;
+
+    public ArrayList<String> getGroupNameList() {
+        return groupNameList;
+    }
+
+    public ArrayList<String> getGroupMemberNumberList() {
+        return groupMemberNumberList;
+    }
+
+    public void setGroupNameList(ArrayList<String> groupNameList) {
+        this.groupNameList = groupNameList;
+    }
+
+    public void setGroupMemberNumberList(ArrayList<String> groupMemberNumberList) {
+        this.groupMemberNumberList = groupMemberNumberList;
     }
 }
