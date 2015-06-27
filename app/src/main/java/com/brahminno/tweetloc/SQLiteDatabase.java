@@ -13,6 +13,7 @@ import java.util.List;
 /**
  * Created by Shushmit on 20-05-2015.
  * Brahmastra Innovations Pvt. Ltd.
+ * This is a local android sqlite database class......
  */
 public class SQLiteDatabase extends SQLiteOpenHelper {
 
@@ -29,10 +30,12 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public static final String COLUMN_IS_ACCEPTED = "Is_Accepted";
     public static final String CONTACTS_NUMBER = "Contacts_Table";
     public static final String INVITE_NUMBER_TABLE = "Invite_Contacts_Table";
+    private Context context;
 
 
     public SQLiteDatabase(Context context) {
         super(context, DATABASE_NAME, null, 1);
+        this.context = context;
     }
 
     @Override
@@ -200,13 +203,20 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     public ArrayList<ContactNameWithNumber> getAllMembersUsingGroupNames(String groupName){
         ArrayList<ContactNameWithNumber> groupMembersUsingGroupName = new ArrayList<>();
+        SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        String MyMobileNumber = prefs.getString("Mobile Number", null);
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("Select a.Group_name as Group_name,a.Group_Members as Group_Members, b.Contact_Name as Contact_Name from Group_Table a left outer join Contacts_Table b  on a.Group_Members=b.Mobile_Number WHERE a.Group_Name = '" + groupName + "'", null);
         Log.i("Cursor count....", "getAllMembersUsingGroupNames" + cursor.getCount());
         cursor.moveToFirst();
         do{
             ContactNameWithNumber contactNameWithNumber = new ContactNameWithNumber();
-            contactNameWithNumber.setContact_name(cursor.getString(cursor.getColumnIndex("Contact_Name")));
+            if(cursor.getString(cursor.getColumnIndex("Group_Members")).equals(MyMobileNumber)){
+                contactNameWithNumber.setContact_name("You");
+            }
+            else{
+                contactNameWithNumber.setContact_name(cursor.getString(cursor.getColumnIndex("Contact_Name")));
+            }
             contactNameWithNumber.setContact_number(cursor.getString(cursor.getColumnIndex("Group_Members")));
             Log.i("Value is....","getAllMembersUsingGroupNames-->"+cursor.getString(cursor.getColumnIndex("Contact_Name"))+"-->"+cursor.getString(cursor.getColumnIndex("Group_Members")));
             groupMembersUsingGroupName.add(contactNameWithNumber);

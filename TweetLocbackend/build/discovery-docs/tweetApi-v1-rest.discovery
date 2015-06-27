@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/Ec2twgWdXjXZHXo8dLEQVwez09U\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/EOUzPI5Dm4sojm0taDi5IPcFbxY\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -254,6 +254,21 @@
     "https://www.googleapis.com/auth/userinfo.email"
    ]
   },
+  "forgetEntityFromGroup": {
+   "id": "tweetApi.forgetEntityFromGroup",
+   "path": "forgetEntityFromGroup",
+   "httpMethod": "POST",
+   "request": {
+    "$ref": "AcceptanceStatusBean",
+    "parameterName": "resource"
+   },
+   "response": {
+    "$ref": "AcceptanceStatusBean"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
   "forgetMe": {
    "id": "tweetApi.forgetMe",
    "path": "forgetMe/{id}",
@@ -320,6 +335,21 @@
    ],
    "response": {
     "$ref": "GroupMemberSyncBeanCollection"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "memberAcceptanceStatus": {
+   "id": "tweetApi.memberAcceptanceStatus",
+   "path": "memberAcceptanceStatus",
+   "httpMethod": "POST",
+   "request": {
+    "$ref": "AcceptanceStatusBean",
+    "parameterName": "resource"
+   },
+   "response": {
+    "$ref": "AcceptanceStatusBean"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

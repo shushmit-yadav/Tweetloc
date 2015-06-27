@@ -1,0 +1,55 @@
+In Registration Page AsyncTask class, i write tweetApi but there is an error, So i write it "TweetApi" then problem resolved.
+
+When deploying project to server by terminal using command "http://stackoverflow.com/questions/14547809/is-it-possible-to-store-listkey-as-property-of-a-entity-in-google-app-engine".in backend name is exact as backend name u give in ur project.
+
+to generate android SHA1 key, first of all we have to redirect to bin folder in java and then paste below command....  
+
+command to find SHA1 Key-  keytool -list -v -keystore c:\users\Shushmit\.android\debug.keystore -alias androiddebugkey -storepass android -keypass android
+
+
+Send All contacts in server as a ArrayList.....then run
+new asyncaddmember()
+mytweetapi.addmembersyn(arraylist mobilenum).execute
+backend
+arraylist mobile addmembersyn(arraylist mobilenum)
+{
+	
+for each element in arraylist 
+check if mobile num exist in registration entity
+if exist then add in returning arraylist
+
+return arraylist of existing mobile numbers
+
+//App db solution.....
+if we change table structure in local sqlite database then we have to update database version or first uninstall app from phone and then install it. otherwise new table will not create.
+
+
+}
+
+
+search based on property 
+https://cloud.google.com/datastore/docs/concepts/queries#Datastore_Property_filters
+Query.Builder q = Query.newBuilder();
+q.addKindBuilder().setName("Person");
+q.setFilter(makeFilter(
+    "height", PropertyFilter.Operator.GREATER_THAN_OR_EQUAL, makeValue(minHeight))); 
+
+
+//date....17/06/2015
+fetch mobile number problem is resolved......
+solution....
+in code telephonymanager returns garbage value which is invalid. so first i check number is valid or not. if number is not valid then prompt window to input number. and again check input number is valid or not...Now code is working properly. 
+
+here u can paste it.....
+
+https://cloud.google.com/appengine/docs/java/datastore/entities
+
+com.google.appengine.api.datastore.Text
+//for showing contacts in add tab and Invite Tab ......
+for this purpose i have used ArrayList.contains() method to check elements of arraylist and show it in saperate tabs succussfully....
+
+//if you are trying to push your backend and it fails again and again......
+then first restart your Android Studio and goto Build and clean project. After succussfully clean,build your backend again and then try to push tour backend to server.
+
+//biggest problem.....
+do'nt use delete,remove,update type of specific keyword in your backend method name.
