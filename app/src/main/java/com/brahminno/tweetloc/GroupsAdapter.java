@@ -21,18 +21,18 @@ import java.util.List;
  */
 public class GroupsAdapter extends BaseAdapter{
 
-    private ArrayList<String> groupNameList;
+    private ArrayList<ContactNameWithNumber> groupMembersList;
     private Context context;
     private LayoutInflater groupInflater;
 
-    public GroupsAdapter(Context context,ArrayList<String> groupNameList){
-        this.groupNameList = groupNameList;
+    public GroupsAdapter(Context context,ArrayList<ContactNameWithNumber> groupMembersList){
+        this.groupMembersList = groupMembersList;
         groupInflater = groupInflater.from(context);
     }
 
     @Override
     public int getCount() {
-        return groupNameList.size();
+        return groupMembersList.size();
     }
 
     @Override
@@ -52,15 +52,17 @@ public class GroupsAdapter extends BaseAdapter{
             groupInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
         if (convertView == null) {
-            convertView = groupInflater.inflate(R.layout.details_contacts2_test, null);
+            convertView = groupInflater.inflate(R.layout.group_members_name, null);
         }
         ViewHolder viewHolder = new ViewHolder();
-        viewHolder.tvGroupName = (TextView) convertView.findViewById(R.id.tvGroupName);
-        //viewHolder.tvGroupName.setText();
+        viewHolder.tvGroupMemberName = (TextView) convertView.findViewById(R.id.tvGroupMembersName);
+        viewHolder.tvGroupMemberNumber = (TextView) convertView.findViewById(R.id.tvGroupMemberNumber);
+        viewHolder.tvGroupMemberName.setText(groupMembersList.get(position).getContact_name());
+        viewHolder.tvGroupMemberNumber.setText(groupMembersList.get(position).getContact_number());
         return convertView;
     }
 
     private class ViewHolder{
-        TextView tvGroupName;
+        TextView tvGroupMemberName,tvGroupMemberNumber;
     }
 }

@@ -218,6 +218,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
                 contactNameWithNumber.setContact_name(cursor.getString(cursor.getColumnIndex("Contact_Name")));
             }
             contactNameWithNumber.setContact_number(cursor.getString(cursor.getColumnIndex("Group_Members")));
+            contactNameWithNumber.setMemberAcceptanceStatus(cursor.getString(cursor.getColumnIndex("Is_Accepted")));
             Log.i("Value is....","getAllMembersUsingGroupNames-->"+cursor.getString(cursor.getColumnIndex("Contact_Name"))+"-->"+cursor.getString(cursor.getColumnIndex("Group_Members")));
             groupMembersUsingGroupName.add(contactNameWithNumber);
         }
@@ -251,11 +252,28 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public void updateGroupTableWithSyncInfo(String isAccepted, String groupName, String groupMemberMobileNumber){
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_IS_ACCEPTED,isAccepted);
+        contentValues.put(COLUMN_IS_ACCEPTED, isAccepted);
         db.update(GROUP_TABLE,contentValues,"Group_Name = "+"'"+groupName+"'"+" and Group_Members = "+"'"+groupMemberMobileNumber+"'",null);
-        Log.i("Value updated...","succussfully");
+        Log.i("Value updated...", "succussfully");
         db.close();
     }
+    //method to update status when user accept group.......
+    public void updateStatusOfGroupMemberIntoGroupTable(String isAccepted,String groupName,String groupMemberMobileNumber){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_IS_ACCEPTED, isAccepted);
+        db.update(GROUP_TABLE,contentValues,"Group_Name = "+"'"+groupName+"'"+" and Group_Members = "+"'"+groupMemberMobileNumber+"'",null);
+        Log.i("Status updated....","succussfully");
+        db.close();
+    }
+    //method to delete group from app db when user reject group........
+    public void deleteGroupFromGroupTable(String groupName){
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE * FROM " + GROUP_TABLE + " WHERE Group_Name = "+"'"+groupName+"'", null);
+        Log.i("Group Deleted.....","succussfully");
+        db.close();
+    }
+
 }
 
 
@@ -285,6 +303,7 @@ class GetGroupData{
 class ContactNameWithNumber{
     String contact_name;
     String contact_number;
+    String memberAcceptanceStatus;
 
     public String getContact_name() {
         return contact_name;
@@ -294,11 +313,19 @@ class ContactNameWithNumber{
         return contact_number;
     }
 
+    public String getMemberAcceptanceStatus(){
+        return memberAcceptanceStatus;
+    }
+
     public void setContact_name(String contact_name) {
         this.contact_name = contact_name;
     }
 
     public void setContact_number(String contact_number) {
         this.contact_number = contact_number;
+    }
+
+    public void setMemberAcceptanceStatus(String memberAcceptanceStatus) {
+        this.memberAcceptanceStatus = memberAcceptanceStatus;
     }
 }

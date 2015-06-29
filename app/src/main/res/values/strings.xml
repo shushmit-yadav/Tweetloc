@@ -15,4 +15,7 @@
     <string name="title_activity_user__profile">User Profile</string>
     <string name="action_contactSync">Contact Sync</string>
     <string name="action_syncAcceptanceStatus">Sync Acceptance</string>
+    <string name="title_activity_group_chat">Group Chat</string>
+
+    <string name="hello_world">Hello world!</string>
 </resources>

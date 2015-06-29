@@ -10,10 +10,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
@@ -172,6 +174,24 @@ public class GroupActivity extends ActionBarActivity {
         }
         ArrayAdapter<String> groupNameAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,groupNames);
         groupNameListView.setAdapter(groupNameAdapter);
+
+        groupNameListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                //listview clicked item index.......
+                int itemPosition = position;
+                //listview clicked item value.......
+                String groupName = (String) groupNameListView.getItemAtPosition(position);
+                //toast to show clicked group name......
+                Toast.makeText(getApplicationContext(),groupName+" clicked",Toast.LENGTH_SHORT).show();
+                //Log to debug the application......
+                Log.i("Group Name...",groupName+" is clicked");
+                Intent intent = new Intent(getApplicationContext(),GroupChatActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("Group Name", groupName);
+                startActivity(intent.putExtras(bundle));
+            }
+        });
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
