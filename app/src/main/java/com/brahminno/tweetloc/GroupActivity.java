@@ -10,8 +10,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ExpandableListView;
+import android.widget.ListView;
 
 import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
@@ -20,6 +22,8 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 //This Async class is used for getting all information of groups based on Mobile num.......
@@ -123,13 +127,12 @@ class AcceptStatusAsyncTask extends AsyncTask<Void,Void,String>{
 public class GroupActivity extends ActionBarActivity {
 
     Button btnCreateGroup;
-    ExpandableListView groupListView;
-    GroupsAdapter groupsAdapter;
+    ListView groupNameListView;
     String deviceId;
     String Mobile_Number;
     SQLiteDatabase mydb;
-    ArrayList<GroupDetails> groupDetailsArrayList;
-    ArrayList<ContactNameWithNumber> groupMembersList;
+    //ArrayList<GroupDetails> groupDetailsArrayList;
+    //ArrayList<ContactNameWithNumber> groupMembersList;
     ArrayList<String> groupNames;
     GetGroupData getGroupData;
 
@@ -139,7 +142,7 @@ public class GroupActivity extends ActionBarActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setIcon(R.drawable.ic_hdr_grp_128);
         setContentView(R.layout.activity_group);
-        groupListView = (ExpandableListView) findViewById(R.id.groupNameListView);
+        groupNameListView = (ListView) findViewById(R.id.groupNameListView);
         btnCreateGroup = (Button) findViewById(R.id.btnCreateGroup);
         //get device id from shared preference.....
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
@@ -161,28 +164,14 @@ public class GroupActivity extends ActionBarActivity {
         //Object of mydb....
         mydb = new SQLiteDatabase(this);
         groupNames = new ArrayList<>();
-        groupDetailsArrayList = new ArrayList<>();
-        groupMembersList = new ArrayList<>();
+        //groupDetailsArrayList = new ArrayList<>();
+        //groupMembersList = new ArrayList<>();
         groupNames = mydb.getUniqueGroupNamesFromGroupTable();
-        for (int i = 0; i < groupNames.size(); i++) {
-            //create object of GroupDetails class.....
-            GroupDetails details = new GroupDetails();
-            details.setGroupName(groupNames.get(i));
-
-            Log.i("Group Name...", groupNames.get(i));
-            //groupMembersList = new ArrayList<>();
-            groupMembersList = mydb.getAllMembersUsingGroupNames(groupNames.get(i));
-            details.setGroupMembers(groupMembersList);
-            //for loop to check group members .........
-            for (int j = 0; j < groupMembersList.size(); j++) {
-                Log.i("Group Name...", "with member " + groupNames.get(i) + "-->" + groupMembersList.get(j));
-            }
-            groupDetailsArrayList.add(details);
+        for(int i = 0; i < groupNames.size(); i++){
+            Log.i("Group Names....",groupNames.get(i));
         }
-        //set data to adapter.......
-        groupsAdapter = new GroupsAdapter(getApplicationContext(),groupDetailsArrayList);
-        //set adapter to expandable listview....
-        groupListView.setAdapter(groupsAdapter);
+        ArrayAdapter<String> groupNameAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,groupNames);
+        groupNameListView.setAdapter(groupNameAdapter);
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
