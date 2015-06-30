@@ -112,6 +112,48 @@ public class MyEndpoint {
         }
     }
 
+    //this method is used for add more members into existing group.........
+    @ApiMethod(name = "addAnotherGroupMember")
+    public void addAnotherGroupMember(GroupBean groupBean){
+        DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
+        try{
+            Key addAnotherGroupMemberKey = KeyFactory.createKey("Details", "Group");
+            Query addAnotherGroupMemberQuery = new Query("User Group Details", addAnotherGroupMemberKey);
+            FilterPredicate filterUsingGroupNameIntoUserGroupDetails = new FilterPredicate("Group Name", FilterOperator.EQUAL, groupBean.getGroup_Name());
+            FilterPredicate filterUsingGroupAdminNuber = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, groupBean.getMobile_Number());
+            Query.CompositeFilter addMemberFilterjoin = Query.CompositeFilterOperator.and(filterUsingGroupNameIntoUserGroupDetails, filterUsingGroupAdminNuber);
+            addAnotherGroupMemberQuery.setFilter(addMemberFilterjoin);
+            PreparedQuery preparedQuery = datastoreService.prepare(addAnotherGroupMemberQuery);
+            for(Entity result : preparedQuery.asIterable()){
+                ArrayList<String> preiviousList = new ArrayList<>();
+                preiviousList = (ArrayList<String>) result.getProperty("Group Member");
+                for(int i = 0; i < groupBean.getGroup_Member().size(); i++){
+                    preiviousList.add(groupBean.getGroup_Member().get(i));
+                    //save new data accordingly into another entity...........
+
+                    String isAdmin = "false";
+                    if (groupBean.getMobile_Number().equals(groupBean.getGroup_Member().get(i))) {
+                        isAdmin = "true";
+                    }
+                    Key newtaskBeanParentKey = KeyFactory.createKey("Group Member Details", "Group Member");
+                    Entity groupMemberEntity = new Entity("User Group Member Details", newtaskBeanParentKey);
+                    groupMemberEntity.setProperty("MobileNumber_Member", groupBean.getGroup_Member().get(i));
+                    groupMemberEntity.setProperty("MobileNumber_Admin", groupBean.getMobile_Number());
+                    groupMemberEntity.setProperty("Group Name", groupBean.getGroup_Name());
+                    groupMemberEntity.setProperty("compositeGroupKey", result.getProperty("CompositeGroupKey"));
+                    groupMemberEntity.setProperty("isAccepted", isAdmin);
+                    datastoreService.put(groupMemberEntity);
+                }
+                result.setProperty("Group Member",preiviousList);
+                datastoreService.put(result);
+            }
+
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
+
+
     //ApiMethod to get Registration using key....
     @ApiMethod(name = "getRegistrationDetailUsingKey")
     public RegistrationBean getRegistrationDetailUsingKey(@Named("id") String id) {
@@ -350,7 +392,7 @@ public class MyEndpoint {
     public AcceptanceStatusBean forgetEntityFromGroup(AcceptanceStatusBean acceptanceStatusBean){
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         AcceptanceStatusBean bean = new AcceptanceStatusBean();
-        Transaction txn = datastoreService.beginTransaction();
+        //Transaction txn = datastoreService.beginTransaction();
         try{
             Key keyMemberDeleteEntity = KeyFactory.createKey("Group Member Details", "Group Member");
             Query memberAcceptanceStatusQuery = new Query("User Group Member Details", keyMemberDeleteEntity);
@@ -364,22 +406,44 @@ public class MyEndpoint {
             memberAcceptanceStatusQuery.setFilter(groupAcceptanceFilterjoin);
             //now use preparedQuery to get result from above query.....
             PreparedQuery preparedQuery = datastoreService.prepare(memberAcceptanceStatusQuery);
-
             for (Entity result : preparedQuery.asIterable()) {
+                //this query is used for getting result using groupName and groupAdminNumber from ("Details","Group") entity.....
+                Key keyMemberForgetEntityFromUserGroupDetails = KeyFactory.createKey("Details", "Group");
+                Query memberForgetQuery = new Query("User Group Details", keyMemberForgetEntityFromUserGroupDetails);
+                FilterPredicate filterUsingGroupNameIntoUserGroupDetails = new FilterPredicate("Group Name", FilterOperator.EQUAL, result.getProperty("Group Name"));
+                FilterPredicate filterUsingGroupAdminNuber = new FilterPredicate("Mobile Number", FilterOperator.EQUAL, result.getProperty("MobileNumber_Admin"));
+                Query.CompositeFilter groupFilterjoin = Query.CompositeFilterOperator.and(filterUsingGroupNameIntoUserGroupDetails, filterUsingGroupAdminNuber);
+                memberForgetQuery.setFilter(groupFilterjoin);
+                PreparedQuery newPreparedQuery = datastoreService.prepare(memberForgetQuery);
+                for(Entity re : newPreparedQuery.asIterable()){
+                    //sizeTemp = groupMemberList.size();
+                    for(int i = 0; i < ((ArrayList<String>) re.getProperty("Group Member")).size(); i++){
+                        if(((ArrayList<String>) re.getProperty("Group Member")).get(i).equals(acceptanceStatusBean.getMobileNumber_Member())){
+                            //groupMemberList.add(((ArrayList<String>) re.getProperty("Group Member")).get(i));
+                            ((ArrayList<String>) re.getProperty("Group Member")).remove(i);
+                        }
+                    }
+                    re.setProperty("Group Member",re.getProperty("Group Member"));
+                    datastoreService.put(re);
+                }
+                //Now from here delete user MobileNumber_Member from "User Group Member Details" entity........
                 datastoreService.delete(result.getKey());
                 //get object to return the data.....
                 bean.setIsAccepted((String) result.getProperty("isAccepted"));
                 bean.setMobileNumber_Member((String) result.getProperty("MobileNumber_Member"));
                 bean.setGroupName((String) result.getProperty("Group Name"));
             }
-            txn.commit();
+            //txn.commit();
 
         }
-        finally {
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        /*finally {
             if(txn.isActive()){
                 txn.rollback();
             }
-        }
+        }*/
         return bean;
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,7 +22,7 @@ import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import java.util.ArrayList;
 
 //this AsyncClass is for update user acceptance status when user click on Accept button.....
-class AcceptAsyncTask extends AsyncTask<Void,Void,String>{
+class AcceptAsyncTask extends AsyncTask<Void, Void, String> {
     private static TweetApi myTweetApi = null;
     private Context context;
     private String groupName;
@@ -29,7 +30,8 @@ class AcceptAsyncTask extends AsyncTask<Void,Void,String>{
     private String acceptanceStatus;
     SQLiteDatabase mydb;
     AcceptanceStatusBean acceptanceStatusBean;
-    public AcceptAsyncTask(Context context,String groupName,String groupMemberMobileNumber,String acceptanceStatus){
+
+    public AcceptAsyncTask(Context context, String groupName, String groupMemberMobileNumber, String acceptanceStatus) {
         this.context = context;
         this.groupName = groupName;
         this.groupMemberMobileNumber = groupMemberMobileNumber;
@@ -39,12 +41,12 @@ class AcceptAsyncTask extends AsyncTask<Void,Void,String>{
     @Override
     protected String doInBackground(Void... params) {
         if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(),new AndroidJsonFactory(),null)
+            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
                     .setRootUrl("https://brahminno.appspot.com/_ah/api/");
 
             myTweetApi = builder.build();
         }
-        try{
+        try {
             AcceptanceStatusBean statusBean = new AcceptanceStatusBean();
             statusBean.setGroupName(groupName);
             statusBean.setMobileNumberMember(groupMemberMobileNumber);
@@ -52,22 +54,22 @@ class AcceptAsyncTask extends AsyncTask<Void,Void,String>{
 
             acceptanceStatusBean = myTweetApi.memberAcceptanceStatus(statusBean).execute();
 
-            Log.i("status response...",""+acceptanceStatusBean.getGroupName());
-            Log.i("status response...",""+acceptanceStatusBean.getMobileNumberMember());
-            Log.i("status response...",""+acceptanceStatusBean.getIsAccepted());
+            Log.i("status response...", "" + acceptanceStatusBean.getGroupName());
+            Log.i("status response...", "" + acceptanceStatusBean.getMobileNumberMember());
+            Log.i("status response...", "" + acceptanceStatusBean.getIsAccepted());
 
             //after getting response from server, update this response to app local database........
             mydb = new SQLiteDatabase(context);
-            mydb.updateStatusOfGroupMemberIntoGroupTable(acceptanceStatusBean.getIsAccepted(),acceptanceStatusBean.getGroupName(),acceptanceStatusBean.getMobileNumberMember());
+            mydb.updateStatusOfGroupMemberIntoGroupTable(acceptanceStatusBean.getIsAccepted(), acceptanceStatusBean.getGroupName(), acceptanceStatusBean.getMobileNumberMember());
 
-        }catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return null;
     }
 }
 
-class RejectAsyncTask extends AsyncTask<Void,Void,String>{
+class RejectAsyncTask extends AsyncTask<Void, Void, String> {
     private static TweetApi myTweetApi = null;
     private Context context;
     private String groupName;
@@ -77,7 +79,7 @@ class RejectAsyncTask extends AsyncTask<Void,Void,String>{
 
     AcceptanceStatusBean statusBean;
 
-    public RejectAsyncTask(Context context,String groupName,String groupMemberMobileNumber,String acceptanceStatus){
+    public RejectAsyncTask(Context context, String groupName, String groupMemberMobileNumber, String acceptanceStatus) {
         this.context = context;
         this.groupName = groupName;
         this.groupMemberMobileNumber = groupMemberMobileNumber;
@@ -87,25 +89,24 @@ class RejectAsyncTask extends AsyncTask<Void,Void,String>{
     @Override
     protected String doInBackground(Void... params) {
         if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(),new AndroidJsonFactory(),null)
+            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
                     .setRootUrl("https://brahminno.appspot.com/_ah/api/");
 
             myTweetApi = builder.build();
         }
-        try{
+        try {
             AcceptanceStatusBean rejectStatusBean = new AcceptanceStatusBean();
             rejectStatusBean.setGroupName(groupName);
             rejectStatusBean.setMobileNumberMember(groupMemberMobileNumber);
             rejectStatusBean.setIsAccepted(acceptanceStatus);
             statusBean = myTweetApi.forgetEntityFromGroup(rejectStatusBean).execute();
-            Log.i("status.....",""+statusBean.getIsAccepted());
-            Log.i("status.....",""+statusBean.getGroupName());
-            Log.i("status.....",""+statusBean.getMobileNumberMember());
+            Log.i("status.....", "" + statusBean.getIsAccepted());
+            Log.i("status.....", "" + statusBean.getGroupName());
+            Log.i("status.....", "" + statusBean.getMobileNumberMember());
             //call sqlite database method to delete group when user click reject button.......
             mydb = new SQLiteDatabase(context);
             mydb.deleteGroupFromGroupTable(statusBean.getGroupName());
-        }
-        catch(Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return null;
@@ -121,6 +122,7 @@ public class GroupChatActivity extends ActionBarActivity {
     ArrayList<ContactNameWithNumber> contactNameWithNumberArrayList;
     String userOwnGroupAcceptanceStatus;
     GroupsAdapter adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -138,24 +140,24 @@ public class GroupChatActivity extends ActionBarActivity {
         contactNameWithNumberArrayList = new ArrayList<>();
         contactNameWithNumberArrayList = mydb.getAllMembersUsingGroupNames(groupName);
         Log.i("size of list...", " " + contactNameWithNumberArrayList.size());
-        for(int i = 0;i < contactNameWithNumberArrayList.size(); i++){
-            Log.i("Contact Name...."," "+contactNameWithNumberArrayList.get(i).getContact_name());
-            Log.i("Contact Number...."," "+contactNameWithNumberArrayList.get(i).getContact_number());
-            Log.i("Contact Status...."," "+contactNameWithNumberArrayList.get(i).getMemberAcceptanceStatus());
-            if(MobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number())){
-                Log.i("Inside if....",""+MobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number()));
+        for (int i = 0; i < contactNameWithNumberArrayList.size(); i++) {
+            Log.i("Contact Name....", " " + contactNameWithNumberArrayList.get(i).getContact_name());
+            Log.i("Contact Number....", " " + contactNameWithNumberArrayList.get(i).getContact_number());
+            Log.i("Contact Status....", " " + contactNameWithNumberArrayList.get(i).getMemberAcceptanceStatus());
+            if (MobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number())) {
+                Log.i("Inside if....", "" + MobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number()));
                 userOwnGroupAcceptanceStatus = contactNameWithNumberArrayList.get(i).getMemberAcceptanceStatus();
             }
         }
         //if userGroupAcceptanceStatus is false or unknown then if condition otherwise else condition..........
-        if(userOwnGroupAcceptanceStatus.equals("false")||userOwnGroupAcceptanceStatus.equals("unknown")){
+        if (userOwnGroupAcceptanceStatus.equals("false") || userOwnGroupAcceptanceStatus.equals("unknown")) {
             setContentView(R.layout.activity_group_chat);
-            Button btnRejectGroup,btnAcceptGroup;
+            Button btnRejectGroup, btnAcceptGroup;
             ListView listViewGroupMembers;
             btnAcceptGroup = (Button) findViewById(R.id.btnAccept);
             btnRejectGroup = (Button) findViewById(R.id.btnReject);
             listViewGroupMembers = (ListView) findViewById(R.id.listViewGroupmembers);
-            adapter = new GroupsAdapter(getApplicationContext(),contactNameWithNumberArrayList);
+            adapter = new GroupsAdapter(getApplicationContext(), contactNameWithNumberArrayList);
             listViewGroupMembers.setAdapter(adapter);
             //on Accept button click event......
             btnAcceptGroup.setOnClickListener(new View.OnClickListener() {
@@ -163,7 +165,7 @@ public class GroupChatActivity extends ActionBarActivity {
                 public void onClick(View v) {
                     String acceptanceStatus = "true";
                     //call async class to update user acceptance status as true.......
-                    new AcceptAsyncTask(getApplicationContext(),groupName,MobileNumber,acceptanceStatus).execute();
+                    new AcceptAsyncTask(getApplicationContext(), groupName, MobileNumber, acceptanceStatus).execute();
                 }
             });
             //on Reject button click event........
@@ -172,12 +174,17 @@ public class GroupChatActivity extends ActionBarActivity {
                 public void onClick(View v) {
                     String acceptanceStatus = "false";
                     //call async class to update user acceptance status as false.......
-                    new RejectAsyncTask(getApplicationContext(),groupName,MobileNumber,acceptanceStatus).execute();
+                    new RejectAsyncTask(getApplicationContext(), groupName, MobileNumber, acceptanceStatus).execute();
                 }
             });
-        }
-        else{
+        } else {
             setContentView(R.layout.already_group_accepted);
+
+            if (savedInstanceState == null) {
+                FragmentTransaction trans = getSupportFragmentManager().beginTransaction();
+                trans.add(R.id.fragment, Chat_Main_Fragment.newInstance(null));
+                trans.commit();
+            }
         }
     }
 

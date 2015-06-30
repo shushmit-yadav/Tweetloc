@@ -1,6 +1,6 @@
 {
  "kind": "discovery#rpcDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/EOUzPI5Dm4sojm0taDi5IPcFbxY\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/KNgZJV7gFu6lEPK165Tfo1vPOVA\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -237,6 +237,20 @@
   }
  },
  "methods": {
+  "tweetApi.addAnotherGroupMember": {
+   "id": "tweetApi.addAnotherGroupMember",
+   "parameters": {
+    "resource": {
+     "$ref": "GroupBean"
+    }
+   },
+   "parameterOrder": [
+    "resource"
+   ],
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
   "tweetApi.contactSync": {
    "id": "tweetApi.contactSync",
    "parameters": {
