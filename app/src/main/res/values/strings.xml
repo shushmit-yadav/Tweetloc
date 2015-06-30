@@ -16,6 +16,7 @@
     <string name="action_contactSync">Contact Sync</string>
     <string name="action_syncAcceptanceStatus">Sync Acceptance</string>
     <string name="title_activity_group_chat">Group Chat</string>
-
+    <string name="action_addNewMember">Add New Members</string>
     <string name="hello_world">Hello world!</string>
+    <string name="title_activity_add_new_member">Add New Members</string>
 </resources>

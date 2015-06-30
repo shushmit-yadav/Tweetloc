@@ -142,7 +142,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         ArrayList<String> namelist = new ArrayList<>();
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("select * from " + INVITE_NUMBER_TABLE, null);
-        Log.i("Cursor size...",""+cursor.getCount());
+        Log.i("Cursor size...", "" + cursor.getCount());
         cursor.moveToFirst();
         while (cursor.isAfterLast() == false) {
             namelist.add(cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
@@ -177,6 +177,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.execSQL("DELETE FROM Invite_Contacts_Table");
         db.close();
     }
+
     //delete all data from Group_Table before saving new data......
     public void deleteGroupTableItems() {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
@@ -185,23 +186,23 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     }
 
     //get all distinct group names from local database.......
-    public ArrayList<String> getUniqueGroupNamesFromGroupTable(){
+    public ArrayList<String> getUniqueGroupNamesFromGroupTable() {
         ArrayList<String> uniqueGroupNames = new ArrayList<>();
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(true, GROUP_TABLE, new String[]{COLUMN_GROUPS_NAME}, null, null, COLUMN_GROUPS_NAME, null, null, null);
         Log.i("Groups return from ....", "app db.." + cursor.getCount());
         cursor.moveToFirst();
-        if(cursor.getCount() > 0){
-            do{
+        if (cursor.getCount() > 0) {
+            do {
                 uniqueGroupNames.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUPS_NAME)));
             }
-            while(cursor.moveToNext());
+            while (cursor.moveToNext());
         }
         cursor.close();
         return uniqueGroupNames;
     }
 
-    public ArrayList<ContactNameWithNumber> getAllMembersUsingGroupNames(String groupName){
+    public ArrayList<ContactNameWithNumber> getAllMembersUsingGroupNames(String groupName) {
         ArrayList<ContactNameWithNumber> groupMembersUsingGroupName = new ArrayList<>();
         SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         String MyMobileNumber = prefs.getString("Mobile Number", null);
@@ -209,38 +210,37 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery("Select a.Group_name as Group_name,a.Group_Members as Group_Members,a.Is_Accepted as Is_Accepted, b.Contact_Name as Contact_Name from Group_Table a left outer join Contacts_Table b  on a.Group_Members=b.Mobile_Number WHERE a.Group_Name = '" + groupName + "'", null);
         Log.i("Cursor count....", "getAllMembersUsingGroupNames" + cursor.getCount());
         cursor.moveToFirst();
-        do{
+        do {
             ContactNameWithNumber contactNameWithNumber = new ContactNameWithNumber();
-            if(cursor.getString(cursor.getColumnIndex("Group_Members")).equals(MyMobileNumber)){
+            if (cursor.getString(cursor.getColumnIndex("Group_Members")).equals(MyMobileNumber)) {
                 contactNameWithNumber.setContact_name("You");
-            }
-            else{
+            } else {
                 contactNameWithNumber.setContact_name(cursor.getString(cursor.getColumnIndex("Contact_Name")));
             }
             contactNameWithNumber.setContact_number(cursor.getString(cursor.getColumnIndex("Group_Members")));
             contactNameWithNumber.setMemberAcceptanceStatus(cursor.getString(cursor.getColumnIndex("Is_Accepted")));
-            Log.i("Value is....","getAllMembersUsingGroupNames-->"+cursor.getString(cursor.getColumnIndex("Contact_Name"))+"-->"+cursor.getString(cursor.getColumnIndex("Group_Members")));
+            Log.i("Value is....", "getAllMembersUsingGroupNames-->" + cursor.getString(cursor.getColumnIndex("Contact_Name")) + "-->" + cursor.getString(cursor.getColumnIndex("Group_Members")));
             groupMembersUsingGroupName.add(contactNameWithNumber);
         }
-        while(cursor.moveToNext());
+        while (cursor.moveToNext());
         cursor.close();
         return groupMembersUsingGroupName;
     }
 
     //get all group names and group member's number for acceptanceSync.....
-    public GetGroupData getAllMobileNumberForSyncAccpt(){
+    public GetGroupData getAllMobileNumberForSyncAccpt() {
         ArrayList<String> groupMemberNumberList = new ArrayList<>();
         ArrayList<String> groupNameList = new ArrayList<>();
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + GROUP_TABLE + " WHERE Is_Accepted = 'unknown'", null);
         Log.i("Cursor count....", "getAllMembersUsingGroupNames" + cursor.getCount());
-        if(cursor.getCount() > 0){
+        if (cursor.getCount() > 0) {
             cursor.moveToFirst();
-            do{
+            do {
                 groupMemberNumberList.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUP_MEMBERS)));
                 groupNameList.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUPS_NAME)));
             }
-            while(cursor.moveToNext());
+            while (cursor.moveToNext());
             cursor.close();
         }
         GetGroupData getGroupData = new GetGroupData();
@@ -249,36 +249,73 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         return getGroupData;
     }
 
-    public void updateGroupTableWithSyncInfo(String isAccepted, String groupName, String groupMemberMobileNumber){
+    public void updateGroupTableWithSyncInfo(String isAccepted, String groupName, String groupMemberMobileNumber) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_IS_ACCEPTED, isAccepted);
-        db.update(GROUP_TABLE,contentValues,"Group_Name = "+"'"+groupName+"'"+" and Group_Members = "+"'"+groupMemberMobileNumber+"'",null);
+        db.update(GROUP_TABLE, contentValues, "Group_Name = " + "'" + groupName + "'" + " and Group_Members = " + "'" + groupMemberMobileNumber + "'", null);
         Log.i("Value updated...", "succussfully");
         db.close();
     }
+
     //method to update status when user accept group.......
-    public void updateStatusOfGroupMemberIntoGroupTable(String isAccepted,String groupName,String groupMemberMobileNumber){
+    public void updateStatusOfGroupMemberIntoGroupTable(String isAccepted, String groupName, String groupMemberMobileNumber) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_IS_ACCEPTED, isAccepted);
-        db.update(GROUP_TABLE,contentValues,"Group_Name = "+"'"+groupName+"'"+" and Group_Members = "+"'"+groupMemberMobileNumber+"'",null);
-        Log.i("Status updated....","succussfully");
+        db.update(GROUP_TABLE, contentValues, "Group_Name = " + "'" + groupName + "'" + " and Group_Members = " + "'" + groupMemberMobileNumber + "'", null);
+        Log.i("Status updated....", "succussfully");
         db.close();
     }
+
     //method to delete group from app db when user reject group........
-    public void deleteGroupFromGroupTable(String groupName){
+    public void deleteGroupFromGroupTable(String groupName) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("DELETE * FROM " + GROUP_TABLE + " WHERE Group_Name = "+"'"+groupName+"'", null);
-        Log.i("Group Deleted.....","succussfully");
+        db.execSQL("DELETE * FROM " + GROUP_TABLE + " WHERE Group_Name = " + "'" + groupName + "'", null);
+        Log.i("Group Deleted.....", "succussfully");
         db.close();
+    }
+
+    //this method is used when group admin wants to add new members to group then this method will call......
+    public ArrayList<ContactNameWithNumber> getNonExistingContacts(String groupName, String groupAdminNumber) {
+        ArrayList<ContactNameWithNumber> nonExistingContactNameList = new ArrayList<>();
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("Select Contact_Name, Mobile_Number from Contacts_Table where Mobile_Number NOT IN (select Group_Members from Group_Table where Group_Name = '" + groupName + "' and Group_Admin_Number = '" + groupAdminNumber + "'" + " )", null);
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            do {
+                ContactNameWithNumber contactNameWithNumber = new ContactNameWithNumber();
+                contactNameWithNumber.setContact_name(cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
+                contactNameWithNumber.setContact_number(cursor.getString(cursor.getColumnIndex(COLUMN_NUMBER)));
+                Log.i("NonExisting no...", contactNameWithNumber.getContact_name() + "-->" + contactNameWithNumber.getContact_number());
+                nonExistingContactNameList.add(contactNameWithNumber);
+            }
+            while (cursor.moveToNext());
+            cursor.close();
+        }
+        return nonExistingContactNameList;
+    }
+
+    //get Admin Mobile Number from group Table using group.......
+    public String getAdminMobileNumberUsingGroupName(String groupName) {
+        String adminMobileNumber = null;
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select distinct Group_Admin_Number from Group_Table where Group_Name = '" + groupName + "'", null);
+        //Cursor cursor = db.query(true, GROUP_TABLE, new String[]{COLUMN_GROUP_ADMIN_NUMBER}, null, null, COLUMN_GROUP_ADMIN_NUMBER, null, null, null);
+        cursor.moveToFirst();
+        do {
+            adminMobileNumber = cursor.getString(cursor.getColumnIndex("Group_Admin_Number"));
+            Log.i("Admin Number...", adminMobileNumber);
+        }
+        while (cursor.moveToNext());
+        return adminMobileNumber;
     }
 
 }
 
 
 //this class is used for returning arrayList of groupName and groupMobileNumber....
-class GetGroupData{
+class GetGroupData {
     private ArrayList<String> groupNameList;
     private ArrayList<String> groupMemberNumberList;
 
@@ -300,7 +337,7 @@ class GetGroupData{
 }
 
 //this class is used for returning contact_name with mobile number.....
-class ContactNameWithNumber{
+class ContactNameWithNumber {
     String contact_name;
     String contact_number;
     String memberAcceptanceStatus;
@@ -313,7 +350,7 @@ class ContactNameWithNumber{
         return contact_number;
     }
 
-    public String getMemberAcceptanceStatus(){
+    public String getMemberAcceptanceStatus() {
         return memberAcceptanceStatus;
     }
 

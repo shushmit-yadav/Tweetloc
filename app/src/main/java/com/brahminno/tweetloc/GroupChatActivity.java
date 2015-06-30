@@ -122,6 +122,8 @@ public class GroupChatActivity extends ActionBarActivity {
     ArrayList<ContactNameWithNumber> contactNameWithNumberArrayList;
     String userOwnGroupAcceptanceStatus;
     GroupsAdapter adapter;
+    String MobileNumber;
+    String groupName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,12 +131,12 @@ public class GroupChatActivity extends ActionBarActivity {
         Log.i("GroupChatActivity....", "is clicked");
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
-        final String groupName = bundle.getString("Group Name");
+        groupName = bundle.getString("Group Name");
         //set group name as title to activity.............
         getSupportActionBar().setTitle(groupName);
         //get User registered mobile_number from shared preference.......
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        final String MobileNumber = prefs.getString("Mobile Number", null);
+        MobileNumber = prefs.getString("Mobile Number", null);
         Log.i("Registered Number....", MobileNumber);
         mydb = new SQLiteDatabase(this);
         contactNameWithNumberArrayList = new ArrayList<>();
@@ -205,6 +207,12 @@ public class GroupChatActivity extends ActionBarActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+        if(id == R.id.action_addNewMember){
+            Intent intent = new Intent(getApplicationContext(),AddNewMemberActivity.class);
+            Bundle bundle = new Bundle();
+            bundle.putString("Group Name", groupName);
+            startActivity(intent.putExtras(bundle));
         }
 
         return super.onOptionsItemSelected(item);

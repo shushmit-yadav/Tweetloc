@@ -50,8 +50,6 @@ public class FragmentAdd extends Fragment {
     ArrayList<String> mydbContactNameList;
     String compositeGroupKey;
 
-    StandardMobileNumberFormat standardMobileNumberFormat;
-
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_add, container, false);
