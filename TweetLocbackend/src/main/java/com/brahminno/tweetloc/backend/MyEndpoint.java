@@ -20,6 +20,14 @@ import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +78,7 @@ public class MyEndpoint {
                 txn.rollback();
             }
         }
+        //dummyPostRequest();
     }
 
     //ApiMethod to store Group name details on server.....
@@ -102,6 +111,10 @@ public class MyEndpoint {
                 groupMemberEntity.setProperty("isAccepted", isAdmin);
                 datastoreService.put(groupMemberEntity);
             }
+
+
+
+            dummyPostRequest(groupBean.getGroup_Member());
             //txn.commit();
         }/* finally {
             if (txn.isActive()) {
@@ -114,9 +127,9 @@ public class MyEndpoint {
 
     //this method is used for add more members into existing group.........
     @ApiMethod(name = "addAnotherGroupMember")
-    public void addAnotherGroupMember(GroupBean groupBean){
+    public void addAnotherGroupMember(GroupBean groupBean) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
-        try{
+        try {
             Key addAnotherGroupMemberKey = KeyFactory.createKey("Details", "Group");
             Query addAnotherGroupMemberQuery = new Query("User Group Details", addAnotherGroupMemberKey);
             FilterPredicate filterUsingGroupNameIntoUserGroupDetails = new FilterPredicate("Group Name", FilterOperator.EQUAL, groupBean.getGroup_Name());
@@ -124,10 +137,10 @@ public class MyEndpoint {
             Query.CompositeFilter addMemberFilterjoin = Query.CompositeFilterOperator.and(filterUsingGroupNameIntoUserGroupDetails, filterUsingGroupAdminNuber);
             addAnotherGroupMemberQuery.setFilter(addMemberFilterjoin);
             PreparedQuery preparedQuery = datastoreService.prepare(addAnotherGroupMemberQuery);
-            for(Entity result : preparedQuery.asIterable()){
+            for (Entity result : preparedQuery.asIterable()) {
                 ArrayList<String> preiviousList = new ArrayList<>();
                 preiviousList = (ArrayList<String>) result.getProperty("Group Member");
-                for(int i = 0; i < groupBean.getGroup_Member().size(); i++){
+                for (int i = 0; i < groupBean.getGroup_Member().size(); i++) {
                     preiviousList.add(groupBean.getGroup_Member().get(i));
                     //save new data accordingly into another entity...........
 
@@ -144,11 +157,11 @@ public class MyEndpoint {
                     groupMemberEntity.setProperty("isAccepted", isAdmin);
                     datastoreService.put(groupMemberEntity);
                 }
-                result.setProperty("Group Member",preiviousList);
+                result.setProperty("Group Member", preiviousList);
                 datastoreService.put(result);
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -389,11 +402,11 @@ public class MyEndpoint {
 
     //this method is used for delete member from group.......
     @ApiMethod(name = "forgetEntityFromGroup")
-    public AcceptanceStatusBean forgetEntityFromGroup(AcceptanceStatusBean acceptanceStatusBean){
+    public AcceptanceStatusBean forgetEntityFromGroup(AcceptanceStatusBean acceptanceStatusBean) {
         DatastoreService datastoreService = DatastoreServiceFactory.getDatastoreService();
         AcceptanceStatusBean bean = new AcceptanceStatusBean();
         //Transaction txn = datastoreService.beginTransaction();
-        try{
+        try {
             Key keyMemberDeleteEntity = KeyFactory.createKey("Group Member Details", "Group Member");
             Query memberAcceptanceStatusQuery = new Query("User Group Member Details", keyMemberDeleteEntity);
 
@@ -415,15 +428,15 @@ public class MyEndpoint {
                 Query.CompositeFilter groupFilterjoin = Query.CompositeFilterOperator.and(filterUsingGroupNameIntoUserGroupDetails, filterUsingGroupAdminNuber);
                 memberForgetQuery.setFilter(groupFilterjoin);
                 PreparedQuery newPreparedQuery = datastoreService.prepare(memberForgetQuery);
-                for(Entity re : newPreparedQuery.asIterable()){
+                for (Entity re : newPreparedQuery.asIterable()) {
                     //sizeTemp = groupMemberList.size();
-                    for(int i = 0; i < ((ArrayList<String>) re.getProperty("Group Member")).size(); i++){
-                        if(((ArrayList<String>) re.getProperty("Group Member")).get(i).equals(acceptanceStatusBean.getMobileNumber_Member())){
+                    for (int i = 0; i < ((ArrayList<String>) re.getProperty("Group Member")).size(); i++) {
+                        if (((ArrayList<String>) re.getProperty("Group Member")).get(i).equals(acceptanceStatusBean.getMobileNumber_Member())) {
                             //groupMemberList.add(((ArrayList<String>) re.getProperty("Group Member")).get(i));
                             ((ArrayList<String>) re.getProperty("Group Member")).remove(i);
                         }
                     }
-                    re.setProperty("Group Member",re.getProperty("Group Member"));
+                    re.setProperty("Group Member", re.getProperty("Group Member"));
                     datastoreService.put(re);
                 }
                 //Now from here delete user MobileNumber_Member from "User Group Member Details" entity........
@@ -435,8 +448,7 @@ public class MyEndpoint {
             }
             //txn.commit();
 
-        }
-        catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         /*finally {
@@ -445,5 +457,36 @@ public class MyEndpoint {
             }
         }*/
         return bean;
+    }
+
+    //this apiMethod is used for POST request to duummy server......
+    @ApiMethod(name = "dummyPostRequest")
+    public void dummyPostRequest(@Named("group_member") ArrayList<String> group_member) {
+        try {
+            String message = URLEncoder.encode(String.valueOf(group_member), "UTF-8");
+            URL url = new URL("https://qcapp-prateeksonkar.rhcloud.com/register");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+
+            OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+            writer.write("message=" + message);
+            writer.close();
+
+            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                // OK
+            } else {
+                // Server returned HTTP error code.
+            }
+
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

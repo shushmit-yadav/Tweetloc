@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/KNgZJV7gFu6lEPK165Tfo1vPOVA\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/H4dvrNtCb_APKoliwnmIXymT1lk\"",
  "discoveryVersion": "v1",
  "id": "tweetApi:v1",
  "name": "tweetApi",
@@ -262,6 +262,25 @@
    "response": {
     "$ref": "ContactSyncBean"
    },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "dummyPostRequest": {
+   "id": "tweetApi.dummyPostRequest",
+   "path": "dummyPostRequest/{group_member}",
+   "httpMethod": "POST",
+   "parameters": {
+    "group_member": {
+     "type": "string",
+     "required": true,
+     "repeated": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "group_member"
+   ],
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
    ]

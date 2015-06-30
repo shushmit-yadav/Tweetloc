@@ -43,7 +43,16 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+
+//socket.io imports....
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
+import com.github.nkzawa.emitter.Emitter;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 //this is a AsyncTask class that push location to server in background.....
 class LocationAsyncTask extends AsyncTask<Void, Void, String> {
@@ -225,6 +234,14 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
 
     private int count = 0; //counter to ensure onetimecamerasettouserloc function executes once on location change
 
+    //this is a socket connection
+    private Socket mSocket;
+    {
+        try {
+            mSocket = IO.socket("https://qcapp-prateeksonkar.rhcloud.com");
+        } catch (URISyntaxException e) {}
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -235,6 +252,44 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             finish();
         }
         setContentView(R.layout.activity_my_trail);
+        //make connection to socket.....
+        mSocket.connect();
+        //mSocket.emit("Tweet", message);
+
+        Emitter.Listener onNewMessage = new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                MyTrail.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        String username;
+                        String message;
+                        try {
+                            username = data.getString("qcmessage");
+                            //message = data.getString("message");
+                        } catch (JSONException e) {
+                            return;
+                        }
+                        Log.i("Socket On...", "" + username);
+                    }
+                });
+
+            }
+        };
+
+        mSocket.on("hello-there", onNewMessage);
+        JSONObject testMessage = new JSONObject();
+        try {
+            testMessage.put("tweetdata","Message from tweetloc client app..");
+            mSocket.emit("tweet-hello",testMessage);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+
+
         btnGroup = (Button) findViewById(R.id.btnGroup);
         //this method is used to get countryCode isung telephonyManager....
         telephonyManager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
