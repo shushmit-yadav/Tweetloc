@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -77,8 +78,7 @@ public class CreateGroupActivity extends ActionBarActivity {
     Button btnCreate;
     String Group_Name;
     String deviceId,Mobile_Number;
-
-    //SQLiteDatabase mydb;
+    SQLiteDatabase mydb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +89,8 @@ public class CreateGroupActivity extends ActionBarActivity {
         etGroupName = (EditText) findViewById(R.id.etGroupName);
         btnCreate = (Button) findViewById(R.id.btnCreate);
 
+        mydb = new SQLiteDatabase(this);
+
         //Get data from shared preference.....
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         deviceId = prefs.getString("Device Id", null);
@@ -97,20 +99,19 @@ public class CreateGroupActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 Group_Name = etGroupName.getText().toString();
-                //Call AsyncTask to upload data on server.....
-                //new GroupAsyncTask(getApplicationContext(),deviceId,Group_Name,"Group_Member",Mobile_Number).execute();
-
-                //save group name to the local app database....
-                //mydb.insertGroups(new GroupDetails(Group_Name));
-                //display Toast
-                Toast.makeText(getApplicationContext(), "values inserted successfully.", Toast.LENGTH_LONG).show();
-
-                //Call Intent to go another activity....
-                Intent groupIntent = new Intent(getApplicationContext(),AddMemberActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putString("Group Name",Group_Name);
-                groupIntent.putExtras(bundle);
-                startActivity(groupIntent);
+                boolean result = mydb.checkGroupNameDuplicacy(Group_Name);
+                Log.i("result from database.."," "+result);
+                if(result == true){
+                    //Call Intent to go another activity....
+                    Intent groupIntent = new Intent(getApplicationContext(),AddMemberActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("Group Name",Group_Name);
+                    groupIntent.putExtras(bundle);
+                    startActivity(groupIntent);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(),"You are already member of this group!!!!",Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

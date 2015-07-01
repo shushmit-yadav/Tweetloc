@@ -27,7 +27,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -114,7 +113,7 @@ public class MyEndpoint {
 
 
 
-            dummyPostRequest(groupBean.getGroup_Member());
+            dummyPostRequest(groupBean.getGroup_Member(),groupBean.getGroup_Name());
             //txn.commit();
         }/* finally {
             if (txn.isActive()) {
@@ -461,16 +460,18 @@ public class MyEndpoint {
 
     //this apiMethod is used for POST request to duummy server......
     @ApiMethod(name = "dummyPostRequest")
-    public void dummyPostRequest(@Named("group_member") ArrayList<String> group_member) {
+    public void dummyPostRequest(@Named("group_member") ArrayList<String> group_member, @Named("groupName") String groupName) {
         try {
-            String message = URLEncoder.encode(String.valueOf(group_member), "UTF-8");
+            //String message = URLEncoder.encode(String.valueOf(group_member), "UTF-8");
             URL url = new URL("https://qcapp-prateeksonkar.rhcloud.com/register");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
 
             OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-            writer.write("message=" + message);
+            //writer.write("message=" + message);
+            writer.write("{\"message\": \""+group_member+"\",\"methodApi\": \""+groupName+"\" }");
             writer.close();
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {

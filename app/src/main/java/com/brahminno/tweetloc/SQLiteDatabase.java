@@ -311,6 +311,19 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         return adminMobileNumber;
     }
 
+    //this method is used to skip same group name. if groupName is already exist inwhich member is added then existing member will not allow to create new group with same name....
+    public boolean checkGroupNameDuplicacy(String groupName){
+        Log.i("Inside : ","checkGroupNameDuplicacy method..");
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select distinct Group_Name from Group_Table where Group_Name = '" + groupName + "'", null);
+        if(cursor.getCount() > 0){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
 }
 
 
