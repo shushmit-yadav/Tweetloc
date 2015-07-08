@@ -1,20 +1,21 @@
 package com.brahminno.tweetloc;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.brahminno.tweetloc.asyncClass.GroupMemberLocationAsync;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -23,13 +24,10 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
-import com.brahminno.tweetloc.SlidingUpPanelLayout;
 
 
 import java.util.ArrayList;
@@ -40,7 +38,8 @@ import java.util.ArrayList;
 public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         SlidingUpPanelLayout.PanelSlideListener, LocationListener {
 
-    private static final String ARG_LOCATION = "arg.location";
+    //private static final String ARG_LOCATION = "arg.location";
+    //private static ArrayList<String> groupMemberMobileNumber;
 
     private LockableListView mListView;
     private SlidingUpPanelLayout mSlidingUpPanelLayout;
@@ -51,6 +50,14 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
     private LatLng mLocation;
     private Marker mLocationMarker;
+    private LocationManager mLocationManager;
+    private Location gpsLocation,networkLocation,finalLocation;
+    private Double altitude;
+    private Double latitude,longitude;
+    private long timeStamp;
+    private int speed;
+    private String userMobileNumber;
+    private ArrayList<String> groupMemberMobileNumber;
 
     private SupportMapFragment mMapFragment;
 
@@ -60,15 +67,9 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
 
-    public Chat_Main_Fragment() {
-    }
 
-    public static Chat_Main_Fragment newInstance(LatLng location) {
-        Chat_Main_Fragment f = new Chat_Main_Fragment();
-        Bundle args = new Bundle();
-        args.putParcelable(ARG_LOCATION, location);
-        f.setArguments(args);
-        return f;
+    public Chat_Main_Fragment (ArrayList<String> groupMemberMobileNumber) {
+        this.groupMemberMobileNumber = groupMemberMobileNumber;
     }
 
     @Override
@@ -110,11 +111,39 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        userMobileNumber = prefs.getString("Mobile Number",null);
+        Log.i("user mobile"," number : "+userMobileNumber);
+        mLocationManager = (LocationManager) getActivity().getSystemService(getActivity().LOCATION_SERVICE);
+        gpsLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        networkLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if(gpsLocation != null && networkLocation != null){
+            if(gpsLocation.getAccuracy() > networkLocation.getAccuracy()){
+                finalLocation = gpsLocation;
+            }else{
+                finalLocation = networkLocation;
+            }
+        }else{
+            if(gpsLocation == null){
+                finalLocation = networkLocation;
+            }else{
+                finalLocation = gpsLocation;
+            }
+        }
 
-        mLocation = getArguments().getParcelable(ARG_LOCATION);
+        mLocation = new LatLng(finalLocation.getLatitude(),finalLocation.getLongitude());
+        Log.i("location in ", " chat_main_fragment class : " + finalLocation.getAltitude());
+        Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber.get(0));
+        Log.i("userMobileNumber...", " in chat_main_fragment: " + userMobileNumber);
         if (mLocation == null) {
             mLocation = getLastKnownLocation(false);
         }
+        latitude = mLocation.latitude;
+        longitude = mLocation.longitude;
+        altitude = finalLocation.getAltitude();
+        speed = (int) finalLocation.getSpeed();
+        timeStamp = finalLocation.getTime();
+        new GroupMemberLocationAsync(getActivity(),latitude,longitude,altitude,speed,timeStamp,userMobileNumber,groupMemberMobileNumber).execute();
 
         mMapFragment = SupportMapFragment.newInstance();
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
@@ -151,9 +180,9 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setCompassEnabled(false);
-                mMap.getUiSettings().setZoomControlsEnabled(false);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                mMap.getUiSettings().setCompassEnabled(true);
+                mMap.getUiSettings().setZoomControlsEnabled(true);
+                mMap.getUiSettings().setMyLocationButtonEnabled(true);
                 LatLng update = getLastKnownLocation();
                 if (update != null) {
                     mMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.fromLatLngZoom(update, 11.0f)));
@@ -163,6 +192,14 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                     public void onMapClick(LatLng latLng) {
                         mIsNeedLocationUpdate = false;
                         moveToLocation(latLng, false);
+                        //mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater()));
+                    }
+                });
+                mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                    @Override
+                    public boolean onMarkerClick(Marker marker) {
+                        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater()));
+                        return false;
                     }
                 });
             }
@@ -217,9 +254,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         if (mLocationMarker != null) {
             mLocationMarker.remove();
         }
-        mLocationMarker = mMap.addMarker(new MarkerOptions()
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_splash_256))
-                .position(latLng).anchor(0.5f, 0.5f));
+        mLocationMarker = mMap.addMarker(new MarkerOptions().title("My Location").position(latLng).anchor(0.5f,0.5f));
     }
 
     private void moveToLocation(Location location) {

@@ -180,11 +180,17 @@ public class GroupChatActivity extends ActionBarActivity {
                 }
             });
         } else {
+            //if user already accepted group, then this screen will appear to user for chat......
             setContentView(R.layout.already_group_accepted);
-
+            ArrayList<String> gruopMemberMobileNumber = null;
+            for(int i = 0; i < contactNameWithNumberArrayList.size(); i++){
+                gruopMemberMobileNumber = new ArrayList<>();
+                gruopMemberMobileNumber.add(contactNameWithNumberArrayList.get(i).getContact_number());
+            }
             if (savedInstanceState == null) {
                 FragmentTransaction trans = getSupportFragmentManager().beginTransaction();
-                trans.add(R.id.fragment, Chat_Main_Fragment.newInstance(null));
+                Chat_Main_Fragment chat_main_fragment = new Chat_Main_Fragment(gruopMemberMobileNumber);
+                trans.add(R.id.fragment, chat_main_fragment);
                 trans.commit();
             }
         }

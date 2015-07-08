@@ -422,6 +422,42 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     protected void onResume() {
         super.onResume();
         initilizeMap();
+
+
+        mSocket.connect();
+        //mSocket.emit("Tweet", message);
+
+        Emitter.Listener onNewMessage = new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                MyTrail.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        String username;
+                        String message;
+                        try {
+                            username = data.getString("qcmessage");
+                            //message = data.getString("message");
+                        } catch (JSONException e) {
+                            return;
+                        }
+                        Log.i("Socket On...", "" + username);
+                    }
+                });
+
+            }
+        };
+
+        mSocket.on("hello-there", onNewMessage);
+        JSONObject testMessage = new JSONObject();
+        try {
+            testMessage.put("tweetdata","Message from tweetloc client app..");
+            mSocket.emit("tweet-hello",testMessage);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
