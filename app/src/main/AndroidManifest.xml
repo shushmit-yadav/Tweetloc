@@ -60,12 +60,15 @@
             android:name=".User_ProfileActivity"
             android:label="@string/title_activity_user__profile" >
         </activity>
-        <activity android:name=".GroupChatActivity" >
+        <activity android:name=".GroupCheckStatusActivity" >
         </activity>
         <activity
             android:name=".AddNewMemberActivity"
             android:label="@string/title_activity_add_new_member" >
         </activity>
+
+        <service
+            android:name=".services.GroupChatService"></service>
     </application>
 
 </manifest>

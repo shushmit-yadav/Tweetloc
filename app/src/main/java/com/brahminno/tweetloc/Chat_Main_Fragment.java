@@ -1,6 +1,8 @@
 package com.brahminno.tweetloc;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Criteria;
 import android.location.Location;
@@ -13,9 +15,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
+import com.brahminno.tweetloc.asyncClass.ChatMessageSendAsyncTask;
 import com.brahminno.tweetloc.asyncClass.GroupMemberLocationAsync;
+import com.brahminno.tweetloc.services.GroupChatService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -34,20 +42,16 @@ import java.util.ArrayList;
 
 /**
  * Created by Shushmit on 29-06-2015.
+ * Brahmastra Innovations Pvt. Ltd.
+ * This class is used for SlidingUpPanel google map with listview and chat .....
  */
 public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         SlidingUpPanelLayout.PanelSlideListener, LocationListener {
 
-    //private static final String ARG_LOCATION = "arg.location";
-    //private static ArrayList<String> groupMemberMobileNumber;
-
-    private LockableListView mListView;
+    private ListView mListView;
     private SlidingUpPanelLayout mSlidingUpPanelLayout;
 
     private View mTransparentHeaderView;
-    private View mTransparentView;
-    private View mSpaceView;
-
     private LatLng mLocation;
     private Marker mLocationMarker;
     private LocationManager mLocationManager;
@@ -56,8 +60,12 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private Double latitude,longitude;
     private long timeStamp;
     private int speed;
-    private String userMobileNumber;
+    private String senderMobileNumber;
+    private String adminMobileNumber;
+    private String groupName;
     private ArrayList<String> groupMemberMobileNumber;
+
+    GroupChatService groupChatService;
 
     private SupportMapFragment mMapFragment;
 
@@ -67,20 +75,25 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
 
+    EditText etMessage;
+    Button btnSendChat;
 
-    public Chat_Main_Fragment (ArrayList<String> groupMemberMobileNumber) {
+
+    public Chat_Main_Fragment (ArrayList<String> groupMemberMobileNumber,String adminMobileNumber,String groupName) {
         this.groupMemberMobileNumber = groupMemberMobileNumber;
+        this.adminMobileNumber = adminMobileNumber;
+        this.groupName = groupName;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.chat_fragment_main, container, false);
 
-        mListView = (LockableListView) rootView.findViewById(android.R.id.list);
-        mListView.setOverScrollMode(ListView.OVER_SCROLL_NEVER);
-
         mSlidingUpPanelLayout = (SlidingUpPanelLayout) rootView.findViewById(R.id.slidingLayout);
         mSlidingUpPanelLayout.setEnableDragViewTouchEvents(true);
+
+        mListView = (ListView) rootView.findViewById(android.R.id.list);
+        mListView.setOverScrollMode(ListView.OVER_SCROLL_ALWAYS);
 
         int mapHeight = getResources().getDimensionPixelSize(R.dimen.map_height);
         mSlidingUpPanelLayout.setPanelHeight(mapHeight); // you can use different height here
@@ -88,12 +101,12 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
         mSlidingUpPanelLayout.setPanelSlideListener(this);
 
-        // transparent view at the top of ListView
-        mTransparentView = rootView.findViewById(R.id.transparentView);
-
         // init header view for ListView
         mTransparentHeaderView = inflater.inflate(R.layout.transparent_header, mListView, false);
-        //mSpaceView = mTransparentHeaderView.findViewById(R.id.space);
+
+        //init EditText and Button.....
+        etMessage = (EditText) rootView.findViewById(R.id.etMessage);
+        btnSendChat = (Button) rootView.findViewById(R.id.btnSendChat);
 
         collapseMap();
 
@@ -104,6 +117,8 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 mSlidingUpPanelLayout.onPanelDragged(0);
             }
         });
+        Intent intent = new Intent(getActivity(),GroupChatService.class);
+        getActivity().startService(intent);
 
         return rootView;
     }
@@ -112,8 +127,8 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        userMobileNumber = prefs.getString("Mobile Number",null);
-        Log.i("user mobile"," number : "+userMobileNumber);
+        senderMobileNumber = prefs.getString("Mobile Number",null);
+        Log.i("user mobile"," number : "+senderMobileNumber);
         mLocationManager = (LocationManager) getActivity().getSystemService(getActivity().LOCATION_SERVICE);
         gpsLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         networkLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -134,7 +149,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         mLocation = new LatLng(finalLocation.getLatitude(),finalLocation.getLongitude());
         Log.i("location in ", " chat_main_fragment class : " + finalLocation.getAltitude());
         Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber.get(0));
-        Log.i("userMobileNumber...", " in chat_main_fragment: " + userMobileNumber);
+        Log.i("userMobileNumber...", " in chat_main_fragment: " + senderMobileNumber);
         if (mLocation == null) {
             mLocation = getLastKnownLocation(false);
         }
@@ -143,25 +158,25 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         altitude = finalLocation.getAltitude();
         speed = (int) finalLocation.getSpeed();
         timeStamp = finalLocation.getTime();
-        new GroupMemberLocationAsync(getActivity(),latitude,longitude,altitude,speed,timeStamp,userMobileNumber,groupMemberMobileNumber).execute();
+        new GroupMemberLocationAsync(getActivity(),latitude,longitude,altitude,speed,timeStamp,senderMobileNumber,groupMemberMobileNumber).execute();
 
         mMapFragment = SupportMapFragment.newInstance();
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
         fragmentTransaction.add(R.id.mapContainer, mMapFragment, "map");
         fragmentTransaction.commit();
 
-        /*ArrayList<String> testData = new ArrayList<String>(100);
+        ArrayList<String> testData = new ArrayList<String>(100);
         for (int i = 0; i < 100; i++) {
             testData.add("Item " + i);
-        }*/
-        /*//mListView.addHeaderView(mTransparentHeaderView);
-        //mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.simple_list_item, testData));
-        //mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        }
+        mListView.addHeaderView(mTransparentHeaderView);
+        mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.simple_list_item, testData));
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 mSlidingUpPanelLayout.collapsePane();
             }
-        });*/
+        });
 
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addApi(LocationServices.API)
@@ -170,6 +185,14 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 .build();
 
         setUpMapIfNeeded();
+
+        btnSendChat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String chatMessage = etMessage.getText().toString();
+                new ChatMessageSendAsyncTask(getActivity(),senderMobileNumber,groupName,adminMobileNumber,chatMessage,timeStamp);
+            }
+        });
     }
 
     private void setUpMapIfNeeded() {
@@ -278,21 +301,15 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     }
 
     private void collapseMap() {
-        //mSpaceView.setVisibility(View.VISIBLE);
-        mTransparentView.setVisibility(View.GONE);
         if (mMap != null && mLocation != null) {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mLocation, 11f), 1000, null);
         }
-        mListView.setScrollingEnabled(true);
     }
 
     private void expandMap() {
-        //mSpaceView.setVisibility(View.GONE);
-        mTransparentView.setVisibility(View.INVISIBLE);
         if (mMap != null) {
             mMap.animateCamera(CameraUpdateFactory.zoomTo(14f), 1000, null);
         }
-        mListView.setScrollingEnabled(false);
     }
 
     @Override

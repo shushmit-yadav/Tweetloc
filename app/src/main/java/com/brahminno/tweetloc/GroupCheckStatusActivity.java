@@ -116,19 +116,20 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
 //this class is called when user click on an group from grouplist........
 //Shushmit Yadav....
 //Brahmastra Innovations........
-public class GroupChatActivity extends ActionBarActivity {
+public class GroupCheckStatusActivity extends ActionBarActivity {
 
     SQLiteDatabase mydb;
     ArrayList<ContactNameWithNumber> contactNameWithNumberArrayList;
     String userOwnGroupAcceptanceStatus;
     GroupsAdapter adapter;
-    String MobileNumber;
+    String userMobileNumber;
     String groupName;
+    String adminMobileNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i("GroupChatActivity....", "is clicked");
+        Log.i("GroupCheckStatus", " Activity is clicked");
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         groupName = bundle.getString("Group Name");
@@ -136,9 +137,11 @@ public class GroupChatActivity extends ActionBarActivity {
         getSupportActionBar().setTitle(groupName);
         //get User registered mobile_number from shared preference.......
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        MobileNumber = prefs.getString("Mobile Number", null);
-        Log.i("Registered Number....", MobileNumber);
+        userMobileNumber = prefs.getString("Mobile Number", null);
+        Log.i("Registered Number....", userMobileNumber);
         mydb = new SQLiteDatabase(this);
+        //call method to get admin mobile number using group name  from local app db.....
+        adminMobileNumber = mydb.getAdminMobileNumberUsingGroupName(groupName);
         contactNameWithNumberArrayList = new ArrayList<>();
         contactNameWithNumberArrayList = mydb.getAllMembersUsingGroupNames(groupName);
         Log.i("size of list...", " " + contactNameWithNumberArrayList.size());
@@ -146,8 +149,8 @@ public class GroupChatActivity extends ActionBarActivity {
             Log.i("Contact Name....", " " + contactNameWithNumberArrayList.get(i).getContact_name());
             Log.i("Contact Number....", " " + contactNameWithNumberArrayList.get(i).getContact_number());
             Log.i("Contact Status....", " " + contactNameWithNumberArrayList.get(i).getMemberAcceptanceStatus());
-            if (MobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number())) {
-                Log.i("Inside if....", "" + MobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number()));
+            if (userMobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number())) {
+                Log.i("Inside if....", "" + userMobileNumber.equals(contactNameWithNumberArrayList.get(i).getContact_number()));
                 userOwnGroupAcceptanceStatus = contactNameWithNumberArrayList.get(i).getMemberAcceptanceStatus();
             }
         }
@@ -167,7 +170,7 @@ public class GroupChatActivity extends ActionBarActivity {
                 public void onClick(View v) {
                     String acceptanceStatus = "true";
                     //call async class to update user acceptance status as true.......
-                    new AcceptAsyncTask(getApplicationContext(), groupName, MobileNumber, acceptanceStatus).execute();
+                    new AcceptAsyncTask(getApplicationContext(), groupName, userMobileNumber, acceptanceStatus).execute();
                 }
             });
             //on Reject button click event........
@@ -176,7 +179,7 @@ public class GroupChatActivity extends ActionBarActivity {
                 public void onClick(View v) {
                     String acceptanceStatus = "false";
                     //call async class to update user acceptance status as false.......
-                    new RejectAsyncTask(getApplicationContext(), groupName, MobileNumber, acceptanceStatus).execute();
+                    new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber, acceptanceStatus).execute();
                 }
             });
         } else {
@@ -189,7 +192,7 @@ public class GroupChatActivity extends ActionBarActivity {
             }
             if (savedInstanceState == null) {
                 FragmentTransaction trans = getSupportFragmentManager().beginTransaction();
-                Chat_Main_Fragment chat_main_fragment = new Chat_Main_Fragment(gruopMemberMobileNumber);
+                Chat_Main_Fragment chat_main_fragment = new Chat_Main_Fragment(gruopMemberMobileNumber,adminMobileNumber,groupName);
                 trans.add(R.id.fragment, chat_main_fragment);
                 trans.commit();
             }

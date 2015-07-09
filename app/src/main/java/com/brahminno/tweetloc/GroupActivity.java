@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ExpandableListView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -24,8 +23,6 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 //This Async class is used for getting all information of groups based on Mobile num.......
@@ -186,7 +183,7 @@ public class GroupActivity extends ActionBarActivity {
                 Toast.makeText(getApplicationContext(),groupName+" clicked",Toast.LENGTH_SHORT).show();
                 //Log to debug the application......
                 Log.i("Group Name...",groupName+" is clicked");
-                Intent intent = new Intent(getApplicationContext(),GroupChatActivity.class);
+                Intent intent = new Intent(getApplicationContext(),GroupCheckStatusActivity.class);
                 Bundle bundle = new Bundle();
                 bundle.putString("Group Name", groupName);
                 startActivity(intent.putExtras(bundle));
