@@ -28,17 +28,31 @@ import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 
 //AsynTask class to push registration details on server...
-class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
-    private static TweetApi myTweetApi = null;
+class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
     private Context context;
     private String Mobile_Number;
     private String Email_ID;
     private String Device_Id;
     RegistrationBean registerUserValidation;
-    public RegistrationAsyncTask(Context con,String Mobile_Number,String Email_ID,String Device_Id){
+
+    public RegistrationAsyncTask(Context con, String Mobile_Number, String Email_ID, String Device_Id) {
         this.Mobile_Number = Mobile_Number;
         this.Email_ID = Email_ID;
         this.Device_Id = Device_Id;
@@ -47,32 +61,78 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
 
     @Override
     protected String doInBackground(Void... params) {
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(),new AndroidJsonFactory(),null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+        Log.i("inside registration..", "succussfully.....");
+        try {
+            InputStream inputStream = null;
+            String result = null;
+            //create HttpClient.....
+            HttpClient httpClient = new DefaultHttpClient();
+            //Http POST request to given url....
+            HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/registeruser");
+            String json = null;
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("mobNo", Mobile_Number);
+                jsonObject.put("emailID", Email_ID);
+                jsonObject.put("deviceID", Device_Id);
+                //convert jsonObject to json string....
+                json = jsonObject.toString();
+                //set json to StringEntity....
+                Log.i("json......", json);
+                StringEntity stringEntity = new StringEntity(json);
+                //set httpPost Entity.....
+                httpPost.setEntity(stringEntity);
+                //set headers to inform server about type of content.....
+                httpPost.setHeader("Content-type", "application/json");
+                //execute POST request to the given server.....
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+                //receive response from server as inputStream............
+                inputStream = httpResponse.getEntity().getContent();
+                if (inputStream != null) {
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        result += line;
+                    }
+                    inputStream.close();
+                }
+                Log.i("result...: ", result);
+                if (result != null) {
+                    //Store details in shared preferince.....
+                    SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", context.MODE_PRIVATE).edit();
+                    editor.putString("Mobile Number", Mobile_Number);
+                    editor.putString("Email Id",Email_ID );
+                    editor.putString("Device Id",Device_Id);
+                    editor.commit();
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-            myTweetApi = builder.build();
-        }
-        try{
-            RegistrationBean registrationBean = new RegistrationBean();
+            /*RegistrationBean registrationBean = new RegistrationBean();
             registrationBean.setMobileNumber(Mobile_Number);
             registrationBean.setEmailId(Email_ID);
             registrationBean.setDeviceId(Device_Id);
 
-            myTweetApi.storeRegistration(registrationBean).execute();
+            myTweetApi.storeRegistration(registrationBean).execute();*/
 
 
             //call registration Details Api.....
-            registerUserValidation = myTweetApi.getRegistrationDetailUsingKey(Device_Id).execute();
+            //registerUserValidation = myTweetApi.getRegistrationDetailUsingKey(Device_Id).execute();
 
             //Store details in shared preferince.....
-            SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", context.MODE_PRIVATE).edit();
+            /*SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", context.MODE_PRIVATE).edit();
             editor.putString("Mobile Number", registerUserValidation.getMobileNumber());
             editor.putString("Email Id", registerUserValidation.getEmailId());
             editor.putString("Device Id", registerUserValidation.getDeviceId());
-            editor.commit();
-        }
-        catch (Exception e){
+            editor.commit();*/
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -82,9 +142,10 @@ class RegistrationAsyncTask extends AsyncTask<Void,Void,String>{
     @Override
     protected void onPostExecute(String s) {
         //super.onPostExecute(s);
-       // Toast.makeText(context,registerUserValidation.getMobileNumber().toString(),Toast.LENGTH_SHORT).show();
+        // Toast.makeText(context,registerUserValidation.getMobileNumber().toString(),Toast.LENGTH_SHORT).show();
     }
 }
+
 //*******************************************************
 //This class is for user registration.....
 //By Shushmit on 20-05-2015.
@@ -121,44 +182,41 @@ public class RegistrationActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
 
-                if (ckBoxTC.isChecked()){
-                    if(!isValidNum){
+                if (ckBoxTC.isChecked()) {
+                    if (!isValidNum) {
                         mobNum = showInputDialog();
 
-                    }
-                    else{
+                    } else {
                         //call StandardMobileNumberFormat class to make mobile number in standard format......
-                        standardMobileNumber = standardMobileNumberFormat.getLocale(mobNum,countryCode);
-                        Log.i("standardMobileNumber...",""+standardMobileNumber);
+                        standardMobileNumber = standardMobileNumberFormat.getLocale(mobNum, countryCode);
+                        Log.i("standardMobileNumber...", "" + standardMobileNumber);
 
                         //call method to store registration details on server
-                        new RegistrationAsyncTask(getApplicationContext(), standardMobileNumber,primaryEmail,deviceID).execute();
+                        new RegistrationAsyncTask(getApplicationContext(), standardMobileNumber, primaryEmail, deviceID).execute();
 
                         //call intent to open MyTrail Activity....
-                        Intent intent = new Intent(getBaseContext(),MyTrail.class);
+                        Intent intent = new Intent(getBaseContext(), MyTrail.class);
                         Bundle bundle = new Bundle();
-                        bundle.putString("Device_Id",deviceID);
+                        bundle.putString("Device_Id", deviceID);
                         intent.putExtras(bundle);
                         startActivity(intent);
 
                         finish();
                     }
-                }
-                else{
-                    Toast.makeText(getApplicationContext(),"Accept Terms and Conditions",Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Accept Terms and Conditions", Toast.LENGTH_SHORT).show();
                 }
             }
         });
         //Check Internet if yes then goto else
-        if (!isNetworkAvailable()){
-            Toast.makeText(this,"No Internet Connection",Toast.LENGTH_SHORT).show();
-        }
-        else{
+        if (!isNetworkAvailable()) {
+            Toast.makeText(this, "No Internet Connection", Toast.LENGTH_SHORT).show();
+        } else {
             //get country code using telephony manager class.......
             TelephonyManager manager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
             countryCode = manager.getNetworkCountryIso().toUpperCase();
-            Toast.makeText(getApplicationContext(),countryCode,Toast.LENGTH_SHORT).show();
-            Log.i("Locale...",countryCode);
+            Toast.makeText(getApplicationContext(), countryCode, Toast.LENGTH_SHORT).show();
+            Log.i("Locale...", countryCode);
             //Retrieve Device Id...
             TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             deviceID = getDeviceID(telephonyManager);
@@ -173,31 +231,31 @@ public class RegistrationActivity extends ActionBarActivity {
             Log.i("Mobile No...", mobNum);
             isValidNum = validPhone(mobNum);
             Log.i("Valid Number..", "" + isValidNum);
-            Toast.makeText(getApplicationContext(), mobNum,Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), mobNum, Toast.LENGTH_SHORT).show();
         }
     }
+
     //Check Internet
-    private boolean isNetworkAvailable(){
+    private boolean isNetworkAvailable() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnected()){
+        if (netInfo != null && netInfo.isConnected()) {
             return true;
-        }
-        else{
+        } else {
             return false;
         }
     }
 
     //To get the Unique Device Id...
-    private String getDeviceID(TelephonyManager manager){
+    private String getDeviceID(TelephonyManager manager) {
         String id = manager.getDeviceId();
-        if(id == null){
+        if (id == null) {
             id = "Not Available";
         }
         int phoneType = manager.getPhoneType();
-        switch(phoneType){
+        switch (phoneType) {
             case TelephonyManager.PHONE_TYPE_NONE:
-                return  "" + id;
+                return "" + id;
 
             case TelephonyManager.PHONE_TYPE_GSM:
                 return "" + id;
@@ -206,17 +264,17 @@ public class RegistrationActivity extends ActionBarActivity {
                 return "" + id;
 
             default:
-                return "" +id;
+                return "" + id;
         }
     }
 
     //To get Email Id....
-    public String getEmail(){
+    public String getEmail() {
 
         Pattern emailPattern = Patterns.EMAIL_ADDRESS;
         Account[] accounts = AccountManager.get(getApplicationContext()).getAccountsByType("com.google");
-        for (Account account : accounts){
-            if(emailPattern.matcher(account.name).matches()){
+        for (Account account : accounts) {
+            if (emailPattern.matcher(account.name).matches()) {
                 primaryEmailID = account.name;
             }
         }
@@ -224,15 +282,15 @@ public class RegistrationActivity extends ActionBarActivity {
     }
 
     //This method is for obtaining mobile mobNum...
-    public String getMobileNumber(){
+    public String getMobileNumber() {
         TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         String strMobileNumber = manager.getLine1Number();
-        Toast.makeText(getApplicationContext(),strMobileNumber,Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), strMobileNumber, Toast.LENGTH_SHORT).show();
         return strMobileNumber;
     }
 
     //If Mobile Number does not fetch automatically.....
-    public String showInputDialog(){
+    public String showInputDialog() {
         //get prompt.xml view...
         LayoutInflater inflater = LayoutInflater.from(RegistrationActivity.this);
         View promptView = inflater.inflate(R.layout.input_number, null);
@@ -246,10 +304,10 @@ public class RegistrationActivity extends ActionBarActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 strNumber = etNumber.getText().toString();
-                Log.i("From Dialog...",strNumber);
-                Log.i("From Dialog is valid...",""+validPhone(strNumber));
+                Log.i("From Dialog...", strNumber);
+                Log.i("From Dialog is valid...", "" + validPhone(strNumber));
                 isValidNum = validPhone(strNumber);
-                if(isValidNum){
+                if (isValidNum) {
                     mobNum = strNumber;
                 }
             }

@@ -185,9 +185,8 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
         } else {
             //if user already accepted group, then this screen will appear to user for chat......
             setContentView(R.layout.already_group_accepted);
-            ArrayList<String> gruopMemberMobileNumber = null;
+            ArrayList<String> gruopMemberMobileNumber = new ArrayList<>();
             for(int i = 0; i < contactNameWithNumberArrayList.size(); i++){
-                gruopMemberMobileNumber = new ArrayList<>();
                 gruopMemberMobileNumber.add(contactNameWithNumberArrayList.get(i).getContact_number());
             }
             if (savedInstanceState == null) {

@@ -36,6 +36,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.api.client.util.DateTime;
 
 
 import java.util.ArrayList;
@@ -189,8 +190,10 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         btnSendChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                long time = System.currentTimeMillis();
                 String chatMessage = etMessage.getText().toString();
-                new ChatMessageSendAsyncTask(getActivity(),senderMobileNumber,groupName,adminMobileNumber,chatMessage,timeStamp);
+                etMessage.setText("");
+                new ChatMessageSendAsyncTask(getActivity(),senderMobileNumber,groupName,adminMobileNumber,groupMemberMobileNumber,chatMessage,time).execute();
             }
         });
     }
