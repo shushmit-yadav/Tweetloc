@@ -59,6 +59,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -281,11 +282,11 @@ class FetchNotificationAsyncTask extends AsyncTask<Void,Void,String>{
             //execute POST request to the given server.....
             HttpResponse httpResponse = httpClient.execute(httpPost);
             //get httpResponse into string.....
-            //String responseResult = EntityUtils.toString(httpResponse.getEntity());
+            String responseResult = EntityUtils.toString(httpResponse.getEntity());
             //convert responseResult to jsonArray....
             //JSONArray jsonArray = new JSONArray(responseResult);
             //JSONObject responseJsonObject = new JSONObject(responseResult);
-            //Log.i("responseResult...: ", responseResult);
+            Log.i("responseResult...: ", responseResult);
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -359,7 +360,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
                         String username;
                         String message;
                         try {
-                            username = data.getString("qcmessage");
+                            username = data.getString("message");
                             //message = data.getString("message");
                         } catch (JSONException e) {
                             return;
@@ -374,8 +375,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         mSocket.on("whoru", onNewMessage);
         JSONObject testMessage = new JSONObject();
         try {
-            testMessage.put("moblieNum",userMobileNumber);
-            mSocket.emit("im", testMessage);
+            testMessage.put("mobileNum",userMobileNumber);
+            mSocket.emit("iam", testMessage);
         } catch (JSONException e) {
             e.printStackTrace();
         }
