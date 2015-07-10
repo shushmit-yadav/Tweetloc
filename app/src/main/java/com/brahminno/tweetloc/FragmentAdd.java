@@ -19,6 +19,8 @@ import android.widget.ListView;
 import com.brahminno.tweetloc.testAdapter.AddContactsAdapter;
 import com.brahminno.tweetloc.testAdapter.Contacts_Test;
 
+import org.json.JSONArray;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,7 +38,7 @@ public class FragmentAdd extends Fragment {
     EditText etGroupName;
 
     String Group_Name;
-    ArrayList<String> Group_Member;
+    JSONArray Group_Member;
     String deviceId, Mobile_Number;
     Context context;
     String countryCode;
@@ -48,7 +50,6 @@ public class FragmentAdd extends Fragment {
     ArrayList<Contacts_Test> contactList;
     ArrayList<String> mydbContactNumberList;
     ArrayList<String> mydbContactNameList;
-    String compositeGroupKey;
 
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -69,10 +70,8 @@ public class FragmentAdd extends Fragment {
         Mobile_Number = prefs.getString("Mobile Number", null);
         manager = (TelephonyManager) getActivity().getSystemService(getActivity().TELEPHONY_SERVICE);
         countryCode = manager.getNetworkCountryIso().toUpperCase();
-        //get value in compositeGroupKey.....
-        compositeGroupKey = Group_Name+"-"+Mobile_Number+"-"+deviceId;
-        Log.i("compositeGroupKey....",""+compositeGroupKey);
-        Group_Member = new ArrayList<>();
+        //init Group_Member JSONArray.....
+        Group_Member = new JSONArray();
         try {
             //Initialization of app local sqlite database.....
             mydb = new SQLiteDatabase(getActivity());
@@ -103,17 +102,19 @@ public class FragmentAdd extends Fragment {
                 @Override
                 public void onClick(View v) {
                     try{
-                        //get arraylist of members from adapter class....
-                        Group_Member = addContactsAdapter.getArrayList();
-                        Group_Member.add(Mobile_Number);
-                        Log.i("Member Number", Group_Member.get(1));
+                        //get JsonArray of members from adapter class.....
+                        Group_Member = addContactsAdapter.getJsonArrayList();
+                        Log.i("JsonArray is..."," "+Group_Member);
+                        Group_Member.put(Mobile_Number);
+                        Log.i("JsonArray is...", " " + Group_Member);
+                        Log.i("Member Number", String.valueOf(Group_Member.get(1)));
                     }
                     catch(Exception ex){
                         ex.printStackTrace();
                     }
                     Log.i("GroupAsyncTask call...", "now");
                     //Call AsyncTask to upload data on server.....
-                    new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number,compositeGroupKey).execute();
+                    new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
                 }
             });
         } catch (Exception ex) {

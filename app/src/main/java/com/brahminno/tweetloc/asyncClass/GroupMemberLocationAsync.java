@@ -10,6 +10,7 @@ import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.gms.maps.model.LatLng;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,10 +28,10 @@ public class GroupMemberLocationAsync extends AsyncTask<Void,Void,String> {
     private Double altitude;
     private int speed;
     private String userMobileNumber;
-    private ArrayList<String> groupMemberMobileNumber;
+    private JSONArray groupMemberMobileNumber;
     private Long timeStamp;
 
-    public GroupMemberLocationAsync(Context context, Double latitide, Double longitude, Double altitude, int speed, Long timeStamp, String userMobileNumber, ArrayList<String> groupMemberMobileNumber){
+    public GroupMemberLocationAsync(Context context, Double latitide, Double longitude, Double altitude, int speed, Long timeStamp, String userMobileNumber, JSONArray groupMemberMobileNumber){
         this.context = context;
         this.latitide = latitide;
         this.longitude = longitude;
@@ -65,7 +66,7 @@ public class GroupMemberLocationAsync extends AsyncTask<Void,Void,String> {
                         float speed;
                         Long timeStamp;
                         String userMobileNumber;
-                        ArrayList<String> groupMemberMobileNumber;
+                        JSONArray groupMemberMobileNumber;
                         try {
                             latitude = data.getDouble("latitude");
                             longitude = data.getDouble("longitude");
@@ -73,12 +74,16 @@ public class GroupMemberLocationAsync extends AsyncTask<Void,Void,String> {
                             speed = data.getInt("speed");
                             timeStamp = data.getLong("timeStamp");
                             userMobileNumber = data.getString("userMobileNumber");
-                            groupMemberMobileNumber = (ArrayList<String>) data.get("groupMemberMobileNumber");
+                            groupMemberMobileNumber = (JSONArray) data.get("groupMemberMobileNumber");
                         } catch (JSONException e) {
                             return;
                         }
                         Log.i("Socket On...", "" + userMobileNumber);
-                        Log.i("Socket On....."," "+groupMemberMobileNumber.get(0));
+                        try {
+                            Log.i("Socket On....."," "+groupMemberMobileNumber.get(0));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }).start();
             }

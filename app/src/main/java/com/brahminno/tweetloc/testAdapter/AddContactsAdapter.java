@@ -12,6 +12,8 @@ import android.widget.TextView;
 
 import com.brahminno.tweetloc.R;
 
+import org.json.JSONArray;
+
 import java.util.ArrayList;
 
 /**
@@ -21,7 +23,7 @@ import java.util.ArrayList;
 public class AddContactsAdapter extends BaseAdapter {
     private ArrayList<Contacts_Test> addContactList;
     private LayoutInflater addContactInflater;
-    static ArrayList<String> Group_Member;
+    static JSONArray groupMemberJsonArray;
     Context context;
     boolean[] itemChecked;
 
@@ -30,7 +32,7 @@ public class AddContactsAdapter extends BaseAdapter {
         addContactInflater = addContactInflater.from(context);
         this.context = context;
         itemChecked = new boolean[addContactList.size()];
-        Group_Member = new ArrayList<>();
+        groupMemberJsonArray = new JSONArray();
     }
 
     private class ViewHolder {
@@ -81,22 +83,22 @@ public class AddContactsAdapter extends BaseAdapter {
                     Log.i("checkbox", "checked");
                     int position = (int) v.getTag();
                     Log.i("checkbox", "position .." + position);
-                    Group_Member.add(currentContact.getNumber());
-                    Log.i("ContactList", "group .." + Group_Member);
+                    groupMemberJsonArray.put(currentContact.getNumber());
+                    Log.i("ContactList", "group .." + groupMemberJsonArray);
                 }
                 if (!c.isChecked()) {
                     int position = (int) v.getTag();
                     Log.i("uncheckbox", "position .." + position);
-                    Group_Member.remove(currentContact.getNumber());
-                    Log.i("ContactList", "group remove .." + Group_Member);
+                    groupMemberJsonArray.remove(position);
+                    Log.i("ContactList", "group remove .." + groupMemberJsonArray);
                 }
             }
         });
         return convertView;
     }
-
-    public static ArrayList<String> getArrayList(){
-        return Group_Member;
+    //this method returns JsonArray.......
+    public static JSONArray getJsonArrayList(){
+        return groupMemberJsonArray;
     }
 
 }

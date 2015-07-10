@@ -39,6 +39,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.api.client.util.DateTime;
 
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.util.ArrayList;
 
 /**
@@ -64,7 +67,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private String senderMobileNumber;
     private String adminMobileNumber;
     private String groupName;
-    private ArrayList<String> groupMemberMobileNumber;
+    private JSONArray groupMemberMobileNumber;
 
     GroupChatService groupChatService;
 
@@ -80,7 +83,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     Button btnSendChat;
 
 
-    public Chat_Main_Fragment (ArrayList<String> groupMemberMobileNumber,String adminMobileNumber,String groupName) {
+    public Chat_Main_Fragment (JSONArray groupMemberMobileNumber,String adminMobileNumber,String groupName) {
         this.groupMemberMobileNumber = groupMemberMobileNumber;
         this.adminMobileNumber = adminMobileNumber;
         this.groupName = groupName;
@@ -149,7 +152,11 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
         mLocation = new LatLng(finalLocation.getLatitude(),finalLocation.getLongitude());
         Log.i("location in ", " chat_main_fragment class : " + finalLocation.getAltitude());
-        Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber.get(0));
+        try {
+            Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber.getString(0));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         Log.i("userMobileNumber...", " in chat_main_fragment: " + senderMobileNumber);
         if (mLocation == null) {
             mLocation = getLastKnownLocation(false);

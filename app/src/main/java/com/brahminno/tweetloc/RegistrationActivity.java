@@ -34,6 +34,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -63,8 +65,6 @@ class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
     protected String doInBackground(Void... params) {
         Log.i("inside registration..", "succussfully.....");
         try {
-            InputStream inputStream = null;
-            String result = null;
             //create HttpClient.....
             HttpClient httpClient = new DefaultHttpClient();
             //Http POST request to given url....
@@ -87,24 +87,22 @@ class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
                 //execute POST request to the given server.....
                 HttpResponse httpResponse = httpClient.execute(httpPost);
                 //receive response from server as inputStream............
-                inputStream = httpResponse.getEntity().getContent();
-                if (inputStream != null) {
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        result += line;
-                    }
-                    inputStream.close();
-                }
-                Log.i("result...: ", result);
-                if (result != null) {
+                //inputStream = httpResponse.getEntity().getContent();
+
+                String responseResult = EntityUtils.toString(httpResponse.getEntity());
+                //convert responseResult to jsonArray....
+                //JSONArray jsonArray = new JSONArray(responseResult);
+                JSONObject responseJsonObject = new JSONObject(responseResult);
+                if(responseJsonObject != null){
+                    Log.i("inside if loop...: ", "if result not null...."+responseResult);
                     //Store details in shared preferince.....
                     SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", context.MODE_PRIVATE).edit();
-                    editor.putString("Mobile Number", Mobile_Number);
-                    editor.putString("Email Id",Email_ID );
-                    editor.putString("Device Id",Device_Id);
+                    editor.putString("Mobile Number", responseJsonObject.getString("mobileNo"));
+                    editor.putString("Email Id",responseJsonObject.getString("emailID") );
+                    editor.putString("Device Id",responseJsonObject.getString("deviceID"));
                     editor.commit();
                 }
+                Log.i("responseResult...: ", responseResult);
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (UnsupportedEncodingException e) {
@@ -114,42 +112,22 @@ class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            /*RegistrationBean registrationBean = new RegistrationBean();
-            registrationBean.setMobileNumber(Mobile_Number);
-            registrationBean.setEmailId(Email_ID);
-            registrationBean.setDeviceId(Device_Id);
-
-            myTweetApi.storeRegistration(registrationBean).execute();*/
-
-
-            //call registration Details Api.....
-            //registerUserValidation = myTweetApi.getRegistrationDetailUsingKey(Device_Id).execute();
-
-            //Store details in shared preferince.....
-            /*SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", context.MODE_PRIVATE).edit();
-            editor.putString("Mobile Number", registerUserValidation.getMobileNumber());
-            editor.putString("Email Id", registerUserValidation.getEmailId());
-            editor.putString("Device Id", registerUserValidation.getDeviceId());
-            editor.commit();*/
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return "";
     }
-
     @Override
     protected void onPostExecute(String s) {
-        //super.onPostExecute(s);
-        // Toast.makeText(context,registerUserValidation.getMobileNumber().toString(),Toast.LENGTH_SHORT).show();
+        super.onPostExecute(s);
     }
 }
 
 //*******************************************************
-//This class is for user registration.....
-//By Shushmit on 20-05-2015.
-//Brahmastra Innovations.
+/**This class is for user registration.....
+ *By Shushmit on 20-05-2015................
+ * Brahmastra Innovations Pvt. Ltd.
+ **/
 public class RegistrationActivity extends ActionBarActivity {
     TextView tvTC;
     Button btnRegister;

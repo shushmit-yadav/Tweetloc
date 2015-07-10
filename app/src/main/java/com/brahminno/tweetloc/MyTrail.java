@@ -43,6 +43,7 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
@@ -51,6 +52,13 @@ import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.github.nkzawa.emitter.Emitter;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -100,35 +108,67 @@ class LocationAsyncTask extends AsyncTask<Void, Void, String> {
 
 //This AsynTask is used to delete the information.....
 class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
-    private static TweetApi myTweetApi = null;
     private Context context;
     private String Device_Id;
+    private boolean status;
 
     public ForgetAsyncTask(Context context, String Device_Id) {
-        context = null;
+        this.context = context;
         this.Device_Id = Device_Id;
     }
 
     @Override
     protected String doInBackground(Void... params) {
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
-
-            myTweetApi = builder.build();
-        }
+        //create HttpClient.....
+        HttpClient httpClient = new DefaultHttpClient();
+        //Http POST request to given url....
+        HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/forgetme");
+        String json = null;
+        JSONObject jsonObject = new JSONObject();
         try {
+            jsonObject.put("id", Device_Id);
+            //convert jsonObject to json string....
+            json = jsonObject.toString();
+            //set json to StringEntity....
+            Log.i("json......", json);
+            StringEntity stringEntity = new StringEntity(json);
+            //set httpPost Entity.....
+            httpPost.setEntity(stringEntity);
+            //set headers to inform server about type of content.....
+            httpPost.setHeader("Content-type", "application/json");
+            //execute POST request to the given server.....
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+            //receive response from server as inputStream............
+            String responseResult = EntityUtils.toString(httpResponse.getEntity());
+            Log.i("responseResult...: ", responseResult);
+            //convert responseResult into jsonObject...
+            JSONObject responseJsonObject = new JSONObject(responseResult);
 
-            myTweetApi.forgetMe(Device_Id).execute();
-        } catch (IOException ex) {
-            ex.printStackTrace();
+            status = responseJsonObject.getBoolean("status");
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return "";
     }
-
     @Override
     protected void onPostExecute(String s) {
-        //super.onPostExecute(s);
+        super.onPostExecute(s);
+        if(status == true){
+            Log.i("inside if loop...: ", "if status is "+status);
+            //Clear all data from shared preference....
+            SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.clear();
+            editor.commit();
+        }
     }
 }
 
@@ -209,6 +249,56 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
     }
 }
 
+//this class is only used for fetching notification from server if any notification is available.....
+//this is testing class.....
+class FetchNotificationAsyncTask extends AsyncTask<Void,Void,String>{
+    private Context context;
+    private String userMobileNumber;
+
+    public FetchNotificationAsyncTask(Context context,String userMobileNumber){
+        this.context = context;
+        this.userMobileNumber = userMobileNumber;
+    }
+    @Override
+    protected String doInBackground(Void... params) {
+        //create HttpClient.....
+        HttpClient httpClient = new DefaultHttpClient();
+        //Http POST request to given url....
+        HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/mynotice");
+        String json = null;
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("mobileNum", userMobileNumber);
+            //convert jsonObject to json string....
+            json = jsonObject.toString();
+            //set json to StringEntity....
+            Log.i("json......", json);
+            StringEntity stringEntity = new StringEntity(json);
+            //set httpPost Entity.....
+            httpPost.setEntity(stringEntity);
+            //set headers to inform server about type of content.....
+            httpPost.setHeader("Content-type", "application/json");
+            //execute POST request to the given server.....
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+            //get httpResponse into string.....
+            //String responseResult = EntityUtils.toString(httpResponse.getEntity());
+            //convert responseResult to jsonArray....
+            //JSONArray jsonArray = new JSONArray(responseResult);
+            //JSONObject responseJsonObject = new JSONObject(responseResult);
+            //Log.i("responseResult...: ", responseResult);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    return "";
+    }
+}
+
 //*************************************************************************************
 
 //this is a main class of MyTrail activity where we plot the map and show the location...
@@ -238,7 +328,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     private Socket mSocket;
     {
         try {
-            mSocket = IO.socket("https://qcapp-prateeksonkar.rhcloud.com");
+            mSocket = IO.socket("http://104.236.27.79:8080");
         } catch (URISyntaxException e) {}
     }
 
@@ -252,6 +342,9 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             finish();
         }
         setContentView(R.layout.activity_my_trail);
+        //get user mobile number from shared preference.......
+        SharedPreferences prefss = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        final String userMobileNumber = prefss.getString("Mobile Number",null);
         //make connection to socket.....
         mSocket.connect();
         //mSocket.emit("Tweet", message);
@@ -278,14 +371,43 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             }
         };
 
-        mSocket.on("hello-there", onNewMessage);
+        mSocket.on("whoru", onNewMessage);
         JSONObject testMessage = new JSONObject();
         try {
-            testMessage.put("tweetdata","Message from tweetloc client app..");
-            mSocket.emit("tweet-hello",testMessage);
+            testMessage.put("moblieNum",userMobileNumber);
+            mSocket.emit("im", testMessage);
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        //below code is for testing purpose to check notification.........
+        Emitter.Listener onNotification = new Emitter.Listener() {
+            @Override
+            public void call(final Object... args) {
+                MyTrail.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        boolean status;
+                        String message;
+                        try {
+                            status = data.getBoolean("notification");
+                            if(status == true){
+                                new FetchNotificationAsyncTask(getApplicationContext(),userMobileNumber).execute();
+                            }
+                        } catch (JSONException e) {
+                            return;
+                        }
+                        Log.i("Socket On...", "" + status);
+                    }
+                });
+
+            }
+        };
+
+        mSocket.on("isnotification",onNotification);
+
+        //check notification code ends here.......
 
 
 
@@ -584,12 +706,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     public void forgetMe() {
         // mydb.deleteInfo(new RegistrationInfo(deviceId));
         new ForgetAsyncTask(getApplicationContext(), deviceId).execute();
-
-        //Clear all data from shared preference....
-        SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.clear();
-        editor.commit();
     }
 
     //this method is used for inviting contacts through social media android app....

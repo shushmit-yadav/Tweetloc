@@ -19,6 +19,8 @@ import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
+import org.json.JSONArray;
+
 import java.util.ArrayList;
 
 //this AsyncClass is for update user acceptance status when user click on Accept button.....
@@ -185,9 +187,9 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
         } else {
             //if user already accepted group, then this screen will appear to user for chat......
             setContentView(R.layout.already_group_accepted);
-            ArrayList<String> gruopMemberMobileNumber = new ArrayList<>();
+            JSONArray gruopMemberMobileNumber = new JSONArray();
             for(int i = 0; i < contactNameWithNumberArrayList.size(); i++){
-                gruopMemberMobileNumber.add(contactNameWithNumberArrayList.get(i).getContact_number());
+                gruopMemberMobileNumber.put(contactNameWithNumberArrayList.get(i).getContact_number());
             }
             if (savedInstanceState == null) {
                 FragmentTransaction trans = getSupportFragmentManager().beginTransaction();

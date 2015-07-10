@@ -12,6 +12,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,10 +32,10 @@ public class ChatMessageSendAsyncTask extends AsyncTask<Void,Void,String> {
     private String senderMobileNumber;
     private String adminMobileNumber;
     private String groupName;
-    private ArrayList<String> groupMemberMobileNumber;
+    private JSONArray groupMemberMobileNumber;
     private Long timeStamp;
 
-    public ChatMessageSendAsyncTask(Context context,String senderMobileNumber,String groupName,String adminMobileNumber,ArrayList<String> groupMemberMobileNumber,String message,Long timeStamp){
+    public ChatMessageSendAsyncTask(Context context,String senderMobileNumber,String groupName,String adminMobileNumber,JSONArray groupMemberMobileNumber,String message,Long timeStamp){
         this.context = context;
         this.senderMobileNumber = senderMobileNumber;
         this.groupName = groupName;
@@ -45,8 +46,6 @@ public class ChatMessageSendAsyncTask extends AsyncTask<Void,Void,String> {
     }
     @Override
     protected String doInBackground(Void... params) {
-        InputStream inputStream = null;
-        String result = null;
         //create HttpClient.....
         HttpClient httpClient = new DefaultHttpClient();
         //Http POST request to given url....
@@ -71,8 +70,6 @@ public class ChatMessageSendAsyncTask extends AsyncTask<Void,Void,String> {
             httpPost.setHeader("Content-type","application/json");
             //execute POST request to the given server.....
             HttpResponse httpResponse = httpClient.execute(httpPost);
-            //receive response from server as inputStream............
-            inputStream = httpResponse.getEntity().getContent();
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {

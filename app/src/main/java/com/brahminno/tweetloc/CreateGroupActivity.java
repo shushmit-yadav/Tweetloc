@@ -21,51 +21,87 @@ import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 //AsyncTask class to push group details on server.....
 class GroupAsyncTask extends AsyncTask<Void,Void,String>{
-
-    private static TweetApi myTweetApi = null;
     private Context context;
     private String Device_Id;
     private String Group_Name;
-    private ArrayList<String> Group_Member ;
-    private String Mobile_Number;
-    private String compositeGroupKey;
+    private JSONArray Group_Member ;
+    private String adminMobileNumber;
+    private String responseResult;
 
-    public GroupAsyncTask(Context context,String Device_Id,String Group_Name,ArrayList<String> Group_Member,String Mobile_Number,String compositeGroupKey){
+    public GroupAsyncTask(Context context,String Device_Id,String Group_Name,JSONArray Group_Member,String adminMobileNumber){
         this.context = context;
         this.Device_Id = Device_Id;
         this.Group_Name = Group_Name;
         this.Group_Member = Group_Member;
-        this.Mobile_Number = Mobile_Number;
-        this.compositeGroupKey = compositeGroupKey;
+        this.adminMobileNumber = adminMobileNumber;
     }
 
     @Override
     protected String doInBackground(Void... params) {
+        Log.i("inside GroupAsyncTask..", "succussfully.....");
+        try {
+            //create HttpClient.....
+            HttpClient httpClient = new DefaultHttpClient();
+            //Http POST request to given url....
+            HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/creategroup");
+            String json = null;
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("groupAdminMobNo", adminMobileNumber);
+                jsonObject.put("groupName",Group_Name);
+                jsonObject.put("deviceID", Device_Id);
+                jsonObject.put("groupmembers", Group_Member);
+                //convert jsonObject to json string....
+                json = jsonObject.toString();
+                //set json to StringEntity....
+                Log.i("json......", json);
+                StringEntity stringEntity = new StringEntity(json);
+                //set httpPost Entity.....
+                httpPost.setEntity(stringEntity);
+                //set headers to inform server about type of content.....
+                httpPost.setHeader("Content-type", "application/json");
+                //execute POST request to the given server.....
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+                //get responseResult from httpResponse......
+                responseResult = EntityUtils.toString(httpResponse.getEntity());
 
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(),new AndroidJsonFactory(),null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
-
-            myTweetApi = builder.build();
-        }
-        try{
-            GroupBean groupBean = new GroupBean();
-            groupBean.setGroupName(Group_Name);
-            groupBean.setGroupMember(Group_Member);
-            groupBean.setDeviceId(Device_Id);
-            groupBean.setMobileNumber(Mobile_Number);
-            groupBean.setCompositeGroupKey(compositeGroupKey);
-
-            myTweetApi.storeGroup(groupBean).execute();
-        }
-        catch (Exception ex){
-            ex.printStackTrace();
+                Log.i("responseResult...: ", responseResult);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return "";
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        super.onPostExecute(s);
+        Toast.makeText(context,responseResult,Toast.LENGTH_SHORT).show();
     }
 }
 
