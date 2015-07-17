@@ -22,58 +22,141 @@ import com.brahminno.tweetloc.backend.tweetApi.model.GroupMemberSyncBean;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 //This Async class is used for getting all information of groups based on Mobile num.......
 class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
-    private static TweetApi myTweetApi = null;
     private Context context;
-    private String Mobile_Number;
+    private String userMobileNumber;
     private String Group_Name;
-    private ArrayList<String> Group_Members;
+    private String groupAdminMobNo;
+    private boolean isAccepted;
+    private String groupMemberMobNo;
     List<GroupMemberSyncBean> groupBeanDetails;
     SQLiteDatabase mydb;
 
-    public GroupDetailsAsyncTask(Context context, String Mobile_Number) {
+    public GroupDetailsAsyncTask(Context context, String userMobileNumber) {
         this.context = context;
-        this.Mobile_Number = Mobile_Number;
+        this.userMobileNumber = userMobileNumber;
     }
 
     @Override
     protected String doInBackground(Void... params) {
-        Log.i("doInBackground...", "method starts");
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
-
-            myTweetApi = builder.build();
-        }
-        try {
-            Log.i("doInBackground...", "try block...");
-            //call group Details Api.....
-            groupBeanDetails = myTweetApi.groupMemberSync(Mobile_Number).execute().getItems();
-            mydb = new SQLiteDatabase(context);
-            //delete GROUP_TABLE Items....
-            mydb.deleteGroupTableItems();
-            for (GroupMemberSyncBean result : groupBeanDetails) {
-                Log.i("Inside for loop...", "values");
-                for (int i = 0; i < result.getGroupMember().size(); i++) {
-                    String isAccepted = "unknown";
-                    if (result.getGroupAdminNumber().equals(result.getGroupMember().get(i))) {
-                        isAccepted = "true";
-                    }
-                    if (Mobile_Number.equals(result.getGroupMember().get(i))) {
-                        isAccepted = result.getIsAccepted();
-                    }
-                    //store data to local app db.........
-                    mydb.insertGroups(result.getGroupName(), result.getGroupAdminNumber(), isAccepted, result.getGroupMember().get(i));
-                }
+        Log.i("Inside....","GroupDetailsAsyncTask");
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/syncgroup");
+        String json = null;
+        JSONObject jsonObject = new JSONObject();
+        try{
+            jsonObject.put("userMobileNum", userMobileNumber);
+            json = jsonObject.toString();
+            StringEntity stringEntity = new StringEntity(json);
+            httpPost.setEntity(stringEntity);
+            httpPost.setHeader("Content-type", "application/json");
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+            String responseResult = EntityUtils.toString(httpResponse.getEntity());
+            Log.i("GroupDetailsAsyncTask..","...:"+responseResult);
+            JSONObject responseJsonResult = new JSONObject(responseResult);
+            JSONArray jsonArray = responseJsonResult.getJSONArray("groupinfo");
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject jsonObjectInJsonArray = jsonArray.getJSONObject(i);
+                Group_Name = jsonObjectInJsonArray.getString("groupName");
+                groupAdminMobNo = jsonObjectInJsonArray.getString("groupAdminMobNo");
+                groupMemberMobNo = jsonObjectInJsonArray.getString("groupMemberMobNo");
+                isAccepted = (jsonObjectInJsonArray.getBoolean("isAccepted"));
+                //new SyncAllGroupMembers(context,Group_Name,groupAdminMobNo,groupMemberMobNo).execute();
             }
-        } catch (Exception ex) {
+        }
+        catch (JSONException ex){
+            ex.printStackTrace();
+        }
+        catch (UnsupportedEncodingException ex){
+            ex.printStackTrace();
+        }
+        catch (ClientProtocolException ex){
+            ex.printStackTrace();
+        }
+        catch (Exception ex){
             ex.printStackTrace();
         }
         return "";
+    }
+}
+
+//this class is used for sync all group members from server using groupName,groupMemberMobNo, and adminMobNo......
+class SyncAllGroupMembers extends AsyncTask<Void,Void,String>{
+    private String groupName;
+    private String groupAdminMobNo;
+    private String groupMemberMobNo;
+    private boolean isAccepted;
+    private Context context;
+    SQLiteDatabase mydb;
+    public SyncAllGroupMembers(Context context,String groupName,String groupAdminMobNo,String groupMemberMobNo){
+        this.context = context;
+        this.groupAdminMobNo = groupAdminMobNo;
+        this.groupMemberMobNo = groupMemberMobNo;
+        this.groupName = groupName;
+    }
+    @Override
+    protected String doInBackground(Void... params) {
+        Log.i("Inside....","SyncAllGroupMembers");
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/syncallgroupmember");
+        String json = null;
+        JSONObject jsonObject = new JSONObject();
+        try{
+            jsonObject.put("userMobileNum", groupMemberMobNo);
+            jsonObject.put("groupAdminMobNo",groupAdminMobNo);
+            jsonObject.put("groupName",groupName);
+            json = jsonObject.toString();
+            StringEntity stringEntity = new StringEntity(json);
+            httpPost.setEntity(stringEntity);
+            httpPost.setHeader("Content-type", "application/json");
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+            String responseResult = EntityUtils.toString(httpResponse.getEntity());
+            Log.i("SyncAllGroupMembers..","...:"+responseResult);
+            JSONObject responseJsonResult = new JSONObject(responseResult);
+            Log.i("SyncAllGroupMembers..","....:"+responseJsonResult);
+            JSONArray jsonArray = responseJsonResult.getJSONArray("allGroupMembers");
+            mydb = new SQLiteDatabase(context);
+            //delete GROUP_TABLE Items....
+            mydb.deleteGroupTableItems();
+            for(int i = 0; i < jsonArray.length(); i++){
+                JSONObject jsonObjectInJsonArray = jsonArray.getJSONObject(i);
+                groupName = jsonObjectInJsonArray.getString("groupName");
+                groupAdminMobNo = jsonObjectInJsonArray.getString("groupAdminMobNo");
+                groupMemberMobNo = jsonObjectInJsonArray.getString("groupMemberMobNo");
+                isAccepted = jsonObjectInJsonArray.getBoolean("isAccepted");
+                Log.i("group members...","details...:"+groupName+" "+ groupMemberMobNo+" "+groupAdminMobNo+" "+ isAccepted);
+                mydb.insertGroups(groupName,groupAdminMobNo,groupMemberMobNo,Boolean.toString(isAccepted));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        return null;
     }
 }
 
@@ -111,7 +194,7 @@ class AcceptStatusAsyncTask extends AsyncTask<Void,Void,String>{
                 Log.i("isAccepted.."," "+acceptanceStatusBean.get(i).getIsAccepted());
                 Log.i("Group Name.."," "+acceptanceStatusBean.get(i).getGroupName());
                 Log.i("GroupMember Number.."," "+acceptanceStatusBean.get(i).getMobileNumberMember());
-                mydb.updateGroupTableWithSyncInfo(acceptanceStatusBean.get(i).getIsAccepted(),acceptanceStatusBean.get(i).getGroupName(),acceptanceStatusBean.get(i).getMobileNumberMember());
+                mydb.updateGroupTableWithSyncInfo(acceptanceStatusBean.get(i).getIsAccepted(), acceptanceStatusBean.get(i).getGroupName(), acceptanceStatusBean.get(i).getMobileNumberMember());
             }
         }
         catch (Exception ex){
@@ -158,7 +241,7 @@ public class GroupActivity extends ActionBarActivity {
         });
         Log.i("AsyncTask method....", " starts");
         //call AsyncMethod to get Groups from server......
-        new GroupDetailsAsyncTask(getApplicationContext(), Mobile_Number).execute();
+        //new GroupDetailsAsyncTask(getApplicationContext(), Mobile_Number).execute();
 
         //Object of mydb....
         mydb = new SQLiteDatabase(this);

@@ -41,7 +41,7 @@
 
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyBbobPos1yQqoETbOMMddmL9ml2z_gR2Xg" />
+            android:value="AIzaSyCXQpV9g413Ap_NEwBd3QOhXeTPW29vRkM" />
 
         <activity
             android:name=".GroupActivity"
@@ -67,8 +67,6 @@
             android:label="@string/title_activity_add_new_member" >
         </activity>
 
-        <service
-            android:name=".services.GroupChatService"></service>
     </application>
 
 </manifest>

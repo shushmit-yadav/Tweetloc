@@ -67,7 +67,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     }
 
-    public void insertGroups(String Group_Name, String GroupMember_Admin, String isAccepted, String Group_Members) {
+    public void insertGroups(String Group_Name, String GroupMember_Admin,String Group_Members,String isAccepted) {
         Log.i("Inside insertGroups...", "table");
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();

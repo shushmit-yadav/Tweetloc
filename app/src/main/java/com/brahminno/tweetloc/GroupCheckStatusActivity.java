@@ -19,99 +19,168 @@ import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 //this AsyncClass is for update user acceptance status when user click on Accept button.....
 class AcceptAsyncTask extends AsyncTask<Void, Void, String> {
-    private static TweetApi myTweetApi = null;
     private Context context;
     private String groupName;
-    private String groupMemberMobileNumber;
-    private String acceptanceStatus;
+    private String groupMemberMobNo;
+    private String groupAdminMobNo;
+    private boolean isAccepted;
     SQLiteDatabase mydb;
-    AcceptanceStatusBean acceptanceStatusBean;
 
-    public AcceptAsyncTask(Context context, String groupName, String groupMemberMobileNumber, String acceptanceStatus) {
+    public AcceptAsyncTask(Context context, String groupName, String groupMemberMobNo,String groupAdminMobNo,boolean isAccepted) {
         this.context = context;
         this.groupName = groupName;
-        this.groupMemberMobileNumber = groupMemberMobileNumber;
-        this.acceptanceStatus = acceptanceStatus;
+        this.groupMemberMobNo = groupMemberMobNo;
+        this.groupAdminMobNo = groupAdminMobNo;
+        this.isAccepted = isAccepted;
     }
 
     @Override
     protected String doInBackground(Void... params) {
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+        Log.i("inside AcceptAsyncTask:"," .....");
+        try{
+            //create HttpClient.....
+            HttpClient httpClient = new DefaultHttpClient();
+            //Http POST request to given url....
+            HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/acceptance");
+            String json = null;
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("groupMemberMobNo", groupMemberMobNo);
+                jsonObject.put("groupName",groupName);
+                jsonObject.put("groupAdminMobNo",groupAdminMobNo);
+                jsonObject.put("isAccepted",isAccepted);
+                //convert jsonObject to json string....
+                json = jsonObject.toString();
+                //set json to StringEntity....
+                Log.i("json......", json);
+                StringEntity stringEntity = new StringEntity(json);
+                //set httpPost Entity.....
+                httpPost.setEntity(stringEntity);
+                //set headers to inform server about type of content.....
+                httpPost.setHeader("Content-type", "application/json");
+                //execute POST request to the given server.....
+                HttpResponse httpResponse = httpClient.execute(httpPost);
 
-            myTweetApi = builder.build();
+                String responseResult = EntityUtils.toString(httpResponse.getEntity());
+                //convert responseResult to jsonObject......
+                JSONObject responseJsonObject = new JSONObject(responseResult);
+                groupName = responseJsonObject.getString("groupName");
+                Log.i("into AcceptAsyncTask...: ", "response" + responseJsonObject);
+                mydb = new SQLiteDatabase(context);
+                mydb.updateStatusOfGroupMemberIntoGroupTable(Boolean.toString(responseJsonObject.getBoolean("isAccepted")), responseJsonObject.getString("groupName"), responseJsonObject.getString("groupMemberMobNo"));
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        try {
-            AcceptanceStatusBean statusBean = new AcceptanceStatusBean();
-            statusBean.setGroupName(groupName);
-            statusBean.setMobileNumberMember(groupMemberMobileNumber);
-            statusBean.setIsAccepted(acceptanceStatus);
-
-            acceptanceStatusBean = myTweetApi.memberAcceptanceStatus(statusBean).execute();
-
-            Log.i("status response...", "" + acceptanceStatusBean.getGroupName());
-            Log.i("status response...", "" + acceptanceStatusBean.getMobileNumberMember());
-            Log.i("status response...", "" + acceptanceStatusBean.getIsAccepted());
-
-            //after getting response from server, update this response to app local database........
-            mydb = new SQLiteDatabase(context);
-            mydb.updateStatusOfGroupMemberIntoGroupTable(acceptanceStatusBean.getIsAccepted(), acceptanceStatusBean.getGroupName(), acceptanceStatusBean.getMobileNumberMember());
-
-        } catch (Exception ex) {
+        catch (Exception ex){
             ex.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        super.onPostExecute(s);
     }
 }
 
 class RejectAsyncTask extends AsyncTask<Void, Void, String> {
-    private static TweetApi myTweetApi = null;
     private Context context;
     private String groupName;
-    private String groupMemberMobileNumber;
-    private String acceptanceStatus;
+    private String groupMemberMobNo;
+    private boolean isAccepted;
+    private String groupAdminMobNo;
     SQLiteDatabase mydb;
 
-    AcceptanceStatusBean statusBean;
-
-    public RejectAsyncTask(Context context, String groupName, String groupMemberMobileNumber, String acceptanceStatus) {
+    public RejectAsyncTask(Context context, String groupName, String groupMemberMobNo,String groupAdminMobNo, boolean isAccepted) {
         this.context = context;
         this.groupName = groupName;
-        this.groupMemberMobileNumber = groupMemberMobileNumber;
-        this.acceptanceStatus = acceptanceStatus;
+        this.groupMemberMobNo = groupMemberMobNo;
+        this.groupAdminMobNo = groupAdminMobNo;
+        this.isAccepted = isAccepted;
     }
 
     @Override
     protected String doInBackground(Void... params) {
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
-
-            myTweetApi = builder.build();
-        }
         try {
-            AcceptanceStatusBean rejectStatusBean = new AcceptanceStatusBean();
-            rejectStatusBean.setGroupName(groupName);
-            rejectStatusBean.setMobileNumberMember(groupMemberMobileNumber);
-            rejectStatusBean.setIsAccepted(acceptanceStatus);
-            statusBean = myTweetApi.forgetEntityFromGroup(rejectStatusBean).execute();
-            Log.i("status.....", "" + statusBean.getIsAccepted());
-            Log.i("status.....", "" + statusBean.getGroupName());
-            Log.i("status.....", "" + statusBean.getMobileNumberMember());
-            //call sqlite database method to delete group when user click reject button.......
+            //create HttpClient.....
+            HttpClient httpClient = new DefaultHttpClient();
+            //Http POST request to given url....
+            HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/rejection");
+            String json = null;
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("groupMemberMobNo", groupMemberMobNo);
+                jsonObject.put("groupName",groupName);
+                jsonObject.put("groupAdminMobNo",groupAdminMobNo);
+                jsonObject.put("isAccepted",isAccepted);
+                //convert jsonObject to json string....
+                json = jsonObject.toString();
+                //set json to StringEntity....
+                Log.i("json......", json);
+                StringEntity stringEntity = new StringEntity(json);
+                //set httpPost Entity.....
+                httpPost.setEntity(stringEntity);
+                //set headers to inform server about type of content.....
+                httpPost.setHeader("Content-type", "application/json");
+                //execute POST request to the given server.....
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+
+                String responseResult = EntityUtils.toString(httpResponse.getEntity());
+                //convert responseResult to jsonObject......
+                //JSONObject responseJsonObject = new JSONObject(responseResult);
+                Log.i("responseResult...: ","into RejectAsyncTask..." + responseResult);
+
+                mydb = new SQLiteDatabase(context);
+                mydb.deleteGroupFromGroupTable(groupName);
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+           /* //call sqlite database method to delete group when user click reject button.......
             mydb = new SQLiteDatabase(context);
-            mydb.deleteGroupFromGroupTable(statusBean.getGroupName());
+            mydb.deleteGroupFromGroupTable(statusBean.getGroupName());*/
         } catch (Exception ex) {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        //super.onPostExecute(s);
+        Intent intent = new Intent(context,GroupActivity.class);
+        context.startActivity(intent);
     }
 }
 
@@ -157,7 +226,7 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
             }
         }
         //if userGroupAcceptanceStatus is false or unknown then if condition otherwise else condition..........
-        if (userOwnGroupAcceptanceStatus.equals("false") || userOwnGroupAcceptanceStatus.equals("unknown")) {
+        if (userOwnGroupAcceptanceStatus.equals("false")) {
             setContentView(R.layout.activity_group_chat);
             Button btnRejectGroup, btnAcceptGroup;
             ListView listViewGroupMembers;
@@ -170,18 +239,18 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
             btnAcceptGroup.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    String acceptanceStatus = "true";
+                    boolean isAccepted = true;
                     //call async class to update user acceptance status as true.......
-                    new AcceptAsyncTask(getApplicationContext(), groupName, userMobileNumber, acceptanceStatus).execute();
+                    new AcceptAsyncTask(getApplicationContext(), groupName, userMobileNumber, adminMobileNumber,isAccepted).execute();
                 }
             });
             //on Reject button click event........
             btnRejectGroup.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    String acceptanceStatus = "false";
+                    boolean isAccepted = false;
                     //call async class to update user acceptance status as false.......
-                    new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber, acceptanceStatus).execute();
+                    new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber,adminMobileNumber, isAccepted).execute();
                 }
             });
         } else {

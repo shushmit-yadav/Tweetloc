@@ -1,5 +1,9 @@
 package com.brahminno.tweetloc;
 
+import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,6 +18,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.ContactsContract;
 import android.provider.Settings;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -29,6 +34,7 @@ import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
 import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
 import com.brahminno.tweetloc.backend.tweetApi.model.LocationBean;
 import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
+import com.brahminno.tweetloc.chatReciever.ChatReciever;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationCallback;
@@ -44,8 +50,11 @@ import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 //socket.io imports....
 import com.github.nkzawa.socketio.client.IO;
@@ -65,36 +74,60 @@ import org.json.JSONObject;
 
 //this is a AsyncTask class that push location to server in background.....
 class LocationAsyncTask extends AsyncTask<Void, Void, String> {
-    private static TweetApi myTweetApi = null;
     private Context context;
-    private String Device_Id;
     private double latitude;
     private double longitude;
+    private double altitude;
+    private String userNumber;
+    private float speed;
 
-    public LocationAsyncTask(Context context, String Device_Id, double latitude, double longitude) {
+    public LocationAsyncTask(Context context, String userNumber, double latitude, double longitude, double altitude, float speed) {
         this.context = context;
-        this.Device_Id = Device_Id;
+        this.userNumber = userNumber;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.altitude = altitude;
+        this.speed = speed;
     }
 
     @Override
     protected String doInBackground(Void... params) {
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
-
-            myTweetApi = builder.build();
-        }
-        try {
-
-            LocationBean locationBean = new LocationBean();
-            locationBean.setDrviceId(Device_Id);
-            locationBean.setLatitude(latitude);
-            locationBean.setLongitude(longitude);
-
-            myTweetApi.storeLocation(locationBean).execute();
-        } catch (IOException ex) {
+        try {//create HttpClient.....
+            HttpClient httpClient = new DefaultHttpClient();
+            //Http POST request to given url....
+            HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/setlocation");
+            String json = null;
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("userNumber", userNumber);
+                jsonObject.put("latitude", latitude);
+                jsonObject.put("longitude", longitude);
+                jsonObject.put("altitude", altitude);
+                jsonObject.put("speed", speed);
+                //convert jsonObject to json string....
+                json = jsonObject.toString();
+                //set json to StringEntity....
+                Log.i("json......", json);
+                StringEntity stringEntity = new StringEntity(json);
+                //set httpPost Entity.....
+                httpPost.setEntity(stringEntity);
+                //set headers to inform server about type of content.....
+                httpPost.setHeader("Content-type", "application/json");
+                //execute POST request to the given server.....
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+                //receive response from server as inputStream............
+                String responseResult = EntityUtils.toString(httpResponse.getEntity());
+                //convert responseResult into jsonObject...
+                JSONObject responseJsonObject = new JSONObject(responseResult);
+                Log.i("responseJsonObject...: ", "" + responseJsonObject);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            }
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return "";
@@ -159,11 +192,12 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
         }
         return "";
     }
+
     @Override
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
-        if(status == true){
-            Log.i("inside if loop...: ", "if status is "+status);
+        if (status == true) {
+            Log.i("inside if loop...: ", "if status is " + status);
             //Clear all data from shared preference....
             SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
@@ -174,13 +208,13 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
 }
 
 //this is a AsyncClass to send all contact to server and server returns arraylist of numbers presented in server and save it to app local sqlite database....
-class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
-
-    private static TweetApi myTweetApi = null;
+class NumberSyncFromServer extends AsyncTask<Void, Void, String> {
     private Context context;
     SQLiteDatabase myDB;
-    ContactSyncBean contactSyncBean;
+    JSONArray contactsNumJsonArray;
     FetchContacts contacts;
+    JSONObject jsonObj;
+    String responseResult;
 
 
     public NumberSyncFromServer(Context context, FetchContacts contacts) {
@@ -190,26 +224,57 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
 
     @Override
     protected String doInBackground(Void... params) {
-        Log.i("NumberSyncFromServer...","is called");
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
+        Log.i("NumberSyncFromServer...", "is called");
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/synccontact");
+        String json = null;
+        contactsNumJsonArray = new JSONArray();
 
-            myTweetApi = builder.build();
+        for (int i = 0; i < contacts.getNumber().size(); i++) {
+            //obj.put("contactsNum", contacts.getNumber().get(i));
+            contactsNumJsonArray.put(contacts.getNumber().get(i));
         }
         try {
-            Log.i("Contact Number", contacts.getNumber().get(1));
-            Log.i("Contact Name",contacts.getName().get(1));
-            ContactSyncBean syncBean = new ContactSyncBean();
-            syncBean.setNumber(contacts.getNumber());
-            syncBean.setName(contacts.getName());
-            contactSyncBean= myTweetApi.contactSync(syncBean).execute();
-            Log.i("Recieved response ...", "from server");
+            jsonObj = new JSONObject();
+            jsonObj.put("usercontact",contactsNumJsonArray);
+            Log.i("contacts...", "-->" + jsonObj);
+            json = jsonObj.toString();
+            StringEntity stringEntity = null;
+            stringEntity = new StringEntity(json);
+            //set httpPost Entity.....
+            httpPost.setEntity(stringEntity);
+            //set headers to inform server about type of content.....
+            httpPost.setHeader("Content-type", "application/json");
+            //execute POST request to the given server.....
+            HttpResponse httpResponse = null;
+
+            httpResponse = httpClient.execute(httpPost);
+            //receive response from server as inputStream............
+            responseResult = EntityUtils.toString(httpResponse.getEntity());
+            Log.i("responseResult...: ", responseResult);
+            JSONObject responseJsonObj = new JSONObject(responseResult);
+            JSONArray responseJsonArray = responseJsonObj.getJSONArray("syncedcontact");
+            for(int i = 0; i < responseJsonArray.length(); i++){
+                JSONObject jsonObjectFromJsonArray = responseJsonArray.getJSONObject(i);
+                String contactNum = jsonObjectFromJsonArray.getString("mobileNo");
+                if(contacts.getNumber().contains(contactNum)){
+
+                }
+
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        /*
             ArrayList<String> MobileNumber = (ArrayList<String>) contactSyncBean.getNumber();
             ArrayList<String> MobileName = (ArrayList<String>) contactSyncBean.getName();
             Log.i("Contact Number", MobileNumber.get(0));
             Log.i("Contact Name", MobileName.get(0));
-            Log.i("ContactList size...",""+MobileNumber.size());
+            Log.i("ContactList size...", "" + MobileNumber.size());
 
             //save arraylist to sqlite database......
             myDB = new SQLiteDatabase(context);
@@ -218,8 +283,8 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             Log.i("Contact from server...", MobileNumber.get(0));
             myDB.insertNumberArrayList(MobileNumber, MobileName);
             //myDB.deleteAddContactFromInvite(MobileNumber);
-            Log.i("Contact size..",""+MobileNumber.size());
-            Log.i("Value contains..",""+MobileNumber.contains(contacts.getNumber().get(1)));
+            Log.i("Contact size..", "" + MobileNumber.size());
+            Log.i("Value contains..", "" + MobileNumber.contains(contacts.getNumber().get(1)));
 
             //first delete items from Invite_Contacts_Table and then store in.....
             myDB.deleteInviteTableItems();
@@ -227,20 +292,20 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
             //below codes are using to store contacts in Invite_Contacts_Table........
             ArrayList<String> Mob_Num = contacts.getNumber();
             ArrayList<String> Mob_Name = contacts.getName();
-            Log.i("size from local..","" +Mob_Num.size());
+            Log.i("size from local..", "" + Mob_Num.size());
             Log.i("size from server..", "" + MobileNumber.size());
-            for(int i = 0; i < Mob_Num.size(); i++){
-                Log.i("Inside for loop..",""+Mob_Num.get(i));
+            for (int i = 0; i < Mob_Num.size(); i++) {
+                Log.i("Inside for loop..", "" + Mob_Num.get(i));
                 //boolean result = myDB.deleteRow(MobileNumber.get(i));
-                Log.i("Result of insertion.."," "+Mob_Num.get(i)+"-->"+Mob_Name.get(i));
-                if(!MobileNumber.contains(Mob_Num.get(i))){
-                    Log.i("Inside If loop...",""+!MobileNumber.contains(Mob_Num.get(i)));
-                    myDB.insertIntoInvite(Mob_Name.get(i),Mob_Num.get(i));
+                Log.i("Result of insertion..", " " + Mob_Num.get(i) + "-->" + Mob_Name.get(i));
+                if (!MobileNumber.contains(Mob_Num.get(i))) {
+                    Log.i("Inside If loop...", "" + !MobileNumber.contains(Mob_Num.get(i)));
+                    myDB.insertIntoInvite(Mob_Name.get(i), Mob_Num.get(i));
                 }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-        }
+        }*/
         return "";
     }
 
@@ -252,16 +317,25 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String>{
 
 //this class is only used for fetching notification from server if any notification is available.....
 //this is testing class.....
-class FetchNotificationAsyncTask extends AsyncTask<Void,Void,String>{
+class FetchNotificationAsyncTask extends AsyncTask<Void, Void, String> {
     private Context context;
     private String userMobileNumber;
+    private String notificationMessage;
+    private String noteContext;
+    private String groupAdminMobNo;
+    private String groupName;
+    private String groupMemberMobNo;
+    SQLiteDatabase mydb;
+    private static final String TAG = "responseJson into NumberSyncFromServer";
 
-    public FetchNotificationAsyncTask(Context context,String userMobileNumber){
+    public FetchNotificationAsyncTask(Context context, String userMobileNumber) {
         this.context = context;
         this.userMobileNumber = userMobileNumber;
     }
+
     @Override
     protected String doInBackground(Void... params) {
+        Log.i("inside...", "FetchNotificationAsyncTask");
         //create HttpClient.....
         HttpClient httpClient = new DefaultHttpClient();
         //Http POST request to given url....
@@ -283,20 +357,50 @@ class FetchNotificationAsyncTask extends AsyncTask<Void,Void,String>{
             HttpResponse httpResponse = httpClient.execute(httpPost);
             //get httpResponse into string.....
             String responseResult = EntityUtils.toString(httpResponse.getEntity());
-            //convert responseResult to jsonArray....
-            //JSONArray jsonArray = new JSONArray(responseResult);
-            //JSONObject responseJsonObject = new JSONObject(responseResult);
-            Log.i("responseResult...: ", responseResult);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            //convert responseResult to jsonObject......
+            JSONObject responseJsonObject = new JSONObject(responseResult);
+            Log.i("ABCD", "" + responseJsonObject);
+            JSONArray array = responseJsonObject.getJSONArray("notification");
+            Log.i("json array is... :", "" + array.length());
+            mydb = new SQLiteDatabase(context);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject newJsonObject = (JSONObject) array.get(i);
+                notificationMessage = newJsonObject.getString("noteMessage");
+                noteContext = newJsonObject.getString("noteContext");
+                JSONArray groupMemberNumJsonArray = newJsonObject.getJSONArray("noteAuxilGrpMembers");
+                for (int j = 0; j < groupMemberNumJsonArray.length(); j++) {
+                    groupName = newJsonObject.getString("noteGroupName");
+                    groupAdminMobNo = newJsonObject.getString("noteGroupAdminNo");
+                    groupMemberMobNo = groupMemberNumJsonArray.getString(j);
+                    boolean isAccepted = false;
+                    if (groupMemberMobNo.equals(groupAdminMobNo)) {
+                        isAccepted = true;
+                    }
+                    mydb.insertGroups(groupName, groupAdminMobNo, groupMemberMobNo, Boolean.toString(isAccepted));
+                }
+            }
+            // Prepare intent which is triggered if the
+            // notification is selected
+            Intent intent = new Intent(context, Chat_Main_Fragment.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            // Build notification
+            // Actions are just fake
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_splash_256)
+                    .setContentTitle(notificationMessage).setContentIntent(pendingIntent);
+
+            NotificationManager manager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
+            manager.notify(0, mBuilder.build());
+        } catch (ClientProtocolException e1) {
+            e1.printStackTrace();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        } catch (JSONException e1) {
+            e1.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-    return "";
+        return "";
     }
 }
 
@@ -304,11 +408,14 @@ class FetchNotificationAsyncTask extends AsyncTask<Void,Void,String>{
 
 //this is a main class of MyTrail activity where we plot the map and show the location...
 
-public class MyTrail extends ActionBarActivity implements LocationListener, com.google.android.gms.location.LocationListener{
+public class MyTrail extends ActionBarActivity implements LocationListener, com.google.android.gms.location.LocationListener {
 
     GoogleMap map;
     double latitude, longitude;
+    double altitude;
+    float speed;
     String deviceId;
+    String userNumber;
     Button btnGroup;
     LocationManager locationManager;
     SQLiteDatabase mydb;
@@ -321,16 +428,20 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     boolean isContactSyncFromServer = false;
     FetchContacts contacts;
 
-    Location final_location,gps_location,network_location;
+    Location final_location, gps_location, network_location;
 
     private int count = 0; //counter to ensure onetimecamerasettouserloc function executes once on location change
 
+    private static final int INTERVAL = 5000;
+
     //this is a socket connection
     private Socket mSocket;
+
     {
         try {
             mSocket = IO.socket("http://104.236.27.79:8080");
-        } catch (URISyntaxException e) {}
+        } catch (URISyntaxException e) {
+        }
     }
 
     @Override
@@ -345,7 +456,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         setContentView(R.layout.activity_my_trail);
         //get user mobile number from shared preference.......
         SharedPreferences prefss = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        final String userMobileNumber = prefss.getString("Mobile Number",null);
+        final String userMobileNumber = prefss.getString("Mobile Number", null);
         //make connection to socket.....
         mSocket.connect();
         //mSocket.emit("Tweet", message);
@@ -375,7 +486,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         mSocket.on("whoru", onNewMessage);
         JSONObject testMessage = new JSONObject();
         try {
-            testMessage.put("mobileNum",userMobileNumber);
+            testMessage.put("mobileNum", userMobileNumber);
             mSocket.emit("iam", testMessage);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -393,8 +504,9 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
                         String message;
                         try {
                             status = data.getBoolean("notification");
-                            if(status == true){
-                                new FetchNotificationAsyncTask(getApplicationContext(),userMobileNumber).execute();
+                            if (status == true) {
+                                Log.i("status is true..", "...." + status);
+                                new FetchNotificationAsyncTask(getApplicationContext(), userMobileNumber).execute();
                             }
                         } catch (JSONException e) {
                             return;
@@ -406,46 +518,53 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             }
         };
 
-        mSocket.on("isnotification",onNotification);
+        mSocket.on("isnotification", onNotification);
 
         //check notification code ends here.......
 
+        /* Retrieve a PendingIntent that will perform a broadcast *//*
+        Intent alarmIntent = new Intent(MyTrail.this, ChatReciever.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(MyTrail.this, 0, alarmIntent, 0);
 
 
+        //create AlarmManager to hit request on server to get chat messages.....
+        AlarmManager alarmManager = (AlarmManager) getApplicationContext().getSystemService(getApplicationContext().ALARM_SERVICE);
+        alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), INTERVAL, pendingIntent);
 
+*/
         btnGroup = (Button) findViewById(R.id.btnGroup);
         //this method is used to get countryCode isung telephonyManager....
         telephonyManager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
         countryCode = telephonyManager.getNetworkCountryIso().toUpperCase();
-        //call NumberSyncFromServer class to sync all contact automatically from server....
-        //first we fetch all contacts from mobile device and then we execute Async Class.....
-        //first we check that app install first time on device or not...
-        //get value from shared preference.......
+        /*call NumberSyncFromServer class to sync all contact automatically from server....
+        first we fetch all contacts from mobile device and then we execute Async Class.....
+        first we check that app install first time on device or not...
+        get value from shared preference.......*/
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         isContactSyncFromServer = prefs.getBoolean("isContactSyncFromServer", false);
+        userNumber = prefs.getString("Mobile Number", null);
         contacts = new FetchContacts();
-        if(!isContactSyncFromServer){
+        if (!isContactSyncFromServer) {
             SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", getApplicationContext().MODE_PRIVATE).edit();
-            editor.putBoolean("isContactSyncFromServer",true);
+            editor.putBoolean("isContactSyncFromServer", true);
             editor.commit();
             contacts = fetchContact();
-            Log.i("size of contacts1..",""+contacts.getNumber().size());
-            Log.i("size of contacts2..",""+contacts.getName().size());
-            try{
+            Log.i("size of contacts1..", "" + contacts.getNumber().size());
+            Log.i("size of contacts2..", "" + contacts.getName().size());
+            try {
                 //save all contacts to loacal app db....
                 mydb = new SQLiteDatabase(this);
                 //mydb.insertIntoInvite(contacts);
-            }
-            catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
             //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
-            new NumberSyncFromServer(getApplicationContext(),contacts).execute();
+            new NumberSyncFromServer(getApplicationContext(), contacts).execute();
         }
         //check if gps is available or not.....
         locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
-        try{
+        try {
             //getting GPS Status....
             isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             Log.i("GPS Status...", "" + isGPSEnabled);
@@ -453,39 +572,36 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             //getting Network Status....
             isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
             Log.i("Network Status...", "" + isNetworkEnabled);
-        }catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         if (!isGPSEnabled && !isNetworkEnabled) {
             //if gps and network both will disable.....then show settings to open gps.....
             showGPSSettings();
-        }
-         else{
-            Log.i("GPS Status","GPS is already activated!!!!");
+        } else {
+            Log.i("GPS Status", "GPS is already activated!!!!");
         }
         //if gps enabled.....
-        if(isGPSEnabled){
+        if (isGPSEnabled) {
             gps_location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if(gps_location != null){
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,20000,10,this);
+            if (gps_location != null) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 20000, 10, this);
             }
         }
         //if Network enabled.....
-        if(isNetworkEnabled){
+        if (isNetworkEnabled) {
             network_location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            if(network_location != null){
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,20000,10,this);
+            if (network_location != null) {
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 20000, 10, this);
             }
         }
-        if(gps_location != null && network_location != null){
-            if(gps_location.getAccuracy() > network_location.getAccuracy()){
+        if (gps_location != null && network_location != null) {
+            if (gps_location.getAccuracy() > network_location.getAccuracy()) {
                 final_location = gps_location;
-            }
-            else{
+            } else {
                 final_location = network_location;
             }
-        }
-        else {
+        } else {
             if (gps_location != null) {
                 final_location = gps_location;
             } else {
@@ -493,9 +609,11 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             }
         }
 
-        if(final_location != null){
+        if (final_location != null) {
             latitude = final_location.getLatitude();
             longitude = final_location.getLongitude();
+            altitude = final_location.getAltitude();
+            speed = final_location.getSpeed();
         }
 
         //Intent to recieve data from previous activity class
@@ -506,14 +624,13 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         try {
 
             //call AsyncTask class to push location on server.....
-            new LocationAsyncTask(getApplicationContext(), deviceId, latitude, longitude).execute();
+            new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
 
             initilizeMap();
-            new DrawMarkerAsyncTask(getApplicationContext(),latitude,longitude);
+            new DrawMarkerAsyncTask(getApplicationContext(), latitude, longitude);
 
 
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
 
@@ -575,8 +692,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         mSocket.on("hello-there", onNewMessage);
         JSONObject testMessage = new JSONObject();
         try {
-            testMessage.put("tweetdata","Message from tweetloc client app..");
-            mSocket.emit("tweet-hello",testMessage);
+            testMessage.put("tweetdata", "Message from tweetloc client app..");
+            mSocket.emit("tweet-hello", testMessage);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -588,16 +705,18 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
 
         latitude = location.getLatitude();
         longitude = location.getLongitude();
+        altitude = location.getAltitude();
+        speed = location.getSpeed();
 
-        if(count == 0){
+        if (count == 0) {
             oneTimeCameraSetToUserLoc(location);
             count = 1;
         }
         //call AsyncTask class to push location on server when location changes.....
-        new LocationAsyncTask(getApplicationContext(), deviceId, latitude, longitude).execute();
+        new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
 
         map.clear();
-        new DrawMarkerAsyncTask(getApplicationContext(),latitude,longitude);
+        new DrawMarkerAsyncTask(getApplicationContext(), latitude, longitude);
 
     }
 
@@ -654,7 +773,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 //No location service, no Activity
-                Toast.makeText(getApplicationContext(),"This app requires GPS for precize location !!!",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "This app requires GPS for precize location !!!", Toast.LENGTH_SHORT).show();
                 finish();
 
             }
@@ -685,20 +804,19 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             forgetMe();
             return true;
         }
-        if(id == R.id.action_contactSync){
+        if (id == R.id.action_contactSync) {
             //first fetch all contact mobNum from device.......
             contacts = fetchContact();
 
-            try{
+            try {
                 //save all contacts to loacal app db....
                 mydb = new SQLiteDatabase(this);
                 //mydb.insertIntoInvite(contacts);
-            }
-            catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
             //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
-            new NumberSyncFromServer(getApplicationContext(),contacts).execute();
+            new NumberSyncFromServer(getApplicationContext(), contacts).execute();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -716,7 +834,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
         startActivity(intent);
     }
-    private FetchContacts fetchContact(){
+
+    private FetchContacts fetchContact() {
         //Set URI....
         Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
         //Set Projection
@@ -733,12 +852,12 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             String name = people.getString(indexName);
             String number = people.getString(indexNumber);
             standardMobileNumberFormat = new StandardMobileNumberFormat();
-            String standardNumber = standardMobileNumberFormat.getLocale(number,countryCode);
+            String standardNumber = standardMobileNumberFormat.getLocale(number, countryCode);
             Log.i("standard number...", "" + standardNumber);
-            if(standardNumber != null){
+            if (standardNumber != null) {
                 nameList.add(name);
                 numberList.add(standardNumber);
-                Log.i("Inside sync...","contacts"+name +"-->" + standardNumber);
+                Log.i("Inside sync...", "contacts" + name + "-->" + standardNumber);
             }
         }
         while (people.moveToNext());
@@ -753,8 +872,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
  * Brahmastra Innovations Pvt. Ltd.
  * this class is used for model of contacts......
  * this is a fetch contacts class to fetch numbers with name....
-*/
-class FetchContacts{
+ */
+class FetchContacts {
     private ArrayList<String> name;
     private ArrayList<String> number;
 
@@ -776,14 +895,14 @@ class FetchContacts{
 }
 
 //this class is used to redraw marker into map.......
-class DrawMarkerAsyncTask extends AsyncTask<Void,Void,String>{
+class DrawMarkerAsyncTask extends AsyncTask<Void, Void, String> {
 
-    double latitude,longitude;
+    double latitude, longitude;
     MarkerOptions marker;
     GoogleMap map;
     private Context context;
 
-    public DrawMarkerAsyncTask(Context context,double latitude,double longitude){
+    public DrawMarkerAsyncTask(Context context, double latitude, double longitude) {
         this.context = context;
         this.latitude = latitude;
         this.longitude = longitude;

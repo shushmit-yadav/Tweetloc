@@ -3,11 +3,16 @@ package com.brahminno.tweetloc;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Base64;
 import android.util.Log;
+
+import java.security.MessageDigest;
 
 //Brahmastra Innovations...
 //By Shushmit on 20/05/2015
@@ -26,6 +31,19 @@ public class Splash_screen extends ActionBarActivity {
         //Remove title...
         getSupportActionBar().hide();
         setContentView(R.layout.splash_screen);
+        /*//generate SHA1 key.....
+        try{
+            Log.i("Inside PackageInfo","....");
+            PackageInfo info = getPackageManager().getPackageInfo("com.brahminno.tweetloc", PackageManager.GET_SIGNATURES);
+            for(android.content.pm.Signature signature : info.signatures){
+                MessageDigest md = MessageDigest.getInstance("SHA1");
+                md.update(signature.toByteArray());
+                Log.i("SHA1 Key is...", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+            }
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }*/
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {

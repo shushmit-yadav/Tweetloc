@@ -1,6 +1,5 @@
 package com.brahminno.tweetloc;
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -23,7 +22,6 @@ import android.widget.ListView;
 
 import com.brahminno.tweetloc.asyncClass.ChatMessageSendAsyncTask;
 import com.brahminno.tweetloc.asyncClass.GroupMemberLocationAsync;
-import com.brahminno.tweetloc.services.GroupChatService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -36,13 +34,13 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.api.client.util.DateTime;
 
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Shushmit on 29-06-2015.
@@ -68,9 +66,6 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private String adminMobileNumber;
     private String groupName;
     private JSONArray groupMemberMobileNumber;
-
-    GroupChatService groupChatService;
-
     private SupportMapFragment mMapFragment;
 
     private GoogleMap mMap;
@@ -81,6 +76,13 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
     EditText etMessage;
     Button btnSendChat;
+
+    //private MessagesCustomListAdapter adapter;
+    //private List<Message> listMessages;
+
+    public Chat_Main_Fragment(){
+
+    }
 
 
     public Chat_Main_Fragment (JSONArray groupMemberMobileNumber,String adminMobileNumber,String groupName) {
@@ -121,9 +123,6 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 mSlidingUpPanelLayout.onPanelDragged(0);
             }
         });
-        Intent intent = new Intent(getActivity(),GroupChatService.class);
-        getActivity().startService(intent);
-
         return rootView;
     }
 
@@ -131,7 +130,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        senderMobileNumber = prefs.getString("Mobile Number",null);
+        senderMobileNumber = prefs.getString("Mobile Number", null);
         Log.i("user mobile"," number : "+senderMobileNumber);
         mLocationManager = (LocationManager) getActivity().getSystemService(getActivity().LOCATION_SERVICE);
         gpsLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -173,6 +172,10 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         fragmentTransaction.add(R.id.mapContainer, mMapFragment, "map");
         fragmentTransaction.commit();
 
+        //mListView.addHeaderView(mTransparentHeaderView);
+       /* listMessages = new ArrayList<Message>();
+        adapter = new MessagesCustomListAdapter(getActivity(),listMessages);
+        mListView.setAdapter(adapter);*/
         ArrayList<String> testData = new ArrayList<String>(100);
         for (int i = 0; i < 100; i++) {
             testData.add("Item " + i);
@@ -220,14 +223,6 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 if (update != null) {
                     mMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.fromLatLngZoom(update, 11.0f)));
                 }
-                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-                    @Override
-                    public void onMapClick(LatLng latLng) {
-                        mIsNeedLocationUpdate = false;
-                        moveToLocation(latLng, false);
-                        //mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater()));
-                    }
-                });
                 mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
