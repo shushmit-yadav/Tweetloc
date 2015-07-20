@@ -42,11 +42,6 @@ import java.util.List;
 class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
     private Context context;
     private String userMobileNumber;
-    private String Group_Name;
-    private String groupAdminMobNo;
-    private boolean isAccepted;
-    private String groupMemberMobNo;
-    List<GroupMemberSyncBean> groupBeanDetails;
     SQLiteDatabase mydb;
 
     public GroupDetailsAsyncTask(Context context, String userMobileNumber) {
@@ -56,7 +51,10 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... params) {
-        Log.i("Inside....","GroupDetailsAsyncTask");
+        mydb = new SQLiteDatabase(context);
+        //delete GROUP_TABLE Items....
+        mydb.deleteGroupTableItems();
+        Log.i("Inside....", "GroupDetailsAsyncTask");
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/syncgroup");
         String json = null;
@@ -70,15 +68,10 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
             HttpResponse httpResponse = httpClient.execute(httpPost);
             String responseResult = EntityUtils.toString(httpResponse.getEntity());
             Log.i("GroupDetailsAsyncTask..","...:"+responseResult);
-            JSONObject responseJsonResult = new JSONObject(responseResult);
-            JSONArray jsonArray = responseJsonResult.getJSONArray("groupinfo");
-            for(int i = 0; i < jsonArray.length(); i++){
-                JSONObject jsonObjectInJsonArray = jsonArray.getJSONObject(i);
-                Group_Name = jsonObjectInJsonArray.getString("groupName");
-                groupAdminMobNo = jsonObjectInJsonArray.getString("groupAdminMobNo");
-                groupMemberMobNo = jsonObjectInJsonArray.getString("groupMemberMobNo");
-                isAccepted = (jsonObjectInJsonArray.getBoolean("isAccepted"));
-                //new SyncAllGroupMembers(context,Group_Name,groupAdminMobNo,groupMemberMobNo).execute();
+            JSONArray responseJsonArrayResult = new JSONArray(responseResult);
+            for(int i = 0; i < responseJsonArrayResult.length(); i++){
+                JSONObject jsonObjectInJsonArray = responseJsonArrayResult.getJSONObject(i);
+                new SyncAllGroupMembers(context,jsonObjectInJsonArray.getString("groupName"),jsonObjectInJsonArray.getString("groupAdminMobNo"),jsonObjectInJsonArray.getString("groupMemberMobNo")).execute();
             }
         }
         catch (JSONException ex){
@@ -102,9 +95,9 @@ class SyncAllGroupMembers extends AsyncTask<Void,Void,String>{
     private String groupName;
     private String groupAdminMobNo;
     private String groupMemberMobNo;
-    private boolean isAccepted;
     private Context context;
     SQLiteDatabase mydb;
+    GroupActivity activity;
     public SyncAllGroupMembers(Context context,String groupName,String groupAdminMobNo,String groupMemberMobNo){
         this.context = context;
         this.groupAdminMobNo = groupAdminMobNo;
@@ -133,16 +126,9 @@ class SyncAllGroupMembers extends AsyncTask<Void,Void,String>{
             Log.i("SyncAllGroupMembers..","....:"+responseJsonResult);
             JSONArray jsonArray = responseJsonResult.getJSONArray("allGroupMembers");
             mydb = new SQLiteDatabase(context);
-            //delete GROUP_TABLE Items....
-            mydb.deleteGroupTableItems();
             for(int i = 0; i < jsonArray.length(); i++){
                 JSONObject jsonObjectInJsonArray = jsonArray.getJSONObject(i);
-                groupName = jsonObjectInJsonArray.getString("groupName");
-                groupAdminMobNo = jsonObjectInJsonArray.getString("groupAdminMobNo");
-                groupMemberMobNo = jsonObjectInJsonArray.getString("groupMemberMobNo");
-                isAccepted = jsonObjectInJsonArray.getBoolean("isAccepted");
-                Log.i("group members...","details...:"+groupName+" "+ groupMemberMobNo+" "+groupAdminMobNo+" "+ isAccepted);
-                mydb.insertGroups(groupName,groupAdminMobNo,groupMemberMobNo,Boolean.toString(isAccepted));
+                mydb.insertGroups(jsonObjectInJsonArray.getString("groupName"), jsonObjectInJsonArray.getString("groupAdminMobNo"), jsonObjectInJsonArray.getString("groupMemberMobNo"), Boolean.toString(jsonObjectInJsonArray.getBoolean("isAccepted")));
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -213,10 +199,11 @@ public class GroupActivity extends ActionBarActivity {
     String deviceId;
     String Mobile_Number;
     SQLiteDatabase mydb;
-    //ArrayList<GroupDetails> groupDetailsArrayList;
-    //ArrayList<ContactNameWithNumber> groupMembersList;
     ArrayList<String> groupNames;
     GetGroupData getGroupData;
+    private String adminMobileNumber;
+    private String userOwnGroupAcceptanceStatus;
+    ArrayList<ContactNameWithNumber> contactNameWithNumberArrayList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -240,21 +227,15 @@ public class GroupActivity extends ActionBarActivity {
             }
         });
         Log.i("AsyncTask method....", " starts");
-        //call AsyncMethod to get Groups from server......
-        //new GroupDetailsAsyncTask(getApplicationContext(), Mobile_Number).execute();
-
         //Object of mydb....
         mydb = new SQLiteDatabase(this);
         groupNames = new ArrayList<>();
-        //groupDetailsArrayList = new ArrayList<>();
-        //groupMembersList = new ArrayList<>();
         groupNames = mydb.getUniqueGroupNamesFromGroupTable();
         for(int i = 0; i < groupNames.size(); i++){
             Log.i("Group Names....",groupNames.get(i));
         }
         ArrayAdapter<String> groupNameAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,groupNames);
         groupNameListView.setAdapter(groupNameAdapter);
-
         groupNameListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -263,13 +244,34 @@ public class GroupActivity extends ActionBarActivity {
                 //listview clicked item value.......
                 String groupName = (String) groupNameListView.getItemAtPosition(position);
                 //toast to show clicked group name......
-                Toast.makeText(getApplicationContext(),groupName+" clicked",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), groupName + " clicked", Toast.LENGTH_SHORT).show();
                 //Log to debug the application......
-                Log.i("Group Name...",groupName+" is clicked");
-                Intent intent = new Intent(getApplicationContext(),GroupCheckStatusActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putString("Group Name", groupName);
-                startActivity(intent.putExtras(bundle));
+                Log.i("Group Name...", groupName + " is clicked");
+                adminMobileNumber = mydb.getAdminMobileNumberUsingGroupName(groupName);
+                contactNameWithNumberArrayList = new ArrayList<>();
+                contactNameWithNumberArrayList = mydb.getAllMembersUsingGroupNames(groupName);
+                for (int i = 0; i < contactNameWithNumberArrayList.size(); i++) {
+                    if (Mobile_Number.equals(contactNameWithNumberArrayList.get(i).getContact_number())) {
+                        Log.i("Inside if....", "" + Mobile_Number.equals(contactNameWithNumberArrayList.get(i).getContact_number()));
+                        userOwnGroupAcceptanceStatus = contactNameWithNumberArrayList.get(i).getMemberAcceptanceStatus();
+                    }
+                }
+
+                if(userOwnGroupAcceptanceStatus.equals("false")){
+                    Intent intent = new Intent(getApplicationContext(), GroupCheckStatusActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putString("Group Name", groupName);
+                    bundle.putString("GroupAdminMobNo", adminMobileNumber);
+                    startActivity(intent.putExtras(bundle));
+                }
+                else{
+                    Intent groupAcceptedIntent = new Intent(getApplicationContext(),GroupAccepted.class);
+                    Bundle groupAcceptedBundle = new Bundle();
+                    groupAcceptedBundle.putString("Group Name", groupName);
+                    groupAcceptedBundle.putString("GroupAdminMobNo", adminMobileNumber);
+                    startActivity(groupAcceptedIntent.putExtras(groupAcceptedBundle));
+                }
+
             }
         });
     }
@@ -300,6 +302,11 @@ public class GroupActivity extends ActionBarActivity {
             syncAcceptanceGroupMember();
             return true;
         }
+        if(id == R.id.action_groupSync){
+            //call AsyncMethod to get Groups from server......
+            new GroupDetailsAsyncTask(getApplicationContext(), Mobile_Number).execute();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -318,7 +325,7 @@ public class GroupActivity extends ActionBarActivity {
         getGroupData = mydb.getAllMobileNumberForSyncAccpt();
         ArrayList<String> groupNameList = new ArrayList<>();
         ArrayList<String> groupMemberNumberList = new ArrayList<>();
-        Log.i("Size of groupName.."," "+getGroupData.getGroupNameList().size());
+        Log.i("Size of groupName..", " " + getGroupData.getGroupNameList().size());
         Log.i("Size of groupMember..", " " + getGroupData.getGroupMemberNumberList().size());
         //call AsyncMethod to Sync status from server in background.....
         if(getGroupData.getGroupNameList().size() > 0 && getGroupData.getGroupMemberNumberList().size() > 0){

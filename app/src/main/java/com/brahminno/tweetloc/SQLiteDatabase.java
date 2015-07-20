@@ -199,6 +199,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             while (cursor.moveToNext());
         }
         cursor.close();
+        db.close();
         return uniqueGroupNames;
     }
 
@@ -269,9 +270,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     }
 
     //method to delete group from app db when user reject group........
-    public void deleteGroupFromGroupTable(String groupName) {
+    public void deleteGroupFromGroupTable(String groupName,String groupAdminMobNo) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("DELETE * FROM " + GROUP_TABLE + " WHERE Group_Name = " + "'" + groupName + "'", null);
+        db.delete(GROUP_TABLE,"Group_Name = '" + groupName + "' and Group_Admin_Number = '"+groupAdminMobNo+"'", null);
         Log.i("Group Deleted.....", "succussfully");
         db.close();
     }

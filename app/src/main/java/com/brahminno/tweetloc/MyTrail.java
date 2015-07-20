@@ -144,7 +144,6 @@ class LocationAsyncTask extends AsyncTask<Void, Void, String> {
 class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
     private Context context;
     private String Device_Id;
-    private boolean status;
 
     public ForgetAsyncTask(Context context, String Device_Id) {
         this.context = context;
@@ -160,7 +159,7 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
         String json = null;
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject.put("id", Device_Id);
+            jsonObject.put("deviceID", Device_Id);
             //convert jsonObject to json string....
             json = jsonObject.toString();
             //set json to StringEntity....
@@ -175,11 +174,14 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
             //receive response from server as inputStream............
             String responseResult = EntityUtils.toString(httpResponse.getEntity());
             Log.i("responseResult...: ", responseResult);
-            //convert responseResult into jsonObject...
-            JSONObject responseJsonObject = new JSONObject(responseResult);
-
-            status = responseJsonObject.getBoolean("status");
-
+            if(responseResult.equals("OK")){
+                Log.i("inside if loop...: ", "if status is " + responseResult);
+                //Clear all data from shared preference....
+                SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.clear();
+                editor.commit();
+            }
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -192,19 +194,6 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
         }
         return "";
     }
-
-    @Override
-    protected void onPostExecute(String s) {
-        super.onPostExecute(s);
-        if (status == true) {
-            Log.i("inside if loop...: ", "if status is " + status);
-            //Clear all data from shared preference....
-            SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.clear();
-            editor.commit();
-        }
-    }
 }
 
 //this is a AsyncClass to send all contact to server and server returns arraylist of numbers presented in server and save it to app local sqlite database....
@@ -215,7 +204,7 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String> {
     FetchContacts contacts;
     JSONObject jsonObj;
     String responseResult;
-
+    ArrayList<String> contactNumber, contactName, contact_Number, contact_Name;
 
     public NumberSyncFromServer(Context context, FetchContacts contacts) {
         this.context = context;
@@ -236,7 +225,7 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String> {
         }
         try {
             jsonObj = new JSONObject();
-            jsonObj.put("usercontact",contactsNumJsonArray);
+            jsonObj.put("usercontact", contactsNumJsonArray);
             Log.i("contacts...", "-->" + jsonObj);
             json = jsonObj.toString();
             StringEntity stringEntity = null;
@@ -254,13 +243,31 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String> {
             Log.i("responseResult...: ", responseResult);
             JSONObject responseJsonObj = new JSONObject(responseResult);
             JSONArray responseJsonArray = responseJsonObj.getJSONArray("syncedcontact");
-            for(int i = 0; i < responseJsonArray.length(); i++){
+            contactName = new ArrayList<>();
+            contactNumber = new ArrayList<>();
+            for (int i = 0; i < responseJsonArray.length(); i++) {
                 JSONObject jsonObjectFromJsonArray = responseJsonArray.getJSONObject(i);
                 String contactNum = jsonObjectFromJsonArray.getString("mobileNo");
-                if(contacts.getNumber().contains(contactNum)){
-
+                for (int j = 0; j < contacts.getNumber().size(); j++) {
+                    if (contacts.getNumber().get(j).equals(contactNum)) {
+                        contactName.add(contacts.getName().get(j));
+                        contactNumber.add(contacts.getNumber().get(j));
+                    }
                 }
-
+            }
+            //call SQLiteDatabase method to store contacts in database.....
+            //save arraylist to sqlite database......
+            myDB = new SQLiteDatabase(context);
+            //clear data from app db....
+            myDB.deleteNumberArrayList();
+            Log.i("Contact from server...", contactName.get(0));
+            myDB.insertNumberArrayList(contactNumber, contactName);
+            //first delete items from Invite_Contacts_Table and then store in.....
+            myDB.deleteInviteTableItems();
+            for (int i = 0; i < contacts.getNumber().size(); i++) {
+                if (!contactNumber.contains(contacts.getNumber().get(i))) {
+                    myDB.insertIntoInvite(contacts.getName().get(i), contacts.getNumber().get(i));
+                }
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -269,43 +276,6 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String> {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        /*
-            ArrayList<String> MobileNumber = (ArrayList<String>) contactSyncBean.getNumber();
-            ArrayList<String> MobileName = (ArrayList<String>) contactSyncBean.getName();
-            Log.i("Contact Number", MobileNumber.get(0));
-            Log.i("Contact Name", MobileName.get(0));
-            Log.i("ContactList size...", "" + MobileNumber.size());
-
-            //save arraylist to sqlite database......
-            myDB = new SQLiteDatabase(context);
-            //clear data from app db....
-            myDB.deleteNumberArrayList();
-            Log.i("Contact from server...", MobileNumber.get(0));
-            myDB.insertNumberArrayList(MobileNumber, MobileName);
-            //myDB.deleteAddContactFromInvite(MobileNumber);
-            Log.i("Contact size..", "" + MobileNumber.size());
-            Log.i("Value contains..", "" + MobileNumber.contains(contacts.getNumber().get(1)));
-
-            //first delete items from Invite_Contacts_Table and then store in.....
-            myDB.deleteInviteTableItems();
-
-            //below codes are using to store contacts in Invite_Contacts_Table........
-            ArrayList<String> Mob_Num = contacts.getNumber();
-            ArrayList<String> Mob_Name = contacts.getName();
-            Log.i("size from local..", "" + Mob_Num.size());
-            Log.i("size from server..", "" + MobileNumber.size());
-            for (int i = 0; i < Mob_Num.size(); i++) {
-                Log.i("Inside for loop..", "" + Mob_Num.get(i));
-                //boolean result = myDB.deleteRow(MobileNumber.get(i));
-                Log.i("Result of insertion..", " " + Mob_Num.get(i) + "-->" + Mob_Name.get(i));
-                if (!MobileNumber.contains(Mob_Num.get(i))) {
-                    Log.i("Inside If loop...", "" + !MobileNumber.contains(Mob_Num.get(i)));
-                    myDB.insertIntoInvite(Mob_Name.get(i), Mob_Num.get(i));
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }*/
         return "";
     }
 
@@ -817,6 +787,10 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             }
             //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
             new NumberSyncFromServer(getApplicationContext(), contacts).execute();
+            return true;
+        }
+        if (id == R.id.action_groupSync) {
+            new GroupDetailsAsyncTask(getApplicationContext(), userNumber).execute();
             return true;
         }
         return super.onOptionsItemSelected(item);

@@ -26,5 +26,10 @@
         android:title="@string/action_contactSync"
         android:orderInCategory="100"
         android:showAsAction="never"/>
+    <item
+        android:id="@+id/action_groupSync"
+        android:title="@string/action_groupSync"
+        android:orderInCategory="100"
+        android:showAsAction="always"/>
 
 </menu>
