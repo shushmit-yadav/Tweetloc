@@ -871,6 +871,22 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         contacts.setNumber(numberList);
         return contacts;
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        try{
+            Log.i("onDestroy...."," MyTrail");
+            alarmManager.cancel(pendingIntent);
+        }catch (Exception ex){
+            ex.fillInStackTrace();
+        }
+    }
 }
 
 /**

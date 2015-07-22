@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -12,6 +13,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,8 +37,11 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 
 import org.json.JSONArray;
@@ -45,6 +50,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Shushmit on 29-06-2015.
@@ -55,17 +62,23 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         SlidingUpPanelLayout.PanelSlideListener, LocationListener {
 
     private static Marker marker;
-    //private static GoogleMap map;
     private ListView mListView;
     private SlidingUpPanelLayout mSlidingUpPanelLayout;
 
     private View mTransparentHeaderView;
     private LatLng mLocation;
+    private LatLng destinationLatLng;
+    private  LatLng sourceLatLng;
     private Marker mLocationMarker;
     private LocationManager mLocationManager;
     private Location gpsLocation, networkLocation, finalLocation;
     private Double altitude;
     private Double latitude, longitude;
+    //these variables are used when user press back button and exit to group, then these values will save to app database as lastLocation...
+    private static double groupMembersLatitude;
+    private static double groupMembersLongitude;
+    private static String groupMemberMobNo;
+    //---------------------------------------------
     private long timeStamp;
     private int speed;
     private String senderMobileNumber;
@@ -84,8 +97,13 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     PendingIntent pendingIntent;
     EditText etMessage;
     Button btnSendChat;
-    static SQLiteDatabase mydb;
-    static LatLng groupLocation;
+    private double sourceLatitude, sourceLongitude;
+    private double destinationLatitude, destinationLongitude;
+
+    private boolean isTravelingToParis = false;
+    private int width, height;
+    private LatLngBounds latlngBounds;
+    private Polyline newPolyline;
 
     //private MessagesCustomListAdapter adapter;
     //private List<Message> listMessages;
@@ -109,7 +127,8 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         mSlidingUpPanelLayout.setEnableDragViewTouchEvents(true);
 
         mListView = (ListView) rootView.findViewById(android.R.id.list);
-        mListView.setOverScrollMode(ListView.OVER_SCROLL_ALWAYS);
+        //mListView.setOverScrollMode(ListView.OVER_SCROLL_ALWAYS);
+        mListView.setOverScrollMode(ListView.OVER_SCROLL_NEVER);
 
         int mapHeight = getResources().getDimensionPixelSize(R.dimen.map_height);
         mSlidingUpPanelLayout.setPanelHeight(mapHeight); // you can use different height here
@@ -117,7 +136,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
         mSlidingUpPanelLayout.setPanelSlideListener(this);
 
-        // init header view for ListView
+        //init header view for ListView
         mTransparentHeaderView = inflater.inflate(R.layout.transparent_header, mListView, false);
 
         //init EditText and Button.....
@@ -178,18 +197,31 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber);
         Log.i("userMobileNumber...", " in chat_main_fragment: " + senderMobileNumber);
         if (mLocation == null) {
-            mLocation = getLastKnownLocation(false);
+            mLocation = getLastKnownLocation(true);
         }
         latitude = mLocation.latitude;
         longitude = mLocation.longitude;
-        altitude = finalLocation.getAltitude();
-        speed = (int) finalLocation.getSpeed();
+        if (finalLocation.hasAltitude()) {
+            altitude = finalLocation.getAltitude();
+        } else {
+            Toast.makeText(getActivity(), "User has not altitude", Toast.LENGTH_SHORT).show();
+        }
+        if (finalLocation.hasSpeed()) {
+            speed = (int) finalLocation.getSpeed();
+        } else {
+            Toast.makeText(getActivity(), "User is not moving", Toast.LENGTH_SHORT).show();
+        }
+
         timeStamp = finalLocation.getTime();
+        Log.i("User Current Location", " Latitude-->" + latitude + " Longitude-->" + longitude + " Altitude-->" + altitude + " Speed-->" + speed + "TimeStamp-->" + timeStamp);
         try {
             groupMemberJsonArray = groupMemberMobileNumber.getJSONArray("userNumbers");
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        sourceLatitude = mLocation.latitude;
+        sourceLongitude = mLocation.longitude;
+        Log.i("Source Location is", "----->" + sourceLatitude + " and " + sourceLongitude);
         new GroupMemberLocationAsync(getActivity(), latitude, longitude, altitude, speed, timeStamp, senderMobileNumber, groupMemberJsonArray).execute();
 
         mMapFragment = SupportMapFragment.newInstance();
@@ -219,7 +251,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-
+        getSreenDimanstions();
         setUpMapIfNeeded();
 
         btnSendChat.setOnClickListener(new View.OnClickListener() {
@@ -236,24 +268,19 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     //in this method get groupmembers location from AsyncTask.......
     public static void getGroupMemberLocationResponse(Context context, JSONArray jsonArray) {
         Log.i("inside....", "Chat_Main_Fragment......" + jsonArray);
-        mydb = new SQLiteDatabase(context);
-        for (int i = 0; i < jsonArray.length(); i++)
+        for (int i = 0; i < jsonArray.length(); i++) {
             try {
                 JSONObject jsonObject = jsonArray.getJSONObject(i);
                 String groupUserMobNo = jsonObject.getString("userNumber");
-                double latitude = jsonObject.getDouble("latitude");
-                double longitude = jsonObject.getDouble("longitude");
-                Log.i("Latlog--->", " " + latitude + " " + longitude);
-                //mydb.insertGroupMembersLocation(groupUserMobNo,Double.toString(latitude),Double.toString(longitude));
-                marker = mMap.addMarker(new MarkerOptions().title(groupUserMobNo).position(new LatLng(latitude,longitude)));
-                Toast.makeText(context, "LatLog...." + latitude + "" + longitude, Toast.LENGTH_SHORT).show();
-                /*MarkerOptions markerOptions = new MarkerOptions();
-                markerOptions.position(new LatLng(latitude, longitude));*/
-                groupLocation = new LatLng(latitude, longitude);
-                //map.addMarker(groupLocation);
+                groupMembersLatitude = jsonObject.getDouble("latitude");
+                groupMembersLongitude = jsonObject.getDouble("longitude");
+                Log.i("Latlog--->", " " + groupMembersLatitude + " " + groupMembersLongitude);
+                marker = mMap.addMarker(new MarkerOptions().title(groupUserMobNo).position(new LatLng(groupMembersLatitude, groupMembersLongitude)));
+                Toast.makeText(context, "LatLog...." + groupMembersLatitude + "" + groupMembersLongitude, Toast.LENGTH_SHORT).show();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+        }
     }
 
     private void setUpMapIfNeeded() {
@@ -275,6 +302,17 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                     @Override
                     public boolean onMarkerClick(Marker marker) {
                         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater()));
+                        destinationLatLng = marker.getPosition();
+                        sourceLatLng = new LatLng(sourceLatitude, sourceLongitude);
+                        destinationLatitude = destinationLatLng.latitude;
+                        destinationLongitude = destinationLatLng.longitude;
+                        if (!isTravelingToParis) {
+                            isTravelingToParis = true;
+                            findDirections(sourceLatLng.latitude, sourceLatLng.longitude, destinationLatLng.latitude, destinationLatLng.longitude, GMapV2Direction.MODE_DRIVING);
+                        } else {
+                            isTravelingToParis = false;
+                            findDirections(sourceLatLng.latitude, sourceLatLng.longitude, destinationLatLng.latitude, destinationLatLng.longitude, GMapV2Direction.MODE_DRIVING);
+                        }
                         return false;
                     }
                 });
@@ -287,6 +325,9 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         super.onResume();
         // In case Google Play services has since become available.
         setUpMapIfNeeded();
+
+        /*latlngBounds = createLatLngBoundsObject(sourceLatLng, destinationLatLng);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(latlngBounds, width, height, 150));*/
     }
 
     @Override
@@ -300,7 +341,24 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     public void onStop() {
         // Disconnecting the client invalidates it.
         mGoogleApiClient.disconnect();
+        Log.i("Cancel Alarm Manager", " onStop......");
+        alarmManager.cancel(pendingIntent);
         super.onStop();
+    }
+
+    @Override
+    public void onDestroyView() {
+        Log.i("Cancel Alarm Manager", " onDestroyView......");
+        alarmManager.cancel(pendingIntent);
+        super.onDestroyView();
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.i("Cancel Alarm Manager", " onDestroy......");
+        alarmManager.cancel(pendingIntent);
+        pendingIntent.cancel();
+        super.onDestroy();
     }
 
     private LatLng getLastKnownLocation() {
@@ -361,7 +419,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
     private void expandMap() {
         if (mMap != null) {
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(14f), 1000, null);
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(14f), 1500, null);
         }
     }
 
@@ -409,4 +467,59 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
     }
+
+    public void handleGetDirectionsResult(ArrayList directionPoints) {
+        PolylineOptions rectLine = new PolylineOptions().width(5).color(Color.GREEN);
+
+        for(int i = 0 ; i < directionPoints.size() ; i++)
+        {
+            rectLine.add((LatLng) directionPoints.get(i));
+        }
+        if (newPolyline != null)
+        {
+            newPolyline.remove();
+        }
+        newPolyline = mMap.addPolyline(rectLine);
+        if (isTravelingToParis)
+        {
+            latlngBounds = createLatLngBoundsObject(sourceLatLng, destinationLatLng);
+            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(latlngBounds, width, height, 150));
+        }
+        else
+        {
+            latlngBounds = createLatLngBoundsObject(sourceLatLng, destinationLatLng);
+            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(latlngBounds, width, height, 150));
+        }
+
+    }
+
+    private LatLngBounds createLatLngBoundsObject(LatLng firstLocation, LatLng secondLocation) {
+        if (firstLocation != null && secondLocation != null)
+        {
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            builder.include(firstLocation).include(secondLocation);
+
+            return builder.build();
+        }
+        return null;
+    }
+
+    public void findDirections(double fromPositionDoubleLat, double fromPositionDoubleLong, double toPositionDoubleLat, double toPositionDoubleLong, String mode) {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put(GetDirectionsAsyncTask.USER_CURRENT_LAT, String.valueOf(fromPositionDoubleLat));
+        map.put(GetDirectionsAsyncTask.USER_CURRENT_LONG, String.valueOf(fromPositionDoubleLong));
+        map.put(GetDirectionsAsyncTask.DESTINATION_LAT, String.valueOf(toPositionDoubleLat));
+        map.put(GetDirectionsAsyncTask.DESTINATION_LONG, String.valueOf(toPositionDoubleLong));
+        map.put(GetDirectionsAsyncTask.DIRECTIONS_MODE, mode);
+
+        GetDirectionsAsyncTask asyncTask = new GetDirectionsAsyncTask(this);
+        asyncTask.execute(map);
+    }
+
+    private void getSreenDimanstions(){
+        Display display = getActivity().getWindowManager().getDefaultDisplay();
+        width = display.getWidth();
+        height = display.getHeight();
+    }
+
 }
