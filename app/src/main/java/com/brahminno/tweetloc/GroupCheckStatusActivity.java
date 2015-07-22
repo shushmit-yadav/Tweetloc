@@ -113,8 +113,7 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
     private String groupMemberMobNo;
     private boolean isAccepted;
     private String groupAdminMobNo;
-    SQLiteDatabase mydb;
-
+    String responseResult;
     public RejectAsyncTask(Context context, String groupName, String groupMemberMobNo, String groupAdminMobNo, boolean isAccepted) {
         this.context = context;
         this.groupName = groupName;
@@ -149,9 +148,7 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
                 //execute POST request to the given server.....
                 HttpResponse httpResponse = httpClient.execute(httpPost);
 
-                String responseResult = EntityUtils.toString(httpResponse.getEntity());
-                //convert responseResult to jsonObject......
-                //JSONObject responseJsonObject = new JSONObject(responseResult);
+                responseResult = EntityUtils.toString(httpResponse.getEntity());
                 Log.i("responseResult...: ", "into RejectAsyncTask..." + responseResult);
 
             } catch (JSONException e) {
@@ -163,19 +160,15 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-           /* //call sqlite database method to delete group when user click reject button.......
-            mydb = new SQLiteDatabase(context);
-            mydb.deleteGroupFromGroupTable(statusBean.getGroupName());*/
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return null;
+        return responseResult;
     }
 
     @Override
     protected void onPostExecute(String s) {
-        //super.onPostExecute(s);
-
+        super.onPostExecute(s);
     }
 }
 

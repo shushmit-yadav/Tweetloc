@@ -1,5 +1,7 @@
 package com.brahminno.tweetloc;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -19,6 +21,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.brahminno.tweetloc.asyncClass.ChatMessageSendAsyncTask;
 import com.brahminno.tweetloc.asyncClass.GroupMemberLocationAsync;
@@ -38,9 +41,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Calendar;
 
 /**
  * Created by Shushmit on 29-06-2015.
@@ -50,6 +54,8 @@ import java.util.List;
 public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         SlidingUpPanelLayout.PanelSlideListener, LocationListener {
 
+    private static Marker marker;
+    //private static GoogleMap map;
     private ListView mListView;
     private SlidingUpPanelLayout mSlidingUpPanelLayout;
 
@@ -57,35 +63,39 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private LatLng mLocation;
     private Marker mLocationMarker;
     private LocationManager mLocationManager;
-    private Location gpsLocation,networkLocation,finalLocation;
+    private Location gpsLocation, networkLocation, finalLocation;
     private Double altitude;
-    private Double latitude,longitude;
+    private Double latitude, longitude;
     private long timeStamp;
     private int speed;
     private String senderMobileNumber;
     private String adminMobileNumber;
     private String groupName;
-    private JSONArray groupMemberMobileNumber;
+    private JSONObject groupMemberMobileNumber;
+    private JSONArray groupMemberJsonArray;
     private SupportMapFragment mMapFragment;
 
-    private GoogleMap mMap;
+    private static GoogleMap mMap;
     private boolean mIsNeedLocationUpdate = true;
 
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
-
+    AlarmManager alarmManager;
+    PendingIntent pendingIntent;
     EditText etMessage;
     Button btnSendChat;
+    static SQLiteDatabase mydb;
+    static LatLng groupLocation;
 
     //private MessagesCustomListAdapter adapter;
     //private List<Message> listMessages;
 
-    public Chat_Main_Fragment(){
+    public Chat_Main_Fragment() {
 
     }
 
 
-    public Chat_Main_Fragment (JSONArray groupMemberMobileNumber,String adminMobileNumber,String groupName) {
+    public Chat_Main_Fragment(JSONObject groupMemberMobileNumber, String adminMobileNumber, String groupName) {
         this.groupMemberMobileNumber = groupMemberMobileNumber;
         this.adminMobileNumber = adminMobileNumber;
         this.groupName = groupName;
@@ -129,33 +139,43 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        /* Retrieve a PendingIntent that will perform a broadcast */
+        Intent intentAlarm = new Intent(getActivity(), MyAlarmManager.class);
+        String jsonGroupMemberArrayString = groupMemberMobileNumber.toString();
+        Log.i("jsonGroupMemberArrayString", "---->" + jsonGroupMemberArrayString);
+        Bundle bundle = new Bundle();
+        bundle.putString("GroupMemberList", jsonGroupMemberArrayString);
+        intentAlarm.putExtras(bundle);
+        // create the object
+        alarmManager = (AlarmManager) getActivity().getSystemService(getActivity().ALARM_SERVICE);
+        pendingIntent = PendingIntent.getBroadcast(getActivity(), 0, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        //set the alarm for particular time
+        alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 20, pendingIntent);
+        //...............................................
         SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         senderMobileNumber = prefs.getString("Mobile Number", null);
-        Log.i("user mobile"," number : "+senderMobileNumber);
+        Log.i("user mobile", " number : " + senderMobileNumber);
         mLocationManager = (LocationManager) getActivity().getSystemService(getActivity().LOCATION_SERVICE);
         gpsLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         networkLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        if(gpsLocation != null && networkLocation != null){
-            if(gpsLocation.getAccuracy() > networkLocation.getAccuracy()){
+        if (gpsLocation != null && networkLocation != null) {
+            if (gpsLocation.getAccuracy() > networkLocation.getAccuracy()) {
                 finalLocation = gpsLocation;
-            }else{
+            } else {
                 finalLocation = networkLocation;
             }
-        }else{
-            if(gpsLocation == null){
+        } else {
+            if (gpsLocation == null) {
                 finalLocation = networkLocation;
-            }else{
+            } else {
                 finalLocation = gpsLocation;
             }
         }
-
-        mLocation = new LatLng(finalLocation.getLatitude(),finalLocation.getLongitude());
+        mLocation = new LatLng(finalLocation.getLatitude(), finalLocation.getLongitude());
         Log.i("location in ", " chat_main_fragment class : " + finalLocation.getAltitude());
-        try {
-            Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber.getString(0));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber);
         Log.i("userMobileNumber...", " in chat_main_fragment: " + senderMobileNumber);
         if (mLocation == null) {
             mLocation = getLastKnownLocation(false);
@@ -165,7 +185,12 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         altitude = finalLocation.getAltitude();
         speed = (int) finalLocation.getSpeed();
         timeStamp = finalLocation.getTime();
-        new GroupMemberLocationAsync(getActivity(),latitude,longitude,altitude,speed,timeStamp,senderMobileNumber,groupMemberMobileNumber).execute();
+        try {
+            groupMemberJsonArray = groupMemberMobileNumber.getJSONArray("userNumbers");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        new GroupMemberLocationAsync(getActivity(), latitude, longitude, altitude, speed, timeStamp, senderMobileNumber, groupMemberJsonArray).execute();
 
         mMapFragment = SupportMapFragment.newInstance();
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
@@ -203,9 +228,32 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 long time = System.currentTimeMillis();
                 String chatMessage = etMessage.getText().toString();
                 etMessage.setText("");
-                new ChatMessageSendAsyncTask(getActivity(),senderMobileNumber,groupName,adminMobileNumber,groupMemberMobileNumber,chatMessage,time).execute();
+                new ChatMessageSendAsyncTask(getActivity(), senderMobileNumber, groupName, adminMobileNumber, groupMemberJsonArray, chatMessage, time).execute();
             }
         });
+    }
+
+    //in this method get groupmembers location from AsyncTask.......
+    public static void getGroupMemberLocationResponse(Context context, JSONArray jsonArray) {
+        Log.i("inside....", "Chat_Main_Fragment......" + jsonArray);
+        mydb = new SQLiteDatabase(context);
+        for (int i = 0; i < jsonArray.length(); i++)
+            try {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                String groupUserMobNo = jsonObject.getString("userNumber");
+                double latitude = jsonObject.getDouble("latitude");
+                double longitude = jsonObject.getDouble("longitude");
+                Log.i("Latlog--->", " " + latitude + " " + longitude);
+                //mydb.insertGroupMembersLocation(groupUserMobNo,Double.toString(latitude),Double.toString(longitude));
+                marker = mMap.addMarker(new MarkerOptions().title(groupUserMobNo).position(new LatLng(latitude,longitude)));
+                Toast.makeText(context, "LatLog...." + latitude + "" + longitude, Toast.LENGTH_SHORT).show();
+                /*MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(new LatLng(latitude, longitude));*/
+                groupLocation = new LatLng(latitude, longitude);
+                //map.addMarker(groupLocation);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
     }
 
     private void setUpMapIfNeeded() {
@@ -282,7 +330,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         if (mLocationMarker != null) {
             mLocationMarker.remove();
         }
-        mLocationMarker = mMap.addMarker(new MarkerOptions().title("My Location").position(latLng).anchor(0.5f,0.5f));
+        mLocationMarker = mMap.addMarker(new MarkerOptions().title("My Location").position(latLng).anchor(0.5f, 0.5f));
     }
 
     private void moveToLocation(Location location) {
@@ -362,4 +410,3 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
     }
 }
-

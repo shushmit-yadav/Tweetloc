@@ -30,6 +30,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     public static final String COLUMN_IS_ACCEPTED = "Is_Accepted";
     public static final String CONTACTS_NUMBER = "Contacts_Table";
     public static final String INVITE_NUMBER_TABLE = "Invite_Contacts_Table";
+    public static final String GROUP_MEMBERS_LOCATION_TABLE = "Group_Members_Location";
+    public static final String COLUMN_LATITUDE = "Latitude";
+    public static final String COLUMN_LONGITUDE = "Longitude";
     private Context context;
 
 
@@ -54,6 +57,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.execSQL("create table " + CONTACTS_NUMBER + "(" + COLUMN_NUMBER + " text," + COLUMN_NAME + " text" + ")");
         Log.i("After table...", "created" + CONTACTS_NUMBER);
         db.execSQL("create table " + INVITE_NUMBER_TABLE + "(" + COLUMN_NAME + " text," + COLUMN_NUMBER + " text" + ")");
+        Log.i("Creating GroupMemberLocation", " succussfully....");
+        db.execSQL("create table " + GROUP_MEMBERS_LOCATION_TABLE + "(" + COLUMN_GROUP_MEMBERS + " text," + COLUMN_LATITUDE + " text,"+ COLUMN_LONGITUDE + "text" + ")" );
     }
 
     @Override
@@ -63,6 +68,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + GROUP_TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + CONTACTS_NUMBER);
         db.execSQL("DROP TABLE IF EXISTS " + INVITE_NUMBER_TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + GROUP_MEMBERS_LOCATION_TABLE);
         onCreate(db);
 
     }
@@ -77,6 +83,19 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         contentValues.put(COLUMN_GROUP_MEMBERS, Group_Members);
         db.insert(GROUP_TABLE, null, contentValues);
         Log.i("Value inserted....", "succussfully" + Group_Name + "-->" + GroupMember_Admin + "-->" + isAccepted + "-->" + Group_Members);
+        db.close();
+    }
+
+    //this methos is used to store groupMembers location......
+    public void insertGroupMembersLocation(String groupMemberNumber,String latitude, String longitude){
+        Log.i("Inside insertGroupMembersLocation...", "table");
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_GROUP_MEMBERS, groupMemberNumber);
+        contentValues.put(COLUMN_LATITUDE, latitude);
+        contentValues.put(COLUMN_LONGITUDE, longitude);
+        db.insert(GROUP_MEMBERS_LOCATION_TABLE,null,contentValues);
+        Log.i("location inserted ","succussfully");
         db.close();
     }
 

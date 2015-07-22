@@ -50,6 +50,7 @@ public class FragmentAdd extends Fragment {
     ArrayList<Contacts_Test> contactList;
     ArrayList<String> mydbContactNumberList;
     ArrayList<String> mydbContactNameList;
+    ArrayList<String> groupMemberArrayList;
 
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -72,6 +73,7 @@ public class FragmentAdd extends Fragment {
         countryCode = manager.getNetworkCountryIso().toUpperCase();
         //init Group_Member JSONArray.....
         Group_Member = new JSONArray();
+        groupMemberArrayList = new ArrayList<>();
         try {
             //Initialization of app local sqlite database.....
             mydb = new SQLiteDatabase(getActivity());
@@ -103,7 +105,10 @@ public class FragmentAdd extends Fragment {
                 public void onClick(View v) {
                     try{
                         //get JsonArray of members from adapter class.....
-                        Group_Member = addContactsAdapter.getJsonArrayList();
+                        groupMemberArrayList = addContactsAdapter.getGroupMemberArrayList();
+                        for(int i = 0; i < groupMemberArrayList.size(); i++){
+                            Group_Member.put(groupMemberArrayList.get(i));
+                        }
                         Log.i("JsonArray is..."," "+Group_Member);
                         Group_Member.put(Mobile_Number);
                         Log.i("JsonArray is...", " " + Group_Member);

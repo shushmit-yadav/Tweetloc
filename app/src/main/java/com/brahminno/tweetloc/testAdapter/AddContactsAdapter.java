@@ -23,7 +23,7 @@ import java.util.ArrayList;
 public class AddContactsAdapter extends BaseAdapter {
     private ArrayList<Contacts_Test> addContactList;
     private LayoutInflater addContactInflater;
-    static JSONArray groupMemberJsonArray;
+    static ArrayList<String> groupMemberArrayList;
     Context context;
     boolean[] itemChecked;
 
@@ -32,7 +32,7 @@ public class AddContactsAdapter extends BaseAdapter {
         addContactInflater = addContactInflater.from(context);
         this.context = context;
         itemChecked = new boolean[addContactList.size()];
-        groupMemberJsonArray = new JSONArray();
+        groupMemberArrayList = new ArrayList<>();
     }
 
     private class ViewHolder {
@@ -83,22 +83,22 @@ public class AddContactsAdapter extends BaseAdapter {
                     Log.i("checkbox", "checked");
                     int position = (int) v.getTag();
                     Log.i("checkbox", "position .." + position);
-                    groupMemberJsonArray.put(currentContact.getNumber());
-                    Log.i("ContactList", "group .." + groupMemberJsonArray);
+                    groupMemberArrayList.add(currentContact.getNumber());
+                    Log.i("ContactList", "group .." + groupMemberArrayList);
                 }
                 if (!c.isChecked()) {
                     int position = (int) v.getTag();
                     Log.i("uncheckbox", "position .." + position);
-                    groupMemberJsonArray.remove(position);
-                    Log.i("ContactList", "group remove .." + groupMemberJsonArray);
+                    groupMemberArrayList.remove(currentContact.getNumber());
+                    Log.i("ContactList", "group remove .." + groupMemberArrayList);
                 }
             }
         });
         return convertView;
     }
     //this method returns JsonArray.......
-    public static JSONArray getJsonArrayList(){
-        return groupMemberJsonArray;
+    public static ArrayList<String> getGroupMemberArrayList(){
+        return groupMemberArrayList;
     }
 
 }

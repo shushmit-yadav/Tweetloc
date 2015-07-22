@@ -53,6 +53,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -71,6 +72,8 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import static android.app.PendingIntent.getActivity;
 
 //this is a AsyncTask class that push location to server in background.....
 class LocationAsyncTask extends AsyncTask<Void, Void, String> {
@@ -144,6 +147,9 @@ class LocationAsyncTask extends AsyncTask<Void, Void, String> {
 class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
     private Context context;
     private String Device_Id;
+    private String responseResult;
+    SQLiteDatabase mydb;
+    MyTrail myTrail;
 
     public ForgetAsyncTask(Context context, String Device_Id) {
         this.context = context;
@@ -152,6 +158,7 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... params) {
+        mydb = new SQLiteDatabase(context);
         //create HttpClient.....
         HttpClient httpClient = new DefaultHttpClient();
         //Http POST request to given url....
@@ -172,16 +179,8 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
             //execute POST request to the given server.....
             HttpResponse httpResponse = httpClient.execute(httpPost);
             //receive response from server as inputStream............
-            String responseResult = EntityUtils.toString(httpResponse.getEntity());
+            responseResult = EntityUtils.toString(httpResponse.getEntity());
             Log.i("responseResult...: ", responseResult);
-            if(responseResult.equals("OK")){
-                Log.i("inside if loop...: ", "if status is " + responseResult);
-                //Clear all data from shared preference....
-                SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.clear();
-                editor.commit();
-            }
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -192,7 +191,16 @@ class ForgetAsyncTask extends AsyncTask<Void, Void, String> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return "";
+        return responseResult;
+    }
+
+    @Override
+    protected void onPostExecute(String result) {
+        super.onPostExecute(result);
+        Log.i("inside onPostExecute...", ".....");
+        MyTrail.getForgetMeResponse(result);
+        if (result.equals("OK")) {
+        }
     }
 }
 
@@ -352,7 +360,7 @@ class FetchNotificationAsyncTask extends AsyncTask<Void, Void, String> {
             // Prepare intent which is triggered if the
             // notification is selected
             Intent intent = new Intent(context, Chat_Main_Fragment.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent pendingIntent = getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
             // Build notification
             // Actions are just fake
@@ -397,7 +405,8 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     String countryCode;
     boolean isContactSyncFromServer = false;
     FetchContacts contacts;
-
+    AlarmManager alarmManager;
+    PendingIntent pendingIntent;
     Location final_location, gps_location, network_location;
 
     private int count = 0; //counter to ensure onetimecamerasettouserloc function executes once on location change
@@ -476,7 +485,18 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
                             status = data.getBoolean("notification");
                             if (status == true) {
                                 Log.i("status is true..", "...." + status);
-                                new FetchNotificationAsyncTask(getApplicationContext(), userMobileNumber).execute();
+                                /* Retrieve a PendingIntent that will perform a broadcast */
+                                Intent intentAlarm = new Intent(getApplicationContext(), MyAlarmManager.class);
+                                Bundle bundle = new Bundle();
+                                bundle.putString("User Mobile Number", userMobileNumber);
+                                intentAlarm.putExtras(bundle);
+                                // create the object
+                                alarmManager = (AlarmManager) getApplicationContext().getSystemService(getApplicationContext().ALARM_SERVICE);
+                                pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+                                Calendar calendar = Calendar.getInstance();
+                                calendar.setTimeInMillis(System.currentTimeMillis());
+                                //set the alarm for particular time
+                                alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 60 * 2, pendingIntent);
                             }
                         } catch (JSONException e) {
                             return;
@@ -799,6 +819,18 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     public void forgetMe() {
         // mydb.deleteInfo(new RegistrationInfo(deviceId));
         new ForgetAsyncTask(getApplicationContext(), deviceId).execute();
+        //Clear all data from shared preference....
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.clear();
+        editor.commit();
+
+        //delete Application Database......
+        getApplicationContext().deleteDatabase("TweetLocDB.db");
+    }
+
+    public static void getForgetMeResponse(String response) {
+        Log.i("getForgetMeResponse", "....." + response);
     }
 
     //this method is used for inviting contacts through social media android app....
