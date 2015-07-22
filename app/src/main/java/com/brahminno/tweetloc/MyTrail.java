@@ -551,6 +551,31 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
             new NumberSyncFromServer(getApplicationContext(), contacts).execute();
         }
+        //this method is used for getting gps location......
+        getGPSLocation();
+        //Intent to recieve data from previous activity class
+        Intent intent = getIntent();
+        Bundle bundle = intent.getExtras();
+        deviceId = bundle.getString("Device_Id", deviceId);
+        Toast.makeText(getApplicationContext(), deviceId, Toast.LENGTH_SHORT).show();
+        try {
+            //call AsyncTask class to push location on server.....
+            new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
+            initilizeMap();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        //When Group Button clicks then this method will execute...
+        btnGroup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), GroupActivity.class);
+                startActivity(intent);
+            }
+        });
+    }
+    //this method is used for getting GPS or NETWORK location....if GPS is not active then show gpsLOcation settings.....
+    private void getGPSLocation(){
         //check if gps is available or not.....
         locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
@@ -604,36 +629,23 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             longitude = final_location.getLongitude();
             altitude = final_location.getAltitude();
             speed = final_location.getSpeed();
+            //call method to draw marker on map.....
+            drawMarkerOnMap(latitude,longitude);
         }
-
-        //Intent to recieve data from previous activity class
-        Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
-        deviceId = bundle.getString("Device_Id", deviceId);
-        Toast.makeText(getApplicationContext(), deviceId, Toast.LENGTH_SHORT).show();
-        try {
-
-            //call AsyncTask class to push location on server.....
-            new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
-
-            initilizeMap();
-            new DrawMarkerAsyncTask(getApplicationContext(), latitude, longitude);
-
-
-        } catch (Exception ex) {
+    }
+    //this method is used for drawing marker on map........
+    private void drawMarkerOnMap(double latitude,double longitude){
+        Log.i("LatLog", "latlog is....." + latitude);
+        try{
+            marker = new MarkerOptions().position(new LatLng(latitude, longitude)).title("My Location");
+            map.addMarker(marker);
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(new LatLng(latitude, longitude)).zoom(15).build();
+            map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        }
+        catch (Exception ex){
             ex.printStackTrace();
         }
-
-
-        //When Group Button clicks then this method will execute...
-        btnGroup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), GroupActivity.class);
-                startActivity(intent);
-            }
-        });
-
     }
 
     private void initilizeMap() {
@@ -687,7 +699,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
 
     @Override
@@ -706,7 +717,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
 
         map.clear();
-        new DrawMarkerAsyncTask(getApplicationContext(), latitude, longitude);
+        drawMarkerOnMap(latitude,longitude);
 
     }
 
@@ -755,8 +766,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             public void onClick(DialogInterface dialog, int which) {
                 //Launch settings, allowing user to make a change
                 Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-
-                startActivity(i);
+                startActivityForResult(i, 0);
             }
         });
         builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -769,6 +779,18 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             }
         });
         builder.create().show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == 0){
+            if(resultCode == RESULT_OK){
+                getGPSLocation();
+            }
+            if(resultCode == RESULT_CANCELED){
+                getGPSLocation();
+            }
+        }
     }
 
     @Override
@@ -913,36 +935,5 @@ class FetchContacts {
 
     public void setNumber(ArrayList<String> number) {
         this.number = number;
-    }
-}
-
-//this class is used to redraw marker into map.......
-class DrawMarkerAsyncTask extends AsyncTask<Void, Void, String> {
-
-    double latitude, longitude;
-    MarkerOptions marker;
-    GoogleMap map;
-    private Context context;
-
-    public DrawMarkerAsyncTask(Context context, double latitude, double longitude) {
-        this.context = context;
-        this.latitude = latitude;
-        this.longitude = longitude;
-    }
-
-    @Override
-    protected String doInBackground(Void... params) {
-        Log.i("LatLog", "latlog is....." + latitude);
-        marker = new MarkerOptions().position(new LatLng(latitude, longitude));
-        map.addMarker(marker);
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(latitude, longitude)).zoom(15).build();
-        map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        return "";
-    }
-
-    @Override
-    protected void onPostExecute(String s) {
-        super.onPostExecute(s);
     }
 }
