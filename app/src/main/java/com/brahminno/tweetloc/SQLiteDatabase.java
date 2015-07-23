@@ -128,6 +128,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             cursor.moveToNext();
         }
         cursor.close();
+        db.close();
         return numberlist;
     }
 
@@ -141,6 +142,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             cursor.moveToNext();
         }
         cursor.close();
+        db.close();
         return namelist;
     }
 
@@ -154,6 +156,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             cursor.moveToNext();
         }
         cursor.close();
+        db.close();
         return numberlist;
     }
 
@@ -168,6 +171,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             cursor.moveToNext();
         }
         cursor.close();
+        db.close();
         return namelist;
     }
 
@@ -244,6 +248,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         }
         while (cursor.moveToNext());
         cursor.close();
+        db.close();
         return groupMembersUsingGroupName;
     }
 
@@ -261,8 +266,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
                 groupNameList.add(cursor.getString(cursor.getColumnIndex(COLUMN_GROUPS_NAME)));
             }
             while (cursor.moveToNext());
-            cursor.close();
         }
+        cursor.close();
+        db.close();
         GetGroupData getGroupData = new GetGroupData();
         getGroupData.setGroupNameList(groupNameList);
         getGroupData.setGroupMemberNumberList(groupMemberNumberList);
@@ -291,7 +297,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     //method to delete group from app db when user reject group........
     public void deleteGroupFromGroupTable(String groupName,String groupAdminMobNo) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(GROUP_TABLE,"Group_Name = '" + groupName + "' and Group_Admin_Number = '"+groupAdminMobNo+"'", null);
+        Log.i("inside deleteGroupFromGroupTable..","Group_Name is "+groupName+" and Group_Admin_No is "+ groupAdminMobNo);
+        db.delete(GROUP_TABLE,"Group_Name =? and Group_Admin_Number =?", new String[]{groupName,groupAdminMobNo});
+        //db.execSQL("delete from Group_Table where Group_Name = 'PraABC' and Group_Admin_Number = '+919654023769'");
         Log.i("Group Deleted.....", "succussfully");
         db.close();
     }
@@ -311,8 +319,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
                 nonExistingContactNameList.add(contactNameWithNumber);
             }
             while (cursor.moveToNext());
-            cursor.close();
         }
+        cursor.close();
+        db.close();
         return nonExistingContactNameList;
     }
 
@@ -328,6 +337,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
             Log.i("Admin Number...", adminMobileNumber);
         }
         while (cursor.moveToNext());
+        cursor.close();
+        db.close();
         return adminMobileNumber;
     }
 
@@ -337,15 +348,16 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("select distinct Group_Name from Group_Table where Group_Name = '" + groupName + "'", null);
         if(cursor.getCount() > 0){
+            cursor.close();
+            db.close();
             return false;
         }
         else{
+            cursor.close();
+            db.close();
             return true;
         }
     }
-
-    //get Admin Mobile Number from group table using group name.........
-
 
 }
 

@@ -44,14 +44,31 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Created by Shushmit on 29-06-2015.
@@ -75,9 +92,12 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private Double altitude;
     private Double latitude, longitude;
     //these variables are used when user press back button and exit to group, then these values will save to app database as lastLocation...
-    private static double groupMembersLatitude;
-    private static double groupMembersLongitude;
-    private static String groupMemberMobNo;
+    private static ArrayList<Double> groupMembersLatitude;
+    private static ArrayList<Double> groupMembersLongitude;
+    private static ArrayList<String> groupMemberMobNo;
+    private static ArrayList<Double> groupMemberAltitude;
+    private static ArrayList<Integer> groupMemberSpeed;
+    private static ArrayList<Long> groupMemberLastUpdate;
     //---------------------------------------------
     private long timeStamp;
     private int speed;
@@ -100,7 +120,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     private double sourceLatitude, sourceLongitude;
     private double destinationLatitude, destinationLongitude;
 
-    private boolean isTravelingToParis = false;
+    private boolean isTraveling = false;
     private int width, height;
     private LatLngBounds latlngBounds;
     private Polyline newPolyline;
@@ -197,7 +217,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber);
         Log.i("userMobileNumber...", " in chat_main_fragment: " + senderMobileNumber);
         if (mLocation == null) {
-            mLocation = getLastKnownLocation(true);
+            mLocation = getLastKnownLocation(false);
         }
         latitude = mLocation.latitude;
         longitude = mLocation.longitude;
@@ -239,12 +259,12 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         }
         mListView.addHeaderView(mTransparentHeaderView);
         mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.simple_list_item, testData));
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+       /* mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 mSlidingUpPanelLayout.collapsePane();
             }
-        });
+        });*/
 
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addApi(LocationServices.API)
@@ -268,15 +288,24 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     //in this method get groupmembers location from AsyncTask.......
     public static void getGroupMemberLocationResponse(Context context, JSONArray jsonArray) {
         Log.i("inside....", "Chat_Main_Fragment......" + jsonArray);
+        groupMemberMobNo = new ArrayList<>();
+        groupMembersLatitude = new ArrayList<>();
+        groupMembersLongitude = new ArrayList<>();
+        groupMemberAltitude = new ArrayList<>();
+        groupMemberSpeed = new ArrayList<>();
+        groupMemberLastUpdate = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++) {
             try {
                 JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String groupUserMobNo = jsonObject.getString("userNumber");
-                groupMembersLatitude = jsonObject.getDouble("latitude");
-                groupMembersLongitude = jsonObject.getDouble("longitude");
-                Log.i("Latlog--->", " " + groupMembersLatitude + " " + groupMembersLongitude);
-                marker = mMap.addMarker(new MarkerOptions().title(groupUserMobNo).position(new LatLng(groupMembersLatitude, groupMembersLongitude)));
-                Toast.makeText(context, "LatLog...." + groupMembersLatitude + "" + groupMembersLongitude, Toast.LENGTH_SHORT).show();
+                groupMemberMobNo.add(jsonObject.getString("userNumber"));
+                groupMembersLatitude.add(jsonObject.getDouble("latitude"));
+                groupMembersLongitude.add(jsonObject.getDouble("longitude"));
+                groupMemberAltitude.add(jsonObject.getDouble("altitude"));
+                groupMemberSpeed.add(jsonObject.getInt("speed"));
+                groupMemberLastUpdate.add(jsonObject.getLong("lastUpdated"));
+                Log.i("Latlog--->", " " + groupMembersLatitude.get(i) + " " + groupMembersLongitude.get(i)+" "+ groupMemberSpeed.get(i)+" "+ groupMemberAltitude.get(i) +" "+groupMemberLastUpdate.get(i)+" "+ groupMemberSpeed.get(i));
+                marker = mMap.addMarker(new MarkerOptions().title(groupMemberMobNo.get(i)).position(new LatLng(groupMembersLatitude.get(i), groupMembersLongitude.get(i))));
+                Toast.makeText(context, "LatLog...." + groupMembersLatitude.get(i) + "" + groupMembersLongitude.get(i), Toast.LENGTH_SHORT).show();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -291,7 +320,8 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setCompassEnabled(true);
+                mMap.isBuildingsEnabled();
+                mMap.isTrafficEnabled();
                 mMap.getUiSettings().setZoomControlsEnabled(true);
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
                 LatLng update = getLastKnownLocation();
@@ -301,16 +331,27 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
-                        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater()));
                         destinationLatLng = marker.getPosition();
-                        sourceLatLng = new LatLng(sourceLatitude, sourceLongitude);
                         destinationLatitude = destinationLatLng.latitude;
                         destinationLongitude = destinationLatLng.longitude;
-                        if (!isTravelingToParis) {
-                            isTravelingToParis = true;
+                        Log.i("destinationLatLng...","destinationLatitude"+destinationLatitude+"destinationLongitude"+destinationLongitude);
+                        sourceLatLng = new LatLng(sourceLatitude, sourceLongitude);
+                        Log.i("sourceLatLng..","sourceLatitude"+sourceLatitude+" sourceLongitude "+ sourceLongitude);
+                        //double altitude = getElevatioFromGoogleMap(destinationLatitude,destinationLongitude);
+                        String userMobNumber = marker.getTitle();
+                        Log.i("userMobNumber on ","marker click is " + userMobNumber);
+                        double distance = calculateDistance(sourceLatitude, sourceLongitude,destinationLatitude,destinationLongitude);
+                        for(int i = 0; i < groupMemberMobNo.size(); i++){
+                            if(userMobNumber.equals(groupMemberMobNo.get(i))){
+                                Log.i("inside if loop...."," value is true....");
+                                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater(),groupMemberAltitude.get(i),groupMemberSpeed.get(i),groupMemberLastUpdate.get(i),distance));
+                            }
+                        }
+                        if (!isTraveling) {
+                            isTraveling = true;
                             findDirections(sourceLatLng.latitude, sourceLatLng.longitude, destinationLatLng.latitude, destinationLatLng.longitude, GMapV2Direction.MODE_DRIVING);
                         } else {
-                            isTravelingToParis = false;
+                            isTraveling = false;
                             findDirections(sourceLatLng.latitude, sourceLatLng.longitude, destinationLatLng.latitude, destinationLatLng.longitude, GMapV2Direction.MODE_DRIVING);
                         }
                         return false;
@@ -318,6 +359,85 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                 });
             }
         }
+    }
+
+    //this methos is used to calculate distance......
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        double theta = lon1 - lon2;
+        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+        dist = dist * 1.609344;
+        return (dist);
+    }
+    //This function converts decimal degrees to radians
+    private double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
+    }
+    //This function converts radians to decimal degrees
+    private double rad2deg(double rad) {
+        return (rad * 180.0 / Math.PI);
+    }
+
+    private double getElevatioFromGoogleMap(double latitude,double longitude){
+        int cTimeOutMs = 30 * 1000;
+        double elevation = 0;
+        try {
+            URL url = new URL("https://maps.googleapis.com/maps/api/elevation/json?locations=" +
+                    String.valueOf(latitude) + "," +
+                    String.valueOf(longitude));
+            HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
+            urlConnection.setConnectTimeout(cTimeOutMs);
+            urlConnection.setReadTimeout(cTimeOutMs);
+            urlConnection.setRequestProperty("Accept", "application/json");
+
+            // Set request type
+            urlConnection.setRequestMethod("GET");
+            urlConnection.setDoOutput(false);
+            urlConnection.setDoInput(true);
+
+            try {
+                // Check for errors
+                int code = urlConnection.getResponseCode();
+                if (code != HttpsURLConnection.HTTP_OK)
+                    throw new IOException("HTTP error " + urlConnection.getResponseCode());
+
+                // Get response
+                BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                StringBuilder json = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null)
+                    json.append(line);
+                Log.d("response....", json.toString());
+
+                // Decode result
+                JSONObject jroot = new JSONObject(json.toString());
+                String status = jroot.getString("status");
+                if ("OK".equals(status)) {
+                    JSONArray results = jroot.getJSONArray("results");
+                    if (results.length() > 0) {
+                        elevation = results.getJSONObject(0).getDouble("elevation");
+                        Log.i("Altitude....", "Elevation " + elevation);
+                    } else
+                        throw new IOException("JSON no results");
+                } else
+                    throw new IOException("JSON status " + status);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                urlConnection.disconnect();
+            }
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return elevation;
     }
 
     @Override
@@ -344,21 +464,6 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         Log.i("Cancel Alarm Manager", " onStop......");
         alarmManager.cancel(pendingIntent);
         super.onStop();
-    }
-
-    @Override
-    public void onDestroyView() {
-        Log.i("Cancel Alarm Manager", " onDestroyView......");
-        alarmManager.cancel(pendingIntent);
-        super.onDestroyView();
-    }
-
-    @Override
-    public void onDestroy() {
-        Log.i("Cancel Alarm Manager", " onDestroy......");
-        alarmManager.cancel(pendingIntent);
-        pendingIntent.cancel();
-        super.onDestroy();
     }
 
     private LatLng getLastKnownLocation() {
@@ -388,7 +493,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         if (mLocationMarker != null) {
             mLocationMarker.remove();
         }
-        mLocationMarker = mMap.addMarker(new MarkerOptions().title("My Location").position(latLng).anchor(0.5f, 0.5f));
+        mLocationMarker = mMap.addMarker(new MarkerOptions().title(senderMobileNumber).position(latLng).anchor(0.5f, 0.5f));
     }
 
     private void moveToLocation(Location location) {
@@ -419,7 +524,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
     private void expandMap() {
         if (mMap != null) {
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(14f), 1500, null);
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(14f), 1000, null);
         }
     }
 
@@ -480,7 +585,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
             newPolyline.remove();
         }
         newPolyline = mMap.addPolyline(rectLine);
-        if (isTravelingToParis)
+        if (isTraveling)
         {
             latlngBounds = createLatLngBoundsObject(sourceLatLng, destinationLatLng);
             mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(latlngBounds, width, height, 150));

@@ -14,13 +14,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
-import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
-import com.brahminno.tweetloc.backend.tweetApi.model.GroupBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -44,6 +37,8 @@ class GroupAsyncTask extends AsyncTask<Void,Void,String>{
     private JSONArray Group_Member ;
     private String adminMobileNumber;
     private String responseResult;
+
+    private SQLiteDatabase mydb;
 
     public GroupAsyncTask(Context context,String Device_Id,String Group_Name,JSONArray Group_Member,String adminMobileNumber){
         this.context = context;
@@ -95,13 +90,33 @@ class GroupAsyncTask extends AsyncTask<Void,Void,String>{
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return responseResult;
     }
 
     @Override
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
-        Toast.makeText(context,responseResult,Toast.LENGTH_SHORT).show();
+        try{
+            Toast.makeText(context,responseResult,Toast.LENGTH_SHORT).show();
+            mydb = new SQLiteDatabase(context);
+            String isAccepted = "false";
+            for(int i = 0; i < Group_Member.length(); i++){
+                try {
+                    if(adminMobileNumber.equals(Group_Member.getString(i))){
+                        isAccepted = "true";
+                    }
+                    mydb.insertGroups(Group_Name,adminMobileNumber,Group_Member.getString(i),isAccepted);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            Intent intent = new Intent(context,GroupActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.getApplicationContext().startActivity(intent);
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
     }
 }
 
@@ -137,7 +152,10 @@ public class CreateGroupActivity extends ActionBarActivity {
                 Group_Name = etGroupName.getText().toString();
                 boolean result = mydb.checkGroupNameDuplicacy(Group_Name);
                 Log.i("result from database.."," "+result);
-                if(result == true){
+                Log.i("result from database..", " " + Group_Name);
+                if(Group_Name.isEmpty()){
+                    Toast.makeText(getApplicationContext(),"Group Name should not null!!!!",Toast.LENGTH_SHORT).show();
+                }else if(result == true){
                     //Call Intent to go another activity....
                     Intent groupIntent = new Intent(getApplicationContext(),AddMemberActivity.class);
                     Bundle bundle = new Bundle();

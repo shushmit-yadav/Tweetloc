@@ -18,9 +18,9 @@ public class MyAlarmManager extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.i("Inside alarmmanager"," class.....");
         Bundle bundle = intent.getExtras();
-        String groupMemberList = bundle.getString("GroupMemberList");
-        Log.i("size...","---> "+ groupMemberList);
+        String groupMembersList = bundle.getString("GroupMemberList");
+        Log.i("size...","---> "+ groupMembersList);
         //Toast.makeText(context, "Alarm Triggered and SMS Sent", Toast.LENGTH_SHORT).show();
-        new GetGroupMemberLocation(context,groupMemberList).execute();
+        new GetGroupMemberLocation(context,groupMembersList).execute();
     }
 }

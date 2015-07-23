@@ -15,13 +15,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
-
-import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
-import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.GroupMemberSyncBean;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -146,51 +139,6 @@ class SyncAllGroupMembers extends AsyncTask<Void,Void,String>{
     }
 }
 
-//this Async class is used for Sync all member's status in a group........
-class AcceptStatusAsyncTask extends AsyncTask<Void,Void,String>{
-
-    GetGroupData getGroupData;
-    private Context context;
-    private static TweetApi myTweetApi = null;
-    List<AcceptanceStatusBean> acceptanceStatusBean;
-    SQLiteDatabase mydb;
-
-    public AcceptStatusAsyncTask(Context context,GetGroupData getGroupData){
-        this.getGroupData = getGroupData;
-        this.context = context;
-    }
-
-    @Override
-    protected String doInBackground(Void... params) {
-
-        if (myTweetApi == null) {
-            TweetApi.Builder builder = new TweetApi.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null)
-                    .setRootUrl("https://brahminno.appspot.com/_ah/api/");
-
-            myTweetApi = builder.build();
-        }
-        try{
-            AcceptanceStatusBean acceptanceStatus = new AcceptanceStatusBean();
-            acceptanceStatus.setGroupNameList(getGroupData.getGroupNameList());
-            acceptanceStatus.setGroupMemberNumberList(getGroupData.getGroupMemberNumberList());
-            acceptanceStatusBean = myTweetApi.processAcceptanceStatusRequest(acceptanceStatus).execute().getItems();
-            Log.i("Size of ...","acceptanceStatusBean..."+acceptanceStatusBean.size());
-            mydb = new SQLiteDatabase(context);
-            for(int i = 0; i < acceptanceStatusBean.size(); i++){
-                Log.i("isAccepted.."," "+acceptanceStatusBean.get(i).getIsAccepted());
-                Log.i("Group Name.."," "+acceptanceStatusBean.get(i).getGroupName());
-                Log.i("GroupMember Number.."," "+acceptanceStatusBean.get(i).getMobileNumberMember());
-                mydb.updateGroupTableWithSyncInfo(acceptanceStatusBean.get(i).getIsAccepted(), acceptanceStatusBean.get(i).getGroupName(), acceptanceStatusBean.get(i).getMobileNumberMember());
-            }
-        }
-        catch (Exception ex){
-            ex.printStackTrace();
-        }
-
-        return null;
-    }
-}
-
 
 public class GroupActivity extends ActionBarActivity {
 
@@ -248,6 +196,7 @@ public class GroupActivity extends ActionBarActivity {
                 //Log to debug the application......
                 Log.i("Group Name...", groupName + " is clicked");
                 adminMobileNumber = mydb.getAdminMobileNumberUsingGroupName(groupName);
+                Log.i("Admin Number...."," in GroupActivity is "+ adminMobileNumber);
                 contactNameWithNumberArrayList = new ArrayList<>();
                 contactNameWithNumberArrayList = mydb.getAllMembersUsingGroupNames(groupName);
                 for (int i = 0; i < contactNameWithNumberArrayList.size(); i++) {
@@ -271,7 +220,6 @@ public class GroupActivity extends ActionBarActivity {
                     groupAcceptedBundle.putString("GroupAdminMobNo", adminMobileNumber);
                     startActivity(groupAcceptedIntent.putExtras(groupAcceptedBundle));
                 }
-
             }
         });
     }
@@ -280,6 +228,32 @@ public class GroupActivity extends ActionBarActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_group, menu);
         return true;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //Object of mydb....
+        mydb = new SQLiteDatabase(this);
+        groupNames = new ArrayList<>();
+        groupNames = mydb.getUniqueGroupNamesFromGroupTable();
+        for(int i = 0; i < groupNames.size(); i++){
+            Log.i("Group Names....",groupNames.get(i));
+        }
+        ArrayAdapter<String> groupNameAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,groupNames);
+        groupNameListView.setAdapter(groupNameAdapter);
+    }
+
+    @Override
+    public void onBackPressed() {
+       /* Intent intent = new Intent(getApplicationContext(),MyTrail.class);
+        Bundle bundle = new Bundle();
+        bundle.putString("Device_Id",deviceId);
+        bundle.putString("User_Mob_No",Mobile_Number);
+        intent.putExtras(bundle);
+        startActivity(intent);
+        finish();*/
+        super.onBackPressed();
     }
 
     @Override
@@ -329,7 +303,7 @@ public class GroupActivity extends ActionBarActivity {
         Log.i("Size of groupMember..", " " + getGroupData.getGroupMemberNumberList().size());
         //call AsyncMethod to Sync status from server in background.....
         if(getGroupData.getGroupNameList().size() > 0 && getGroupData.getGroupMemberNumberList().size() > 0){
-            new AcceptStatusAsyncTask(getApplicationContext(),getGroupData).execute();
+            //new AcceptStatusAsyncTask(getApplicationContext(),getGroupData).execute();
         }
 
     }

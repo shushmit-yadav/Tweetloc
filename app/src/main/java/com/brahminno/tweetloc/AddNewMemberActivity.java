@@ -11,14 +11,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
-
-import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
-import com.brahminno.tweetloc.backend.tweetApi.model.GroupBean;
-import com.brahminno.tweetloc.testAdapter.AddContactsAdapter;
-import com.brahminno.tweetloc.testAdapter.Contacts_Test;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;

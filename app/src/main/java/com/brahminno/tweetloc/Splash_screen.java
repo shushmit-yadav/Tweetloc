@@ -49,7 +49,11 @@ public class Splash_screen extends ActionBarActivity {
             public void run() {
                 SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
                 String deviceId = prefs.getString("Device Id", null);
+                String userNumber = prefs.getString("Mobile Number", null);
                 Log.i("SplashActivity", "Device id .." + deviceId);
+                if(userNumber != null){
+                    new GroupDetailsAsyncTask(getApplicationContext(), userNumber).execute();
+                }
                 if(deviceId == null){
                     Intent intent = new Intent(getApplicationContext(), RegistrationActivity.class);
                     startActivity(intent);
@@ -59,6 +63,7 @@ public class Splash_screen extends ActionBarActivity {
                     Intent intent = new Intent(getApplicationContext(),MyTrail.class);
                     Bundle bundle = new Bundle();
                     bundle.putString("Device_Id",deviceId);
+                    bundle.putString("User_Mob_No",userNumber);
                     intent.putExtras(bundle);
                     startActivity(intent);
                     finish();

@@ -22,12 +22,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
-import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -52,7 +46,6 @@ class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
     private String Mobile_Number;
     private String Email_ID;
     private String Device_Id;
-    RegistrationBean registerUserValidation;
 
     public RegistrationAsyncTask(Context con, String Mobile_Number, String Email_ID, String Device_Id) {
         this.Mobile_Number = Mobile_Number;

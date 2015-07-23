@@ -30,10 +30,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
-import com.brahminno.tweetloc.backend.tweetApi.model.ContactSyncBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.LocationBean;
-import com.brahminno.tweetloc.backend.tweetApi.model.RegistrationBean;
 import com.brahminno.tweetloc.chatReciever.ChatReciever;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -45,8 +41,6 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -393,7 +387,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     double altitude;
     float speed;
     String deviceId;
-    String userNumber;
+    private String userNumber;
     Button btnGroup;
     LocationManager locationManager;
     SQLiteDatabase mydb;
@@ -486,7 +480,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
                             if (status == true) {
                                 Log.i("status is true..", "...." + status);
                                 /* Retrieve a PendingIntent that will perform a broadcast */
-                                Intent intentAlarm = new Intent(getApplicationContext(), MyAlarmManager.class);
+                                Intent intentAlarm = new Intent(getApplicationContext(), NotificationAlarmManager.class);
                                 Bundle bundle = new Bundle();
                                 bundle.putString("User Mobile Number", userMobileNumber);
                                 intentAlarm.putExtras(bundle);
@@ -530,41 +524,28 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         first we fetch all contacts from mobile device and then we execute Async Class.....
         first we check that app install first time on device or not...
         get value from shared preference.......*/
-        SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        isContactSyncFromServer = prefs.getBoolean("isContactSyncFromServer", false);
-        userNumber = prefs.getString("Mobile Number", null);
         contacts = new FetchContacts();
-        if (!isContactSyncFromServer) {
-            SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", getApplicationContext().MODE_PRIVATE).edit();
-            editor.putBoolean("isContactSyncFromServer", true);
-            editor.commit();
-            contacts = fetchContact();
-            Log.i("size of contacts1..", "" + contacts.getNumber().size());
-            Log.i("size of contacts2..", "" + contacts.getName().size());
-            try {
-                //save all contacts to loacal app db....
-                mydb = new SQLiteDatabase(this);
-                //mydb.insertIntoInvite(contacts);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
-            new NumberSyncFromServer(getApplicationContext(), contacts).execute();
+        contacts = fetchContact();
+        Log.i("size of contacts1..", "" + contacts.getNumber().size());
+        Log.i("size of contacts2..", "" + contacts.getName().size());
+        try {
+            //save all contacts to loacal app db....
+            mydb = new SQLiteDatabase(this);
+            //mydb.insertIntoInvite(contacts);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
+        //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
+        new NumberSyncFromServer(getApplicationContext(), contacts).execute();
+
         //this method is used for getting gps location......
         getGPSLocation();
         //Intent to recieve data from previous activity class
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         deviceId = bundle.getString("Device_Id", deviceId);
+        userNumber = bundle.getString("User_Mob_No", userNumber);
         Toast.makeText(getApplicationContext(), deviceId, Toast.LENGTH_SHORT).show();
-        try {
-            //call AsyncTask class to push location on server.....
-            new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
-            initilizeMap();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
         //When Group Button clicks then this method will execute...
         btnGroup.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -573,9 +554,17 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
                 startActivity(intent);
             }
         });
+        try {
+            //call AsyncTask class to push location on server.....
+            new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
+            initilizeMap();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
+
     //this method is used for getting GPS or NETWORK location....if GPS is not active then show gpsLOcation settings.....
-    private void getGPSLocation(){
+    private void getGPSLocation() {
         //check if gps is available or not.....
         locationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
 
@@ -630,20 +619,20 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             altitude = final_location.getAltitude();
             speed = final_location.getSpeed();
             //call method to draw marker on map.....
-            drawMarkerOnMap(latitude,longitude);
+            drawMarkerOnMap(latitude, longitude);
         }
     }
+
     //this method is used for drawing marker on map........
-    private void drawMarkerOnMap(double latitude,double longitude){
+    private void drawMarkerOnMap(double latitude, double longitude) {
         Log.i("LatLog", "latlog is....." + latitude);
-        try{
+        try {
             marker = new MarkerOptions().position(new LatLng(latitude, longitude)).title("My Location");
             map.addMarker(marker);
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(new LatLng(latitude, longitude)).zoom(15).build();
             map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        }
-        catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -717,7 +706,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
 
         map.clear();
-        drawMarkerOnMap(latitude,longitude);
+        drawMarkerOnMap(latitude, longitude);
 
     }
 
@@ -783,11 +772,11 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == 0){
-            if(resultCode == RESULT_OK){
+        if (requestCode == 0) {
+            if (resultCode == RESULT_OK) {
                 getGPSLocation();
             }
-            if(resultCode == RESULT_CANCELED){
+            if (resultCode == RESULT_CANCELED) {
                 getGPSLocation();
             }
         }
@@ -832,12 +821,12 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             return true;
         }
         if (id == R.id.action_groupSync) {
+            Log.i("action_groupSync", " clicked---> " + userNumber);
             new GroupDetailsAsyncTask(getApplicationContext(), userNumber).execute();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
-
     public void forgetMe() {
         // mydb.deleteInfo(new RegistrationInfo(deviceId));
         new ForgetAsyncTask(getApplicationContext(), deviceId).execute();
@@ -892,22 +881,6 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         contacts.setName(nameList);
         contacts.setNumber(numberList);
         return contacts;
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        try{
-            Log.i("onDestroy...."," MyTrail");
-            alarmManager.cancel(pendingIntent);
-        }catch (Exception ex){
-            ex.fillInStackTrace();
-        }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.brahminno.tweetloc;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,12 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
-
-import com.brahminno.tweetloc.backend.tweetApi.TweetApi;
-import com.brahminno.tweetloc.backend.tweetApi.model.AcceptanceStatusBean;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -114,6 +109,7 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
     private boolean isAccepted;
     private String groupAdminMobNo;
     String responseResult;
+    private SQLiteDatabase mydb;
     public RejectAsyncTask(Context context, String groupName, String groupMemberMobNo, String groupAdminMobNo, boolean isAccepted) {
         this.context = context;
         this.groupName = groupName;
@@ -136,6 +132,7 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
                 jsonObject.put("groupName", groupName);
                 jsonObject.put("groupAdminMobNo", groupAdminMobNo);
                 jsonObject.put("isAccepted", isAccepted);
+                Log.i("Group_Admin_Number...", groupAdminMobNo);
                 //convert jsonObject to json string....
                 json = jsonObject.toString();
                 //set json to StringEntity....
@@ -169,6 +166,23 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
     @Override
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
+        Activity activity = (Activity) context;
+        try{
+            mydb = new SQLiteDatabase(context.getApplicationContext());
+            Log.i("inside onPostExecute.."," into RejectAsyncTask "+ s);
+            Log.i("Admin Num...",""+groupAdminMobNo);
+            if(true){
+                Log.i("inside if loog"," onPostExecute");
+                mydb.deleteGroupFromGroupTable(groupName,groupAdminMobNo);
+            }
+            Intent intent = new Intent(context,GroupActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.getApplicationContext().startActivity(intent);
+            activity.finish();
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
     }
 }
 
@@ -196,7 +210,7 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         groupName = bundle.getString("Group Name");
-        adminMobileNumber = bundle.getString("adminMobileNumber");
+        adminMobileNumber = bundle.getString("GroupAdminMobNo");
         //set group name as title to activity.............
         getSupportActionBar().setTitle(groupName);
         //get User registered mobile_number from shared preference.......
@@ -224,6 +238,7 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
                 groupAcceptedBundle.putString("Group Name", groupName);
                 groupAcceptedBundle.putString("GroupAdminMobNo", adminMobileNumber);
                 startActivity(groupAcceptedIntent.putExtras(groupAcceptedBundle));
+                finish();
             }
         });
         //on Reject button click event........
@@ -231,13 +246,9 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 boolean isAccepted = false;
+                Log.i("Admin mobNum..."," in btnRejection press "+ adminMobileNumber);
                 //call async class to update user acceptance status as false.......
                 new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber, adminMobileNumber, isAccepted).execute();
-                mydb = new SQLiteDatabase(getApplicationContext());
-                mydb.deleteGroupFromGroupTable(groupName, adminMobileNumber);
-                //Intent to go previous activity......
-                Intent intent = new Intent(getApplicationContext(), GroupActivity.class);
-                startActivity(intent);
             }
         });
     }
