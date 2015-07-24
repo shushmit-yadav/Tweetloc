@@ -166,7 +166,6 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
     @Override
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
-        Activity activity = (Activity) context;
         try{
             mydb = new SQLiteDatabase(context.getApplicationContext());
             Log.i("inside onPostExecute.."," into RejectAsyncTask "+ s);
@@ -176,9 +175,9 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
                 mydb.deleteGroupFromGroupTable(groupName,groupAdminMobNo);
             }
             Intent intent = new Intent(context,GroupActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.getApplicationContext().startActivity(intent);
-            activity.finish();
         }
         catch (Exception ex){
             ex.printStackTrace();

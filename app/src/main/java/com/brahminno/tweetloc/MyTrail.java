@@ -1,7 +1,6 @@
 package com.brahminno.tweetloc;
 
 import android.app.AlarmManager;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -9,11 +8,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.ContactsContract;
@@ -30,26 +29,21 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.brahminno.tweetloc.chatReciever.ChatReciever;
+import com.brahminno.tweetloc.chat_reciever_alarmManager.ChatReceiverAlarmManager;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
-import java.util.List;
 
 //socket.io imports....
 import com.github.nkzawa.socketio.client.IO;
@@ -247,27 +241,37 @@ class NumberSyncFromServer extends AsyncTask<Void, Void, String> {
             JSONArray responseJsonArray = responseJsonObj.getJSONArray("syncedcontact");
             contactName = new ArrayList<>();
             contactNumber = new ArrayList<>();
-            for (int i = 0; i < responseJsonArray.length(); i++) {
-                JSONObject jsonObjectFromJsonArray = responseJsonArray.getJSONObject(i);
-                String contactNum = jsonObjectFromJsonArray.getString("mobileNo");
-                for (int j = 0; j < contacts.getNumber().size(); j++) {
-                    if (contacts.getNumber().get(j).equals(contactNum)) {
-                        contactName.add(contacts.getName().get(j));
-                        contactNumber.add(contacts.getNumber().get(j));
+            if (responseJsonArray.length() > 0) {
+                for (int i = 0; i < responseJsonArray.length(); i++) {
+                    JSONObject jsonObjectFromJsonArray = responseJsonArray.getJSONObject(i);
+                    String contactNum = jsonObjectFromJsonArray.getString("mobileNo");
+                    for (int j = 0; j < contacts.getNumber().size(); j++) {
+                        if (contacts.getNumber().get(j).equals(contactNum)) {
+                            contactName.add(contacts.getName().get(j));
+                            contactNumber.add(contacts.getNumber().get(j));
+                        }
                     }
                 }
+            } else {
+                Log.i("Response result..", " No contacts is restoger from TweetLoc app...");
             }
             //call SQLiteDatabase method to store contacts in database.....
             //save arraylist to sqlite database......
             myDB = new SQLiteDatabase(context);
             //clear data from app db....
             myDB.deleteNumberArrayList();
-            Log.i("Contact from server...", contactName.get(0));
+            //Log.i("Contact from server...", contactName.get(0));
             myDB.insertNumberArrayList(contactNumber, contactName);
             //first delete items from Invite_Contacts_Table and then store in.....
             myDB.deleteInviteTableItems();
-            for (int i = 0; i < contacts.getNumber().size(); i++) {
-                if (!contactNumber.contains(contacts.getNumber().get(i))) {
+            if (contactNumber.size() > 0) {
+                for (int i = 0; i < contacts.getNumber().size(); i++) {
+                    if (!contactNumber.contains(contacts.getNumber().get(i))) {
+                        myDB.insertIntoInvite(contacts.getName().get(i), contacts.getNumber().get(i));
+                    }
+                }
+            } else {
+                for (int i = 0; i < contacts.getNumber().size(); i++) {
                     myDB.insertIntoInvite(contacts.getName().get(i), contacts.getNumber().get(i));
                 }
             }
@@ -297,6 +301,9 @@ class FetchNotificationAsyncTask extends AsyncTask<Void, Void, String> {
     private String groupAdminMobNo;
     private String groupName;
     private String groupMemberMobNo;
+    private JSONArray groupMemberNumJsonArray;
+    private String noteGroupName;
+    private String noteGroupAdminNo;
     SQLiteDatabase mydb;
     private static final String TAG = "responseJson into NumberSyncFromServer";
 
@@ -335,34 +342,43 @@ class FetchNotificationAsyncTask extends AsyncTask<Void, Void, String> {
             JSONArray array = responseJsonObject.getJSONArray("notification");
             Log.i("json array is... :", "" + array.length());
             mydb = new SQLiteDatabase(context);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject newJsonObject = (JSONObject) array.get(i);
-                notificationMessage = newJsonObject.getString("noteMessage");
-                noteContext = newJsonObject.getString("noteContext");
-                JSONArray groupMemberNumJsonArray = newJsonObject.getJSONArray("noteAuxilGrpMembers");
-                for (int j = 0; j < groupMemberNumJsonArray.length(); j++) {
-                    groupName = newJsonObject.getString("noteGroupName");
-                    groupAdminMobNo = newJsonObject.getString("noteGroupAdminNo");
-                    groupMemberMobNo = groupMemberNumJsonArray.getString(j);
-                    boolean isAccepted = false;
-                    if (groupMemberMobNo.equals(groupAdminMobNo)) {
-                        isAccepted = true;
+            if(array.length() > 0){
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject newJsonObject = (JSONObject) array.get(i);
+                    notificationMessage = newJsonObject.getString("noteMessage");
+                    noteGroupName = newJsonObject.getString("noteGroupName");
+                    noteContext = newJsonObject.getString("noteContext");
+                    noteGroupAdminNo = newJsonObject.getString("noteGroupAdminNo");
+                    groupMemberNumJsonArray = newJsonObject.getJSONArray("noteAuxilGrpMembers");
+                    if(noteContext.equals("notifyGroupDeletion")){
+                        mydb.deleteGroupFromGroupTable(noteGroupName,noteGroupAdminNo);
                     }
-                    mydb.insertGroups(groupName, groupAdminMobNo, groupMemberMobNo, Boolean.toString(isAccepted));
+                    else if(noteContext.equals("notifyGroupCreation")){
+                        for (int j = 0; j < groupMemberNumJsonArray.length(); j++) {
+                            groupMemberMobNo = groupMemberNumJsonArray.getString(j);
+                            boolean isAccepted = false;
+                            if (groupMemberMobNo.equals(groupAdminMobNo)) {
+                                isAccepted = true;
+                            }
+                            mydb.insertGroups(noteGroupName, noteGroupAdminNo, groupMemberMobNo, Boolean.toString(isAccepted));
+                        }
+                    }
                 }
+                // Prepare intent which is triggered if the
+                // notification is selected
+                Intent intent = new Intent(context, Chat_Main_Fragment.class);
+                PendingIntent pendingIntent = getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                // Build notification
+                // Actions are just fake
+                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_splash_256)
+                        .setContentTitle(notificationMessage).setContentIntent(pendingIntent);
+
+                NotificationManager manager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
+                manager.notify(0, mBuilder.build());
+            }else{
+                Log.i("Notification...","there is not any notification...");
             }
-            // Prepare intent which is triggered if the
-            // notification is selected
-            Intent intent = new Intent(context, Chat_Main_Fragment.class);
-            PendingIntent pendingIntent = getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-            // Build notification
-            // Actions are just fake
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_splash_256)
-                    .setContentTitle(notificationMessage).setContentIntent(pendingIntent);
-
-            NotificationManager manager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
-            manager.notify(0, mBuilder.build());
         } catch (ClientProtocolException e1) {
             e1.printStackTrace();
         } catch (IOException e1) {
@@ -430,136 +446,143 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         //get user mobile number from shared preference.......
         SharedPreferences prefss = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         final String userMobileNumber = prefss.getString("Mobile Number", null);
-        //make connection to socket.....
-        mSocket.connect();
-        //mSocket.emit("Tweet", message);
+        if(!isNetworkAvailable()){
+            Toast.makeText(getApplicationContext(),"Please connect ot Internet!!!!",Toast.LENGTH_SHORT).show();
+        }else{
+            //make connection to socket.....
+            mSocket.connect();
+            //mSocket.emit("Tweet", message);
 
-        Emitter.Listener onNewMessage = new Emitter.Listener() {
-            @Override
-            public void call(final Object... args) {
-                MyTrail.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        JSONObject data = (JSONObject) args[0];
-                        String username;
-                        String message;
-                        try {
-                            username = data.getString("message");
-                            //message = data.getString("message");
-                        } catch (JSONException e) {
-                            return;
-                        }
-                        Log.i("Socket On...", "" + username);
-                    }
-                });
-
-            }
-        };
-
-        mSocket.on("whoru", onNewMessage);
-        JSONObject testMessage = new JSONObject();
-        try {
-            testMessage.put("mobileNum", userMobileNumber);
-            mSocket.emit("iam", testMessage);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        //below code is for testing purpose to check notification.........
-        Emitter.Listener onNotification = new Emitter.Listener() {
-            @Override
-            public void call(final Object... args) {
-                MyTrail.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        JSONObject data = (JSONObject) args[0];
-                        boolean status;
-                        String message;
-                        try {
-                            status = data.getBoolean("notification");
-                            if (status == true) {
-                                Log.i("status is true..", "...." + status);
-                                /* Retrieve a PendingIntent that will perform a broadcast */
-                                Intent intentAlarm = new Intent(getApplicationContext(), NotificationAlarmManager.class);
-                                Bundle bundle = new Bundle();
-                                bundle.putString("User Mobile Number", userMobileNumber);
-                                intentAlarm.putExtras(bundle);
-                                // create the object
-                                alarmManager = (AlarmManager) getApplicationContext().getSystemService(getApplicationContext().ALARM_SERVICE);
-                                pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
-                                Calendar calendar = Calendar.getInstance();
-                                calendar.setTimeInMillis(System.currentTimeMillis());
-                                //set the alarm for particular time
-                                alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 60 * 2, pendingIntent);
+            Emitter.Listener onNewMessage = new Emitter.Listener() {
+                @Override
+                public void call(final Object... args) {
+                    MyTrail.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            JSONObject data = (JSONObject) args[0];
+                            String username;
+                            String message;
+                            try {
+                                username = data.getString("message");
+                                //message = data.getString("message");
+                            } catch (JSONException e) {
+                                return;
                             }
-                        } catch (JSONException e) {
-                            return;
+                            Log.i("Socket On...", "" + username);
                         }
-                        Log.i("Socket On...", "" + status);
-                    }
-                });
+                    });
 
+                }
+            };
+
+            mSocket.on("whoru", onNewMessage);
+            JSONObject testMessage = new JSONObject();
+            try {
+                testMessage.put("mobileNum", userMobileNumber);
+                mSocket.emit("iam", testMessage);
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-        };
 
-        mSocket.on("isnotification", onNotification);
+            //below code is for testing purpose to check notification.........
+            Emitter.Listener onNotification = new Emitter.Listener() {
+                @Override
+                public void call(final Object... args) {
+                    MyTrail.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            JSONObject data = (JSONObject) args[0];
+                            boolean status;
+                            String message;
+                            try {
+                                status = data.getBoolean("notification");
+                                if (status == true) {
+                                    Log.i("status is true..", "...." + status);
+                                /* Retrieve a PendingIntent that will perform a broadcast */
+                                    Intent intentAlarm = new Intent(getApplicationContext(), NotificationAlarmManager.class);
+                                    Bundle bundle = new Bundle();
+                                    bundle.putString("User Mobile Number", userMobileNumber);
+                                    intentAlarm.putExtras(bundle);
+                                    // create the object
+                                    alarmManager = (AlarmManager) getApplicationContext().getSystemService(getApplicationContext().ALARM_SERVICE);
+                                    pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+                                    Calendar calendar = Calendar.getInstance();
+                                    calendar.setTimeInMillis(System.currentTimeMillis());
+                                    //set the alarm for particular time
+                                    alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 60 * 2, pendingIntent);
+                                }
+                            } catch (JSONException e) {
+                                return;
+                            }
+                            Log.i("Socket On...", "" + status);
+                        }
+                    });
 
-        //check notification code ends here.......
+                }
+            };
 
-        /* Retrieve a PendingIntent that will perform a broadcast *//*
-        Intent alarmIntent = new Intent(MyTrail.this, ChatReciever.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(MyTrail.this, 0, alarmIntent, 0);
+            mSocket.on("isnotification", onNotification);
 
+            //check notification code ends here.......
 
-        //create AlarmManager to hit request on server to get chat messages.....
-        AlarmManager alarmManager = (AlarmManager) getApplicationContext().getSystemService(getApplicationContext().ALARM_SERVICE);
-        alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), INTERVAL, pendingIntent);
+            // Create Alarm manager that hit on server to get chats......
+            Intent intentChatAlarm = new Intent(getApplicationContext(), ChatReceiverAlarmManager.class);
+            Bundle chatBundle = new Bundle();
+            chatBundle.putString("User Mobile Number", userMobileNumber);
+            intentChatAlarm.putExtras(chatBundle);
+            AlarmManager chatAlarmManager = (AlarmManager) getApplicationContext().getSystemService(getApplicationContext().ALARM_SERVICE);
+            PendingIntent getChatPendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intentChatAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(System.currentTimeMillis());
+            //set the alarm for particular time
+            chatAlarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 10, getChatPendingIntent);
+            //ends of getChatAlarmManager code........
 
-*/
-        btnGroup = (Button) findViewById(R.id.btnGroup);
-        //this method is used to get countryCode isung telephonyManager....
-        telephonyManager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
-        countryCode = telephonyManager.getNetworkCountryIso().toUpperCase();
+            btnGroup = (Button) findViewById(R.id.btnGroup);
+            //this method is used to get countryCode isung telephonyManager....
+            telephonyManager = (TelephonyManager) getApplicationContext().getSystemService(getApplicationContext().TELEPHONY_SERVICE);
+            countryCode = telephonyManager.getNetworkCountryIso().toUpperCase();
         /*call NumberSyncFromServer class to sync all contact automatically from server....
         first we fetch all contacts from mobile device and then we execute Async Class.....
         first we check that app install first time on device or not...
         get value from shared preference.......*/
-        contacts = new FetchContacts();
-        contacts = fetchContact();
-        Log.i("size of contacts1..", "" + contacts.getNumber().size());
-        Log.i("size of contacts2..", "" + contacts.getName().size());
-        try {
-            //save all contacts to loacal app db....
-            mydb = new SQLiteDatabase(this);
-            //mydb.insertIntoInvite(contacts);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
-        new NumberSyncFromServer(getApplicationContext(), contacts).execute();
-
-        //this method is used for getting gps location......
-        getGPSLocation();
-        //Intent to recieve data from previous activity class
-        Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
-        deviceId = bundle.getString("Device_Id", deviceId);
-        userNumber = bundle.getString("User_Mob_No", userNumber);
-        Toast.makeText(getApplicationContext(), deviceId, Toast.LENGTH_SHORT).show();
-        //When Group Button clicks then this method will execute...
-        btnGroup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), GroupActivity.class);
-                startActivity(intent);
+            contacts = new FetchContacts();
+            contacts = fetchContact();
+            Log.i("size of contacts1..", "" + contacts.getNumber().size());
+            Log.i("size of contacts2..", "" + contacts.getName().size());
+            try {
+                //save all contacts to loacal app db....
+                mydb = new SQLiteDatabase(this);
+                //mydb.insertIntoInvite(contacts);
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
-        });
-        try {
-            //call AsyncTask class to push location on server.....
-            new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
-            initilizeMap();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+            //After Successfully fetching all contact mobNum, call AsyncTask class to send this contact to server.......
+            new NumberSyncFromServer(getApplicationContext(), contacts).execute();
+
+            //this method is used for getting gps location......
+            getGPSLocation();
+            //Intent to recieve data from previous activity class
+            Intent intent = getIntent();
+            Bundle bundle = intent.getExtras();
+            deviceId = bundle.getString("Device_Id", deviceId);
+            userNumber = bundle.getString("User_Mob_No", userNumber);
+            Toast.makeText(getApplicationContext(), deviceId, Toast.LENGTH_SHORT).show();
+            //When Group Button clicks then this method will execute...
+            btnGroup.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getApplicationContext(), GroupActivity.class);
+                    startActivity(intent);
+                }
+            });
+            try {
+                //call AsyncTask class to push location on server.....
+                new LocationAsyncTask(getApplicationContext(), userNumber, latitude, longitude, altitude, speed).execute();
+                initilizeMap();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -632,7 +655,10 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(new LatLng(latitude, longitude)).zoom(15).build();
             map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        } catch (Exception ex) {
+        }catch (NullPointerException ex){
+            ex.printStackTrace();
+        }
+        catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -647,6 +673,17 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         map.getUiSettings().setZoomControlsEnabled(true);
         map.getUiSettings().setCompassEnabled(true);
         map.getUiSettings().setMyLocationButtonEnabled(true);
+    }
+
+    //Check Internet
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnected()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -827,6 +864,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         }
         return super.onOptionsItemSelected(item);
     }
+
     public void forgetMe() {
         // mydb.deleteInfo(new RegistrationInfo(deviceId));
         new ForgetAsyncTask(getApplicationContext(), deviceId).execute();

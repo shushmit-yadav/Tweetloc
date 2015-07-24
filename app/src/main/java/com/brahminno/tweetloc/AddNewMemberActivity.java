@@ -1,5 +1,6 @@
 package com.brahminno.tweetloc;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -11,6 +12,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -29,10 +31,13 @@ import java.util.Collections;
 import java.util.Comparator;
 
 //this Async class is used to add new members in an existing group......
-class AddNewMembersAsyncTask extends AsyncTask<Void, Void, String> {
+class AddNewMembersAsyncTask extends AsyncTask<Void, Void, Boolean> {
     private Context context;
     private String groupName, groupAdminMobNo;
     private ArrayList<String> groupmembers;
+    private boolean responseResultBoolean;
+    SQLiteDatabase mydb;
+    AddNewMemberActivity addNewMemberActivity;
 
     public AddNewMembersAsyncTask(Context context, String groupName, String groupAdminMobNo, ArrayList<String> groupmembers) {
         this.context = context;
@@ -42,7 +47,7 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, String> {
     }
 
     @Override
-    protected String doInBackground(Void... params) {
+    protected Boolean doInBackground(Void... params) {
         try {
             Log.i("inside...", "AddNewMemberAsyncTask....");
             //create HttpClient.....
@@ -52,9 +57,13 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, String> {
             String json = null;
             JSONObject jsonObject = new JSONObject();
             try {
+                JSONArray groupMemberJsonArray = new JSONArray();
+                for (int i = 0; i < groupmembers.size(); i++) {
+                    groupMemberJsonArray.put(groupmembers.get(i));
+                }
                 jsonObject.put("groupAdminMobNo", groupAdminMobNo);
                 jsonObject.put("groupName", groupName);
-                jsonObject.put("groupmembers", groupmembers);
+                jsonObject.put("groupMembers", groupMemberJsonArray);
                 //convert jsonObject to json string....
                 json = jsonObject.toString();
                 //set json to StringEntity....
@@ -70,8 +79,8 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, String> {
                 String responseResult = EntityUtils.toString(httpResponse.getEntity());
                 //convert responseResult to jsonObject......
                 JSONObject responseJsonObject = new JSONObject(responseResult);
-                Log.i("responseJsonObject...", "" + responseJsonObject);
-
+                Log.i("responseJsonObject...", "" + responseResult);
+                responseResultBoolean = responseJsonObject.getBoolean("status");
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -82,90 +91,129 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, String> {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-        catch (Exception ex){
-        ex.printStackTrace();
-        }
-        return null;
-    }
+        return responseResultBoolean;
     }
 
-    //When group admin wants to add new members into his/her group, then this class is used......
-    public class AddNewMemberActivity extends ActionBarActivity {
-
-        String groupName;
-        ArrayList<String> Group_Member;
-        String adminMobileNumber;
-        SQLiteDatabase mydb;
-        ListView listViewAddNewContactToGroup;
-        NonExistingContactsAdapter nonExistingContactsAdapter;
-        Button btnNewAddSelectedContact;
-        ArrayList<ContactNameWithNumber> nonExistingContactList;
-
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_add_new_member);
-            listViewAddNewContactToGroup = (ListView) findViewById(R.id.addNewMemberListView);
-            btnNewAddSelectedContact = (Button) findViewById(R.id.btnNewAddSelectedContact);
-            //get groupName from intent......
-            Intent intent = getIntent();
-            Bundle bundle = intent.getExtras();
-            groupName = bundle.getString("Group Name");
-            Group_Member = new ArrayList<>();
-            try {
-                mydb = new SQLiteDatabase(this);
-                //get Admin Mobile Number from database using groupName....
-                adminMobileNumber = mydb.getAdminMobileNumberUsingGroupName(groupName);
-                nonExistingContactList = new ArrayList<>();
-                nonExistingContactList = mydb.getNonExistingContacts(groupName, adminMobileNumber);
-                for (int i = 0; i < nonExistingContactList.size(); i++) {
-                    Log.i("Contacts.....", "" + nonExistingContactList.get(i).getContact_name() + "-->" + nonExistingContactList.get(i).getContact_number());
-                }
-                Log.i("size of...", "non existing contacts" + nonExistingContactList.size());
-                Collections.sort(nonExistingContactList, new Comparator<ContactNameWithNumber>() {
-                    public int compare(ContactNameWithNumber a, ContactNameWithNumber b) {
-                        return a.getContact_name().compareTo(b.getContact_name());
-                    }
-                });
-
-                nonExistingContactsAdapter = new NonExistingContactsAdapter(getApplicationContext(), nonExistingContactList);
-                listViewAddNewContactToGroup.setAdapter(nonExistingContactsAdapter);
-                //on button click event......
-                btnNewAddSelectedContact.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Group_Member = nonExistingContactsAdapter.getArrayList();
-                        new AddNewMembersAsyncTask(getApplicationContext(), groupName, adminMobileNumber, Group_Member).execute();
-                    }
-                });
-
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
+    @Override
+    protected void onPostExecute(Boolean aBoolean) {
+        super.onPostExecute(aBoolean);
+        Activity activity = new Activity();
+        addNewMemberActivity = new AddNewMemberActivity();
+        mydb = new SQLiteDatabase(context);
+        boolean isAccepted = false;
+        Log.i("onPostExecute...."," "+aBoolean);
+        if (aBoolean) {
+            for (int i = 0; i < groupmembers.size(); i++) {
+                mydb.insertGroups(groupName, groupAdminMobNo, groupmembers.get(i), Boolean.toString(isAccepted));
             }
+        }
+        Intent intent = new Intent(context.getApplicationContext(),GroupAccepted.class);
+        Bundle bundle = new Bundle();
+        bundle.putString("Group Name",groupName);
+        bundle.putString("GroupAdminMobNo", groupAdminMobNo);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.getApplicationContext().startActivity(intent.putExtras(bundle));
+        activity.finishActivity(0);
+    }
+}
 
+//When group admin wants to add new members into his/her group, then this class is used......
+public class AddNewMemberActivity extends ActionBarActivity {
+
+    static String groupName;
+    ArrayList<String> Group_Member;
+    static String adminMobileNumber;
+    SQLiteDatabase mydb;
+    ListView listViewAddNewContactToGroup;
+    NonExistingContactsAdapter nonExistingContactsAdapter;
+    Button btnNewAddSelectedContact;
+    ArrayList<ContactNameWithNumber> nonExistingContactList;
+    static Context context;
+    static Activity activity = null;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_add_new_member);
+        activity = this;
+        listViewAddNewContactToGroup = (ListView) findViewById(R.id.addNewMemberListView);
+        btnNewAddSelectedContact = (Button) findViewById(R.id.btnNewAddSelectedContact);
+        //get groupName from intent......
+        Intent intent = getIntent();
+        Bundle bundle = intent.getExtras();
+        groupName = bundle.getString("Group Name", groupName);
+        Group_Member = new ArrayList<>();
+        try {
+            mydb = new SQLiteDatabase(this);
+            //get Admin Mobile Number from database using groupName....
+            adminMobileNumber = mydb.getAdminMobileNumberUsingGroupName(groupName);
+            nonExistingContactList = new ArrayList<>();
+            nonExistingContactList = mydb.getNonExistingContacts(groupName, adminMobileNumber);
+            for (int i = 0; i < nonExistingContactList.size(); i++) {
+                Log.i("Contacts.....", "" + nonExistingContactList.get(i).getContact_name() + "-->" + nonExistingContactList.get(i).getContact_number());
+            }
+            Log.i("size of...", "non existing contacts" + nonExistingContactList.size());
+            Collections.sort(nonExistingContactList, new Comparator<ContactNameWithNumber>() {
+                public int compare(ContactNameWithNumber a, ContactNameWithNumber b) {
+                    return a.getContact_name().compareTo(b.getContact_name());
+                }
+            });
+
+            nonExistingContactsAdapter = new NonExistingContactsAdapter(getApplicationContext(), nonExistingContactList);
+            listViewAddNewContactToGroup.setAdapter(nonExistingContactsAdapter);
+            //on button click event......
+            btnNewAddSelectedContact.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.i("onButtonClick.....",".... ");
+                    Group_Member = nonExistingContactsAdapter.getArrayList();
+                    new AddNewMembersAsyncTask(getApplicationContext(), groupName, adminMobileNumber, Group_Member).execute();
+                }
+            });
+
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
 
-        @Override
-        public boolean onCreateOptionsMenu(Menu menu) {
-            // Inflate the menu; this adds items to the action bar if it is present.
-            getMenuInflater().inflate(R.menu.menu_add_new_member, menu);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_add_new_member, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
             return true;
         }
 
-        @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
-            // Handle action bar item clicks here. The action bar will
-            // automatically handle clicks on the Home/Up button, so long
-            // as you specify a parent activity in AndroidManifest.xml.
-            int id = item.getItemId();
-
-            //noinspection SimplifiableIfStatement
-            if (id == R.id.action_settings) {
-                return true;
-            }
-
-            return super.onOptionsItemSelected(item);
-        }
+        return super.onOptionsItemSelected(item);
     }
+
+   /* public static void getResponseStatus(Boolean response){
+        if(response){
+            Log.i("getResponseStatus..."," "+response);
+            Intent intent = new Intent(context.getApplicationContext(),GroupAccepted.class);
+            Bundle bundle = new Bundle();
+            bundle.putString("Group Name",groupName);
+            bundle.putString("GroupAdminMobNo",adminMobileNumber);
+            context.getApplicationContext().startActivity(intent.putExtras(bundle));
+            activity.finish();
+        }
+    }*/
+}

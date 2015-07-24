@@ -18,6 +18,9 @@
     <string name="action_syncAcceptanceStatus">Sync Acceptance</string>
     <string name="title_activity_group_chat">Group Chat</string>
     <string name="action_addNewMember">Add New Members</string>
+    <string name="action_deleteGroup">Delete Group</string>
+    <string name="action_removeMeFromGroup">Remove Me From Group</string>
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_add_new_member">Add New Members</string>
+    <string name="title_activity_group_accepted_admin">GroupAcceptedAdmin</string>
 </resources>

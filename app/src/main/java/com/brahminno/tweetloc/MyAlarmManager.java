@@ -3,6 +3,8 @@ package com.brahminno.tweetloc;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -21,6 +23,10 @@ public class MyAlarmManager extends BroadcastReceiver {
         String groupMembersList = bundle.getString("GroupMemberList");
         Log.i("size...","---> "+ groupMembersList);
         //Toast.makeText(context, "Alarm Triggered and SMS Sent", Toast.LENGTH_SHORT).show();
-        new GetGroupMemberLocation(context,groupMembersList).execute();
+        if(!groupMembersList.isEmpty()){
+            new GetGroupMemberLocation(context,groupMembersList).execute();
+        }else{
+            Log.i("size...","there is not any group member....");
+        }
     }
 }

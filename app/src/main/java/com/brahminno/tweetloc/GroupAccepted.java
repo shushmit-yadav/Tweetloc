@@ -5,6 +5,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
@@ -12,6 +14,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -48,12 +51,12 @@ public class GroupAccepted extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getSupportActionBar().setTitle(groupName);
         setContentView(R.layout.already_group_accepted);
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         groupName = bundle.getString("Group Name");
         groupAdminMobileNumber = bundle.getString("GroupAdminMobNo");
+        getSupportActionBar().setTitle(groupName);
         //get User registered mobile_number from shared preference.......
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         userMobileNumber = prefs.getString("Mobile Number", null);
@@ -75,20 +78,6 @@ public class GroupAccepted extends ActionBarActivity {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-       /* //set AlarmManager class to getGroupMember's location contitnuously....
-        Log.i("inside GroupAccepted..."," "+jsonObject);
-        Intent intentAlarm = new Intent(getApplicationContext(), MyAlarmManager.class);
-        Bundle intentAlarmBundle = new Bundle();
-        intentAlarmBundle.putString("groupMemberMobNo", jsonObject.toString());
-        intentAlarm.putExtras(intentAlarmBundle);
-        // create the object
-        alarmManager = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
-        pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        //set the alarm for particular time
-        alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(),1000 * 60, pendingIntent);
-*/
 
         if (savedInstanceState == null) {
             FragmentTransaction trans = getSupportFragmentManager().beginTransaction();
@@ -98,20 +87,6 @@ public class GroupAccepted extends ActionBarActivity {
         }
     }
 
-    /*public static void getGroupMemberLocationResponse(JSONArray jsonArray){
-        Log.i("inside....","Chat_Main_Fragment......"+ jsonArray);
-        for(int i = 0; i < jsonArray.length(); i++)
-            try {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String groupUserMobNo = jsonObject.getString("userNumber");
-                double latitude = jsonObject.getDouble("latitude");
-                double longitude = jsonObject.getDouble("longitude");
-                Log.i("Latlog--->"," "+ latitude+" "+longitude);
-                //marker = map.addMarker(new MarkerOptions().title(groupUserMobNo).position(new LatLng(latitude,longitude)));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-    }*/
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -119,13 +94,42 @@ public class GroupAccepted extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        return super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.menu_group_chat, menu);
+        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            Intent intent = new Intent(getApplicationContext(), User_ProfileActivity.class);
+            startActivity(intent);
+            finish();
+            return true;
+        }
+        if(id == R.id.action_removeMeFromGroup){
+            if(isNetworkAvailable()){
+                boolean isAccepted = false;
+                new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber, groupAdminMobileNumber, isAccepted).execute();
+            }
+            else{
+                Toast.makeText(getApplicationContext(),"Please connect to Internet!!!!",Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
+
+    //Check Internet
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnected()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }
 

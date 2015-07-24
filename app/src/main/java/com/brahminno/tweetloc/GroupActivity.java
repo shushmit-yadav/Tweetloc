@@ -213,6 +213,13 @@ public class GroupActivity extends ActionBarActivity {
                     bundle.putString("GroupAdminMobNo", adminMobileNumber);
                     startActivity(intent.putExtras(bundle));
                 }
+                else if(Mobile_Number.equals(adminMobileNumber)){
+                    Intent groupAcceptedIntent = new Intent(getApplicationContext(),GroupAcceptedAdmin.class);
+                    Bundle groupAcceptedBundle = new Bundle();
+                    groupAcceptedBundle.putString("Group Name", groupName);
+                    groupAcceptedBundle.putString("GroupAdminMobNo", adminMobileNumber);
+                    startActivity(groupAcceptedIntent.putExtras(groupAcceptedBundle));
+                }
                 else{
                     Intent groupAcceptedIntent = new Intent(getApplicationContext(),GroupAccepted.class);
                     Bundle groupAcceptedBundle = new Bundle();
@@ -246,13 +253,13 @@ public class GroupActivity extends ActionBarActivity {
 
     @Override
     public void onBackPressed() {
-       /* Intent intent = new Intent(getApplicationContext(),MyTrail.class);
+        Intent intent = new Intent(getApplicationContext(),MyTrail.class);
         Bundle bundle = new Bundle();
         bundle.putString("Device_Id",deviceId);
         bundle.putString("User_Mob_No",Mobile_Number);
         intent.putExtras(bundle);
         startActivity(intent);
-        finish();*/
+        finish();
         super.onBackPressed();
     }
 

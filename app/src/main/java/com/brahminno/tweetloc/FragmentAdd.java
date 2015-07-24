@@ -3,6 +3,8 @@ package com.brahminno.tweetloc;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -15,6 +17,7 @@ import android.support.v4.app.Fragment;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.brahminno.tweetloc.testAdapter.AddContactsAdapter;
 import com.brahminno.tweetloc.testAdapter.Contacts_Test;
@@ -66,64 +69,80 @@ public class FragmentAdd extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        deviceId = prefs.getString("Device Id", null);
-        Mobile_Number = prefs.getString("Mobile Number", null);
-        manager = (TelephonyManager) getActivity().getSystemService(getActivity().TELEPHONY_SERVICE);
-        countryCode = manager.getNetworkCountryIso().toUpperCase();
-        //init Group_Member JSONArray.....
-        Group_Member = new JSONArray();
-        groupMemberArrayList = new ArrayList<>();
-        try {
-            //Initialization of app local sqlite database.....
-            mydb = new SQLiteDatabase(getActivity());
-            //get arraylist from sqlite database.....
-            mydbContactNumberList = new ArrayList<>();
-            mydbContactNumberList = mydb.getAllNumbersFromContactTable();
-            //get all names from database.....
-            mydbContactNameList = new ArrayList<>();
-            mydbContactNameList = mydb.getAllNamesFromContactTable();
-            //Log.i("Numberlist...", String.valueOf(mydbMobileNumberArrayList.get(1)));
-            contactList = new ArrayList<>();
-            for(int i = 0; i < mydbContactNumberList.size(); i++){
-                String contact_Name = mydbContactNameList.get(i);
-                String contact_Number = mydbContactNumberList.get(i);
-                contactList.add(new Contacts_Test(contact_Name,contact_Number));
-            }
-            //Log.i("Final List...", mydbMobileNumberArrayList.get(1));
-            Collections.sort(contactList, new Comparator<Contacts_Test>() {
-                public int compare(Contacts_Test a, Contacts_Test b) {
-                    return a.getName().compareTo(b.getName());
+        if(!isNetworkAvailable()){
+            Toast.makeText(getActivity(),"Please connect to Internet!!!!",Toast.LENGTH_SHORT).show();
+        }
+        else{
+            SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+            deviceId = prefs.getString("Device Id", null);
+            Mobile_Number = prefs.getString("Mobile Number", null);
+            manager = (TelephonyManager) getActivity().getSystemService(getActivity().TELEPHONY_SERVICE);
+            countryCode = manager.getNetworkCountryIso().toUpperCase();
+            //init Group_Member JSONArray.....
+            Group_Member = new JSONArray();
+            groupMemberArrayList = new ArrayList<>();
+            try {
+                //Initialization of app local sqlite database.....
+                mydb = new SQLiteDatabase(getActivity());
+                //get arraylist from sqlite database.....
+                mydbContactNumberList = new ArrayList<>();
+                mydbContactNumberList = mydb.getAllNumbersFromContactTable();
+                //get all names from database.....
+                mydbContactNameList = new ArrayList<>();
+                mydbContactNameList = mydb.getAllNamesFromContactTable();
+                //Log.i("Numberlist...", String.valueOf(mydbMobileNumberArrayList.get(1)));
+                contactList = new ArrayList<>();
+                for(int i = 0; i < mydbContactNumberList.size(); i++){
+                    String contact_Name = mydbContactNameList.get(i);
+                    String contact_Number = mydbContactNumberList.get(i);
+                    contactList.add(new Contacts_Test(contact_Name,contact_Number));
                 }
-            });
-            addContactsAdapter = new AddContactsAdapter(getActivity(), contactList);
-            listViewAddContact.setAdapter(addContactsAdapter);
+                //Log.i("Final List...", mydbMobileNumberArrayList.get(1));
+                Collections.sort(contactList, new Comparator<Contacts_Test>() {
+                    public int compare(Contacts_Test a, Contacts_Test b) {
+                        return a.getName().compareTo(b.getName());
+                    }
+                });
+                addContactsAdapter = new AddContactsAdapter(getActivity(), contactList);
+                listViewAddContact.setAdapter(addContactsAdapter);
 
-            //on button click event.....
-            btnAddSelectedContact.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try{
-                        //get JsonArray of members from adapter class.....
-                        groupMemberArrayList = addContactsAdapter.getGroupMemberArrayList();
-                        for(int i = 0; i < groupMemberArrayList.size(); i++){
-                            Group_Member.put(groupMemberArrayList.get(i));
+                //on button click event.....
+                btnAddSelectedContact.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        try{
+                            //get JsonArray of members from adapter class.....
+                            groupMemberArrayList = addContactsAdapter.getGroupMemberArrayList();
+                            for(int i = 0; i < groupMemberArrayList.size(); i++){
+                                Group_Member.put(groupMemberArrayList.get(i));
+                            }
+                            Log.i("JsonArray is..."," "+Group_Member);
+                            Group_Member.put(Mobile_Number);
+                            Log.i("JsonArray is...", " " + Group_Member);
+                            //Log.i("Member Number", String.valueOf(Group_Member.get(1)));
                         }
-                        Log.i("JsonArray is..."," "+Group_Member);
-                        Group_Member.put(Mobile_Number);
-                        Log.i("JsonArray is...", " " + Group_Member);
-                        Log.i("Member Number", String.valueOf(Group_Member.get(1)));
+                        catch(Exception ex){
+                            ex.printStackTrace();
+                        }
+                        Log.i("GroupAsyncTask call...", "now");
+                        //Call AsyncTask to upload data on server.....
+                        new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
                     }
-                    catch(Exception ex){
-                        ex.printStackTrace();
-                    }
-                    Log.i("GroupAsyncTask call...", "now");
-                    //Call AsyncTask to upload data on server.....
-                    new GroupAsyncTask(getActivity().getApplicationContext(), deviceId, Group_Name, Group_Member, Mobile_Number).execute();
-                }
-            });
-        } catch (Exception ex) {
-            ex.printStackTrace();
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    //Check Internet
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnected()) {
+            return true;
+        } else {
+            return false;
         }
     }
 }

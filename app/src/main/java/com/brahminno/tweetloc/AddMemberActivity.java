@@ -3,6 +3,8 @@ package com.brahminno.tweetloc;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,6 +17,8 @@ import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,7 +91,12 @@ public class AddMemberActivity extends ActionBarActivity implements ActionBar.Ta
             return true;
         }
         if(id == R.id.action_invte){
-            inviteContacts();
+            if(isNetworkAvailable()){
+                inviteContacts();
+            }
+            else{
+                Toast.makeText(getApplicationContext(),"Please connect to Internet!!!",Toast.LENGTH_SHORT).show();
+            }
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -113,9 +122,17 @@ public class AddMemberActivity extends ActionBarActivity implements ActionBar.Ta
 
     @Override
     public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-
-
     }
 
+    //Check Internet
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnected()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
 }
