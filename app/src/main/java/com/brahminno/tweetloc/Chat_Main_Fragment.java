@@ -3,30 +3,33 @@ package com.brahminno.tweetloc;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Entity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.brahminno.tweetloc.asyncClass.ChatMessageSendAsyncTask;
 import com.brahminno.tweetloc.asyncClass.GroupMemberLocationAsync;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -45,21 +48,22 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -185,91 +189,88 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        if(!isNetworkAvailable()){
-            Toast.makeText(getActivity(),"Please connect to Internet",Toast.LENGTH_SHORT).show();
+        //setHasOptionsMenu(true);
+        /* Retrieve a PendingIntent that will perform a broadcast */
+        Intent intentAlarm = new Intent(getActivity(), MyAlarmManager.class);
+        String jsonGroupMemberArrayString = groupMemberMobileNumber.toString();
+        Log.i("jsonGroupMemberArrayString", "---->" + jsonGroupMemberArrayString);
+        Bundle bundle = new Bundle();
+        bundle.putString("GroupMemberList", jsonGroupMemberArrayString);
+        intentAlarm.putExtras(bundle);
+        // create the object
+        alarmManager = (AlarmManager) getActivity().getSystemService(getActivity().ALARM_SERVICE);
+        pendingIntent = PendingIntent.getBroadcast(getActivity(), 0, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        //set the alarm for particular time
+        alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 20, pendingIntent);
+        //...............................................
+        SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        senderMobileNumber = prefs.getString("Mobile Number", null);
+        Log.i("user mobile", " number : " + senderMobileNumber);
+        mLocationManager = (LocationManager) getActivity().getSystemService(getActivity().LOCATION_SERVICE);
+        gpsLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        networkLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (gpsLocation != null && networkLocation != null) {
+            if (gpsLocation.getAccuracy() > networkLocation.getAccuracy()) {
+                finalLocation = gpsLocation;
+            } else {
+                finalLocation = networkLocation;
+            }
+        } else {
+            if (gpsLocation == null) {
+                finalLocation = networkLocation;
+            } else {
+                finalLocation = gpsLocation;
+            }
         }
-        else{
-            /* Retrieve a PendingIntent that will perform a broadcast */
-            Intent intentAlarm = new Intent(getActivity(), MyAlarmManager.class);
-            String jsonGroupMemberArrayString = groupMemberMobileNumber.toString();
-            Log.i("jsonGroupMemberArrayString", "---->" + jsonGroupMemberArrayString);
-            Bundle bundle = new Bundle();
-            bundle.putString("GroupMemberList", jsonGroupMemberArrayString);
-            intentAlarm.putExtras(bundle);
-            // create the object
-            alarmManager = (AlarmManager) getActivity().getSystemService(getActivity().ALARM_SERVICE);
-            pendingIntent = PendingIntent.getBroadcast(getActivity(), 0, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-            //set the alarm for particular time
-            alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 20, pendingIntent);
-            //...............................................
-            SharedPreferences prefs = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-            senderMobileNumber = prefs.getString("Mobile Number", null);
-            Log.i("user mobile", " number : " + senderMobileNumber);
-            mLocationManager = (LocationManager) getActivity().getSystemService(getActivity().LOCATION_SERVICE);
-            gpsLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            networkLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-            if (gpsLocation != null && networkLocation != null) {
-                if (gpsLocation.getAccuracy() > networkLocation.getAccuracy()) {
-                    finalLocation = gpsLocation;
-                } else {
-                    finalLocation = networkLocation;
-                }
-            } else {
-                if (gpsLocation == null) {
-                    finalLocation = networkLocation;
-                } else {
-                    finalLocation = gpsLocation;
-                }
-            }
-            mLocation = new LatLng(finalLocation.getLatitude(), finalLocation.getLongitude());
-            Log.i("location in ", " chat_main_fragment class : " + finalLocation.getAltitude());
-            Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber);
-            Log.i("userMobileNumber...", " in chat_main_fragment: " + senderMobileNumber);
-            if (mLocation == null) {
-                mLocation = getLastKnownLocation(false);
-            }
-            latitude = mLocation.latitude;
-            longitude = mLocation.longitude;
-            if (finalLocation.hasAltitude()) {
-                altitude = finalLocation.getAltitude();
-            } else {
-                Toast.makeText(getActivity(), "User has not altitude", Toast.LENGTH_SHORT).show();
-            }
-            if (finalLocation.hasSpeed()) {
-                speed = (int) finalLocation.getSpeed();
-            } else {
-                Toast.makeText(getActivity(), "User is not moving", Toast.LENGTH_SHORT).show();
-            }
+        mLocation = new LatLng(finalLocation.getLatitude(), finalLocation.getLongitude());
+        Log.i("location in ", " chat_main_fragment class : " + finalLocation.getAltitude());
+        Log.i("grouplist in ", " chat_main_fragment class : " + groupMemberMobileNumber);
+        Log.i("userMobileNumber...", " in chat_main_fragment: " + senderMobileNumber);
+        if (mLocation == null) {
+            mLocation = getLastKnownLocation(false);
+        }
+        latitude = mLocation.latitude;
+        longitude = mLocation.longitude;
+        if (finalLocation.hasAltitude()) {
+            altitude = finalLocation.getAltitude();
+        } else {
+            Toast.makeText(getActivity(), "User has not altitude", Toast.LENGTH_SHORT).show();
+        }
+        if (finalLocation.hasSpeed()) {
+            speed = (int) finalLocation.getSpeed();
+        } else {
+            Toast.makeText(getActivity(), "User is not moving", Toast.LENGTH_SHORT).show();
+        }
 
-            timeStamp = finalLocation.getTime();
-            Log.i("User Current Location", " Latitude-->" + latitude + " Longitude-->" + longitude + " Altitude-->" + altitude + " Speed-->" + speed + "TimeStamp-->" + timeStamp);
-            try {
-                groupMemberJsonArray = groupMemberMobileNumber.getJSONArray("userNumbers");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            sourceLatitude = mLocation.latitude;
-            sourceLongitude = mLocation.longitude;
-            Log.i("Source Location is", "----->" + sourceLatitude + " and " + sourceLongitude);
-            new GroupMemberLocationAsync(getActivity(), latitude, longitude, altitude, speed, timeStamp, senderMobileNumber, groupMemberJsonArray).execute();
+        timeStamp = finalLocation.getTime();
+        Log.i("User Current Location", " Latitude-->" + latitude + " Longitude-->" + longitude + " Altitude-->" + altitude + " Speed-->" + speed + "TimeStamp-->" + timeStamp);
+        try {
+            groupMemberJsonArray = groupMemberMobileNumber.getJSONArray("userNumbers");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        sourceLatitude = mLocation.latitude;
+        sourceLongitude = mLocation.longitude;
+        Log.i("Source Location is", "----->" + sourceLatitude + " and " + sourceLongitude);
+        new GroupMemberLocationAsync(getActivity(), latitude, longitude, altitude, speed, timeStamp, senderMobileNumber, groupMemberJsonArray).execute();
 
-            mMapFragment = SupportMapFragment.newInstance();
-            FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
-            fragmentTransaction.add(R.id.mapContainer, mMapFragment, "map");
-            fragmentTransaction.commit();
+        mMapFragment = SupportMapFragment.newInstance();
+        FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.mapContainer, mMapFragment, "map");
+        fragmentTransaction.commit();
 
-            //mListView.addHeaderView(mTransparentHeaderView);
+        //mListView.addHeaderView(mTransparentHeaderView);
        /* listMessages = new ArrayList<Message>();
         adapter = new MessagesCustomListAdapter(getActivity(),listMessages);
         mListView.setAdapter(adapter);*/
-            ArrayList<String> testData = new ArrayList<String>(100);
-            for (int i = 0; i < 100; i++) {
-                testData.add("Item " + i);
-            }
-            mListView.addHeaderView(mTransparentHeaderView);
-            mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.simple_list_item, testData));
+        ArrayList<String> testData = new ArrayList<String>(100);
+        for (int i = 0; i < 100; i++) {
+            testData.add("Item " + i);
+        }
+        mListView.addHeaderView(mTransparentHeaderView);
+        mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.simple_list_item, testData));
        /* mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -277,24 +278,23 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
             }
         });*/
 
-            mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
-                    .addApi(LocationServices.API)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-            getSreenDimanstions();
-            setUpMapIfNeeded();
+        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+        getSreenDimanstions();
+        setUpMapIfNeeded();
 
-            btnSendChat.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    long time = System.currentTimeMillis();
-                    String chatMessage = etMessage.getText().toString();
-                    etMessage.setText("");
-                    sendChatMessageToGroup(senderMobileNumber,groupName,adminMobileNumber,groupMemberJsonArray, chatMessage, time);
-                }
-            });
-        }
+        btnSendChat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                long time = System.currentTimeMillis();
+                String chatMessage = etMessage.getText().toString();
+                etMessage.setText("");
+                //new ChatMessageSendAsyncTask(getActivity(), senderMobileNumber, groupName, adminMobileNumber, groupMemberJsonArray, chatMessage, time).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            }
+        });
     }
 
     //in this method get groupmembers location from AsyncTask.......
@@ -306,26 +306,21 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         groupMemberAltitude = new ArrayList<>();
         groupMemberSpeed = new ArrayList<>();
         groupMemberLastUpdate = new ArrayList<>();
-        if(jsonArray.length() > 0){
-            for (int i = 0; i < jsonArray.length(); i++) {
-                try {
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    groupMemberMobNo.add(jsonObject.getString("userNumber"));
-                    groupMembersLatitude.add(jsonObject.getDouble("latitude"));
-                    groupMembersLongitude.add(jsonObject.getDouble("longitude"));
-                    groupMemberAltitude.add(jsonObject.getDouble("altitude"));
-                    groupMemberSpeed.add(jsonObject.getInt("speed"));
-                    groupMemberLastUpdate.add(jsonObject.getLong("lastUpdated"));
-                    Log.i("Latlog--->", " " + groupMembersLatitude.get(i) + " " + groupMembersLongitude.get(i)+" "+ groupMemberSpeed.get(i)+" "+ groupMemberAltitude.get(i) +" "+groupMemberLastUpdate.get(i)+" "+ groupMemberSpeed.get(i));
-                    marker = mMap.addMarker(new MarkerOptions().title(groupMemberMobNo.get(i)).position(new LatLng(groupMembersLatitude.get(i), groupMembersLongitude.get(i))));
-                    Toast.makeText(context, "LatLog...." + groupMembersLatitude.get(i) + "" + groupMembersLongitude.get(i), Toast.LENGTH_SHORT).show();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+        for (int i = 0; i < jsonArray.length(); i++) {
+            try {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                groupMemberMobNo.add(jsonObject.getString("userNumber"));
+                groupMembersLatitude.add(jsonObject.getDouble("latitude"));
+                groupMembersLongitude.add(jsonObject.getDouble("longitude"));
+                groupMemberAltitude.add(jsonObject.getDouble("altitude"));
+                groupMemberSpeed.add(jsonObject.getInt("speed"));
+                groupMemberLastUpdate.add(jsonObject.getLong("lastUpdated"));
+                Log.i("Latlog--->", " " + groupMembersLatitude.get(i) + " " + groupMembersLongitude.get(i)+" "+ groupMemberSpeed.get(i)+" "+ groupMemberAltitude.get(i) +" "+groupMemberLastUpdate.get(i)+" "+ groupMemberSpeed.get(i));
+                marker = mMap.addMarker(new MarkerOptions().title(groupMemberMobNo.get(i)).position(new LatLng(groupMembersLatitude.get(i), groupMembersLongitude.get(i))));
+                Toast.makeText(context, "LatLog...." + groupMembersLatitude.get(i) + "" + groupMembersLongitude.get(i), Toast.LENGTH_SHORT).show();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-        }
-        else{
-            Log.i("No Location"," of groupmembers");
         }
     }
 
@@ -643,61 +638,29 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         width = display.getWidth();
         height = display.getHeight();
     }
-
-    //Check Internet
-    private boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) getActivity().getSystemService(getActivity().CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnected()) {
+   /* @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        getActivity().getMenuInflater().inflate(R.menu.menu_group_chat,menu);
+        return;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // handle item selection
+        int id = item.getItemId();
+        if(id == R.id.action_settings){
+            Intent intent = new Intent(getActivity(), User_ProfileActivity.class);
+            startActivity(intent);
+            getActivity().finish();
             return true;
-        } else {
-            return false;
         }
-    }
-
-    public void sendChatMessageToGroup(String senderMobileNumber,String groupName,String adminMobileNumber,JSONArray groupMemberJsonArray, String chatMessage,Long time) {
-        try{
-            Log.i("Inside sendChatMessage.."," method....");
-            //create HttpClient.....
-            HttpClient httpClient = new DefaultHttpClient();
-            //Http POST request to given url....
-            HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/sendchat");
-            String json = null;
-            JSONObject jsonObject = new JSONObject();
-            try {
-                jsonObject.put("senderMob", senderMobileNumber);
-                jsonObject.put("adminMob",adminMobileNumber);
-                jsonObject.put("memberList",groupMemberJsonArray);
-                jsonObject.put("groupName",groupName);
-                jsonObject.put("message",chatMessage);
-                jsonObject.put("tStamp",time);
-
-                //convert jsonObject to json string....
-                json = jsonObject.toString();
-                //set json to StringEntity....
-                StringEntity stringEntity = new StringEntity(json);
-                //set httpPost Entity.....
-                httpPost.setEntity(stringEntity);
-                //set headers to inform server about type of content.....
-                httpPost.setHeader("Content-type","application/json");
-                //execute POST request to the given server.....
-                HttpResponse httpResponse = httpClient.execute(httpPost);
-                String response = EntityUtils.toString(httpResponse.getEntity());
-                JSONObject objResponse = new JSONObject(response);
-                boolean reponseBoolean = objResponse.getBoolean("status");
-                Log.i("status...."," "+ reponseBoolean);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            } catch (ClientProtocolException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if(id == R.id.action_addNewMember){
+            Intent intent = new Intent(getActivity(),AddNewMemberActivity.class);
+            Bundle bundle = new Bundle();
+            bundle.putString("Group Name",groupName);
+            startActivity(intent);
+            getActivity().finish();
+            return true;
         }
-        catch (Exception ex){
-            ex.printStackTrace();
-        }
-    }
+        return super.onOptionsItemSelected(item);
+    }*/
 }

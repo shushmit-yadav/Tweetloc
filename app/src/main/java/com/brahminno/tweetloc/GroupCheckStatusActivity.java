@@ -121,6 +121,10 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
     @Override
     protected String doInBackground(Void... params) {
         try {
+            Log.i("rejectGroup..."," doInBackgroupnd.....");
+
+            System.out.println("doInBackgroupnd");
+
             //create HttpClient.....
             HttpClient httpClient = new DefaultHttpClient();
             //Http POST request to given url....
@@ -175,8 +179,8 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
                 mydb.deleteGroupFromGroupTable(groupName,groupAdminMobNo);
             }
             Intent intent = new Intent(context,GroupActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             context.getApplicationContext().startActivity(intent);
         }
         catch (Exception ex){
@@ -230,7 +234,7 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
             public void onClick(View v) {
                 boolean isAccepted = true;
                 //call async class to update user acceptance status as true.......
-                new AcceptAsyncTask(getApplicationContext(), groupName, userMobileNumber, adminMobileNumber, isAccepted).execute();
+                new AcceptAsyncTask(GroupCheckStatusActivity.this, groupName, userMobileNumber, adminMobileNumber, isAccepted).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 //intent to go next activity when user accept group.....
                 Intent groupAcceptedIntent = new Intent(getApplicationContext(), GroupAccepted.class);
                 Bundle groupAcceptedBundle = new Bundle();
@@ -247,7 +251,7 @@ public class GroupCheckStatusActivity extends ActionBarActivity {
                 boolean isAccepted = false;
                 Log.i("Admin mobNum..."," in btnRejection press "+ adminMobileNumber);
                 //call async class to update user acceptance status as false.......
-                new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber, adminMobileNumber, isAccepted).execute();
+                new RejectAsyncTask(GroupCheckStatusActivity.this, groupName, userMobileNumber, adminMobileNumber, isAccepted).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR );
             }
         });
     }

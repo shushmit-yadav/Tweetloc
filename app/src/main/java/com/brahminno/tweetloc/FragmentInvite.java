@@ -2,9 +2,6 @@ package com.brahminno.tweetloc;
 
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
 import android.database.Cursor;
@@ -54,44 +51,28 @@ public class FragmentInvite extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        if(isNetworkAvailable()){
-            //initialize SQLiteDatabase....
-            mydb = new SQLiteDatabase(getActivity());
-            mydbNameList = new ArrayList<>();
-            mydbNameList = mydb.getAllNamesFromInviteTable();
-            mydbNumberList = new ArrayList<>();
-            mydbNumberList = mydb.getAllNumbersInviteTable();
-            Log.i("size of array...",""+mydbNumberList.size());
-            contactList = new ArrayList<Contact>();
-            for(int i =0; i < mydbNumberList.size(); i++){
-                String name = mydbNameList.get(i);
-                String number = mydbNumberList.get(i);
-                Log.i("Contacts in Invite...",""+name + "--->" + number);
-                contactList.add(new Contact(name,number));
+        //initialize SQLiteDatabase....
+        mydb = new SQLiteDatabase(getActivity());
+        mydbNameList = new ArrayList<>();
+        mydbNameList = mydb.getAllNamesFromInviteTable();
+        mydbNumberList = new ArrayList<>();
+        mydbNumberList = mydb.getAllNumbersInviteTable();
+        Log.i("size of array...",""+mydbNumberList.size());
+        contactList = new ArrayList<Contact>();
+        for(int i =0; i < mydbNumberList.size(); i++){
+            String name = mydbNameList.get(i);
+            String number = mydbNumberList.get(i);
+            Log.i("Contacts in Invite...",""+name + "--->" + number);
+            contactList.add(new Contact(name,number));
+        }
+
+        Collections.sort(contactList, new Comparator<Contact>() {
+            public int compare(Contact a, Contact b) {
+                return a.getName().compareTo(b.getName());
             }
-
-            Collections.sort(contactList, new Comparator<Contact>() {
-                public int compare(Contact a, Contact b) {
-                    return a.getName().compareTo(b.getName());
-                }
-            });
-            ContactsAdapter contactsAdapter = new ContactsAdapter(getActivity(),contactList );
-            listView.setAdapter(contactsAdapter);
-        }
-        else{
-            Toast.makeText(getActivity(),"Please connect to Internet!!!!!",Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    //Check Internet
-    private boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnected()) {
-            return true;
-        } else {
-            return false;
-        }
+        });
+        ContactsAdapter contactsAdapter = new ContactsAdapter(getActivity(),contactList );
+        listView.setAdapter(contactsAdapter);
     }
 }
 

@@ -73,6 +73,6 @@ public class ChatMessageRecieveAsyncTask extends AsyncTask<Void,Void,JSONArray> 
     @Override
     protected void onPostExecute(JSONArray jsonArray) {
         super.onPostExecute(jsonArray);
-        Log.i("inside..."," onPostExecute method of ChatMessageRecieveAsyncTask"+jsonArray);
+        Log.i("inside..."," onPostExecute method of ChatMessageRecieveAsyncTask");
     }
 }

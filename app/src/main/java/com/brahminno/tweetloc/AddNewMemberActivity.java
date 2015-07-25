@@ -100,8 +100,6 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, Boolean> {
     @Override
     protected void onPostExecute(Boolean aBoolean) {
         super.onPostExecute(aBoolean);
-        Activity activity = new Activity();
-        addNewMemberActivity = new AddNewMemberActivity();
         mydb = new SQLiteDatabase(context);
         boolean isAccepted = false;
         Log.i("onPostExecute...."," "+aBoolean);
@@ -115,8 +113,8 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, Boolean> {
         bundle.putString("Group Name",groupName);
         bundle.putString("GroupAdminMobNo", groupAdminMobNo);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.getApplicationContext().startActivity(intent.putExtras(bundle));
-        activity.finishActivity(0);
     }
 }
 
@@ -172,7 +170,7 @@ public class AddNewMemberActivity extends ActionBarActivity {
                 public void onClick(View v) {
                     Log.i("onButtonClick.....",".... ");
                     Group_Member = nonExistingContactsAdapter.getArrayList();
-                    new AddNewMembersAsyncTask(getApplicationContext(), groupName, adminMobileNumber, Group_Member).execute();
+                    new AddNewMembersAsyncTask(getApplicationContext(), groupName, adminMobileNumber, Group_Member).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 }
             });
 

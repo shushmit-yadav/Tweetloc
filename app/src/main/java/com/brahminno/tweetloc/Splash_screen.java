@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -52,7 +53,7 @@ public class Splash_screen extends ActionBarActivity {
                 String userNumber = prefs.getString("Mobile Number", null);
                 Log.i("SplashActivity", "Device id .." + deviceId);
                 if(userNumber != null){
-                    new GroupDetailsAsyncTask(getApplicationContext(), userNumber).execute();
+                    new GroupDetailsAsyncTask(getApplicationContext(), userNumber).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 }
                 if(deviceId == null){
                     Intent intent = new Intent(getApplicationContext(), RegistrationActivity.class);

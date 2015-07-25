@@ -5,8 +5,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
@@ -14,7 +12,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -90,11 +87,12 @@ public class GroupAccepted extends ActionBarActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        finishActivity(0);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_group_chat, menu);
+        getMenuInflater().inflate(R.menu.menu_group_chat,menu);
         return true;
     }
 
@@ -108,28 +106,13 @@ public class GroupAccepted extends ActionBarActivity {
             return true;
         }
         if(id == R.id.action_removeMeFromGroup){
-            if(isNetworkAvailable()){
-                boolean isAccepted = false;
-                new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber, groupAdminMobileNumber, isAccepted).execute();
-            }
-            else{
-                Toast.makeText(getApplicationContext(),"Please connect to Internet!!!!",Toast.LENGTH_SHORT).show();
-            }
+            boolean isAccepted = false;
+            new RejectAsyncTask(getApplicationContext(), groupName, userMobileNumber, groupAdminMobileNumber, isAccepted).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    //Check Internet
-    private boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnected()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 
 }
 

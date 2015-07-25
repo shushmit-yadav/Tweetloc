@@ -94,6 +94,7 @@ class DeleteGroupAsyncClass extends AsyncTask<Void,Void,Boolean>{
             mydb.deleteGroupFromGroupTable(groupName,groupAdminNum);
             Intent intent = new Intent(context.getApplicationContext(),GroupActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             context.getApplicationContext().startActivity(intent);
         }
     }
@@ -174,7 +175,7 @@ public class GroupAcceptedAdmin extends ActionBarActivity {
             return true;
         }
         if(id == R.id.action_deleteGroup){
-            new DeleteGroupAsyncClass(getApplicationContext(),groupName,groupAdminMobileNumber,gruopMemberMobileNumber).execute();
+            new DeleteGroupAsyncClass(getApplicationContext(),groupName,groupAdminMobileNumber,gruopMemberMobileNumber).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             return true;
         }
         return super.onOptionsItemSelected(item);

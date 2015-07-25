@@ -47,7 +47,7 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
         mydb = new SQLiteDatabase(context);
         //delete GROUP_TABLE Items....
         mydb.deleteGroupTableItems();
-        Log.i("Inside....", "GroupDetailsAsyncTask");
+        Log.i("GroupDetailsAsyncTask....", "GroupDetailsAsyncTask");
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost("http://104.236.27.79:8080/syncgroup");
         String json = null;
@@ -61,10 +61,25 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
             HttpResponse httpResponse = httpClient.execute(httpPost);
             String responseResult = EntityUtils.toString(httpResponse.getEntity());
             Log.i("GroupDetailsAsyncTask..","...:"+responseResult);
-            JSONArray responseJsonArrayResult = new JSONArray(responseResult);
-            for(int i = 0; i < responseJsonArrayResult.length(); i++){
-                JSONObject jsonObjectInJsonArray = responseJsonArrayResult.getJSONObject(i);
-                new SyncAllGroupMembers(context,jsonObjectInJsonArray.getString("groupName"),jsonObjectInJsonArray.getString("groupAdminMobNo"),jsonObjectInJsonArray.getString("groupMemberMobNo")).execute();
+            JSONObject responseJsonObj  = new JSONObject(responseResult);
+            if(responseJsonObj.getBoolean("status")){
+                JSONArray responseJsonArray = responseJsonObj.getJSONArray("members");
+                if(responseJsonArray.length() > 0){
+                    for(int i = 0; i < responseJsonArray.length(); i++){
+                        JSONArray groupArray = responseJsonArray.getJSONArray(i);
+                        for(int j = 0; j < groupArray.length(); j++){
+                            JSONObject groupJsonObject = groupArray.getJSONObject(j);
+                            Log.i("insert groups", " into groupTable..." + groupJsonObject.getString("groupName")+" "+ groupJsonObject.getString("groupAdminMobNo")+" "+ groupJsonObject.getString("groupMemberMobNo")+" "+ Boolean.toString(groupJsonObject.getBoolean("isAccepted")));
+                                    mydb.insertGroups(groupJsonObject.getString("groupName"), groupJsonObject.getString("groupAdminMobNo"), groupJsonObject.getString("groupMemberMobNo"), Boolean.toString(groupJsonObject.getBoolean("isAccepted")));
+                        }
+                    }
+                }
+                else{
+                    Log.i("No Group Sync..."," available");
+                }
+            }
+            else{
+                Log.i("No Group Sync..."," available");
             }
         }
         catch (JSONException ex){
@@ -83,6 +98,7 @@ class GroupDetailsAsyncTask extends AsyncTask<Void, Void, String> {
     }
 }
 
+/*
 //this class is used for sync all group members from server using groupName,groupMemberMobNo, and adminMobNo......
 class SyncAllGroupMembers extends AsyncTask<Void,Void,String>{
     private String groupName;
@@ -138,6 +154,7 @@ class SyncAllGroupMembers extends AsyncTask<Void,Void,String>{
         return null;
     }
 }
+*/
 
 
 public class GroupActivity extends ActionBarActivity {
@@ -253,13 +270,13 @@ public class GroupActivity extends ActionBarActivity {
 
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent(getApplicationContext(),MyTrail.class);
+       /* Intent intent = new Intent(getApplicationContext(),MyTrail.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         Bundle bundle = new Bundle();
         bundle.putString("Device_Id",deviceId);
         bundle.putString("User_Mob_No",Mobile_Number);
         intent.putExtras(bundle);
-        startActivity(intent);
-        finish();
+        startActivity(intent);*/
         super.onBackPressed();
     }
 

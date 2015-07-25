@@ -3,8 +3,6 @@ package com.brahminno.tweetloc;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -114,6 +112,7 @@ class GroupAsyncTask extends AsyncTask<Void,Void,String>{
             }
             Intent intent = new Intent(context,GroupActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             context.getApplicationContext().startActivity(intent);
         }
         catch(Exception ex){
@@ -153,19 +152,20 @@ public class CreateGroupActivity extends ActionBarActivity {
             public void onClick(View v) {
                 Group_Name = etGroupName.getText().toString();
                 boolean result = mydb.checkGroupNameDuplicacy(Group_Name);
-                Log.i("result from database..", " " + result);
+                Log.i("result from database.."," "+result);
                 Log.i("result from database..", " " + Group_Name);
-                if (Group_Name.isEmpty()) {
-                    Toast.makeText(getApplicationContext(), "Group Name should not null!!!!", Toast.LENGTH_SHORT).show();
-                } else if (result == true) {
+                if(Group_Name.isEmpty()){
+                    Toast.makeText(getApplicationContext(),"Group Name should not null!!!!",Toast.LENGTH_SHORT).show();
+                }else if(result == true){
                     //Call Intent to go another activity....
-                    Intent groupIntent = new Intent(getApplicationContext(), AddMemberActivity.class);
+                    Intent groupIntent = new Intent(getApplicationContext(),AddMemberActivity.class);
                     Bundle bundle = new Bundle();
-                    bundle.putString("Group Name", Group_Name);
+                    bundle.putString("Group Name",Group_Name);
                     groupIntent.putExtras(bundle);
                     startActivity(groupIntent);
-                } else {
-                    Toast.makeText(getApplicationContext(), "You are already member of this group!!!!", Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    Toast.makeText(getApplicationContext(),"You are already member of this group!!!!",Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -190,12 +190,7 @@ public class CreateGroupActivity extends ActionBarActivity {
             return true;
         }
         if(id == R.id.action_invte){
-            if(isNetworkAvailable()){
-                inviteContacts();
-            }
-            else{
-                Toast.makeText(getApplicationContext(),"Please connect to Internet!!!",Toast.LENGTH_SHORT).show();
-            }
+            inviteContacts();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -207,16 +202,5 @@ public class CreateGroupActivity extends ActionBarActivity {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, "here is the link to download TweetLoc");
         startActivity(intent);
-    }
-
-    //Check Internet
-    private boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnected()) {
-            return true;
-        } else {
-            return false;
-        }
     }
 }

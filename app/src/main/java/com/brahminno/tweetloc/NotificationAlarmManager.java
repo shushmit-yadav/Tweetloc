@@ -3,6 +3,7 @@ package com.brahminno.tweetloc;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -17,6 +18,6 @@ public class NotificationAlarmManager extends BroadcastReceiver {
         Log.i("inside NotificationAlarmManager..",".....");
         Bundle bundle = intent.getExtras();
         String userMobileNumber = bundle.getString("User Mobile Number");
-        new FetchNotificationAsyncTask(context, userMobileNumber).execute();
+        new FetchNotificationAsyncTask(context, userMobileNumber).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 }
