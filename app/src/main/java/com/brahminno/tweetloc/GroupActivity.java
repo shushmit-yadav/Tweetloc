@@ -296,10 +296,10 @@ public class GroupActivity extends ActionBarActivity {
             inviteContacts();
             return true;
         }
-        if(id == R.id.action_syncAcceptanceStatus){
+       /* if(id == R.id.action_syncAcceptanceStatus){
             syncAcceptanceGroupMember();
             return true;
-        }
+        }*/
         if(id == R.id.action_groupSync){
             //call AsyncMethod to get Groups from server......
             new GroupDetailsAsyncTask(getApplicationContext(), Mobile_Number).execute();

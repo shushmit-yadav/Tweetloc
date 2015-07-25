@@ -521,7 +521,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
                                 Calendar calendar = Calendar.getInstance();
                                 calendar.setTimeInMillis(System.currentTimeMillis());
                                 //set the alarm for particular time
-                                alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 60 * 2, pendingIntent);
+                                alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 60 , pendingIntent);
                             }
                             else{
                                 /* Retrieve a PendingIntent that will perform a broadcast */
@@ -535,7 +535,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
                                 Calendar calendar = Calendar.getInstance();
                                 calendar.setTimeInMillis(System.currentTimeMillis());
                                 //set the alarm for particular time
-                                alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 60 * 2, pendingIntent);
+                                alarmManager.setInexactRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), 1000 * 60 , pendingIntent);
 
                             }
                         } catch (JSONException e) {
