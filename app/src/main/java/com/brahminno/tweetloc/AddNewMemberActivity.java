@@ -12,6 +12,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -31,13 +32,14 @@ import java.util.Collections;
 import java.util.Comparator;
 
 //this Async class is used to add new members in an existing group......
-class AddNewMembersAsyncTask extends AsyncTask<Void, Void, Boolean> {
+class AddNewMembersAsyncTask extends AsyncTask<Void, Void, JSONObject> {
     private Context context;
     private String groupName, groupAdminMobNo;
     private ArrayList<String> groupmembers;
     private boolean responseResultBoolean;
     SQLiteDatabase mydb;
     AddNewMemberActivity addNewMemberActivity;
+    JSONObject responseJsonObject;
 
     public AddNewMembersAsyncTask(Context context, String groupName, String groupAdminMobNo, ArrayList<String> groupmembers) {
         this.context = context;
@@ -47,7 +49,7 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, Boolean> {
     }
 
     @Override
-    protected Boolean doInBackground(Void... params) {
+    protected JSONObject doInBackground(Void... params) {
         try {
             Log.i("inside...", "AddNewMemberAsyncTask....");
             //create HttpClient.....
@@ -78,9 +80,9 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, Boolean> {
                 //get httpResponse into string.....
                 String responseResult = EntityUtils.toString(httpResponse.getEntity());
                 //convert responseResult to jsonObject......
-                JSONObject responseJsonObject = new JSONObject(responseResult);
+                responseJsonObject = new JSONObject(responseResult);
                 Log.i("responseJsonObject...", "" + responseResult);
-                responseResultBoolean = responseJsonObject.getBoolean("status");
+                //responseResultBoolean = responseJsonObject.getBoolean("status");
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -94,27 +96,36 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, Boolean> {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return responseResultBoolean;
+        return responseJsonObject;
     }
 
     @Override
-    protected void onPostExecute(Boolean aBoolean) {
-        super.onPostExecute(aBoolean);
+    protected void onPostExecute(JSONObject jsonObject) {
+        super.onPostExecute(jsonObject);
         mydb = new SQLiteDatabase(context);
         boolean isAccepted = false;
-        Log.i("onPostExecute...."," "+aBoolean);
-        if (aBoolean) {
-            for (int i = 0; i < groupmembers.size(); i++) {
-                mydb.insertGroups(groupName, groupAdminMobNo, groupmembers.get(i), Boolean.toString(isAccepted));
+        Log.i("onPostExecute....", " " + jsonObject);
+        try {
+            if (jsonObject.getBoolean("status")) {
+                Toast.makeText(context,jsonObject.getString("info"),Toast.LENGTH_SHORT).show();
+                for (int i = 0; i < groupmembers.size(); i++) {
+                    mydb.insertGroups(groupName, groupAdminMobNo, groupmembers.get(i), Boolean.toString(isAccepted));
+                }
+                Intent intent = new Intent(context,GroupAccepted.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("Group Name",groupName);
+                bundle.putString("GroupAdminMobNo", groupAdminMobNo);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+                context.getApplicationContext().startActivity(intent.putExtras(bundle));
             }
+            else{
+                Toast.makeText(context,jsonObject.getString("info"),Toast.LENGTH_SHORT).show();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-        Intent intent = new Intent(context.getApplicationContext(),GroupAccepted.class);
-        Bundle bundle = new Bundle();
-        bundle.putString("Group Name",groupName);
-        bundle.putString("GroupAdminMobNo", groupAdminMobNo);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.getApplicationContext().startActivity(intent.putExtras(bundle));
     }
 }
 

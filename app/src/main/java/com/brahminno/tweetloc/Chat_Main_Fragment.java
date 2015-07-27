@@ -254,7 +254,7 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         sourceLatitude = mLocation.latitude;
         sourceLongitude = mLocation.longitude;
         Log.i("Source Location is", "----->" + sourceLatitude + " and " + sourceLongitude);
-        new GroupMemberLocationAsync(getActivity(), latitude, longitude, altitude, speed, timeStamp, senderMobileNumber, groupMemberJsonArray).execute();
+        //new GroupMemberLocationAsync(getActivity(), latitude, longitude, altitude, speed, timeStamp, senderMobileNumber, groupMemberJsonArray).execute();
 
         mMapFragment = SupportMapFragment.newInstance();
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();

@@ -14,6 +14,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -76,11 +78,17 @@ class AcceptAsyncTask extends AsyncTask<Void, Void, String> {
                 String responseResult = EntityUtils.toString(httpResponse.getEntity());
                 //convert responseResult to jsonObject......
                 JSONObject responseJsonObject = new JSONObject(responseResult);
-                groupName = responseJsonObject.getString("groupName");
-                Log.i("into AcceptAsyncTask...: ", "response" + responseJsonObject);
-                mydb = new SQLiteDatabase(context);
-                mydb.updateStatusOfGroupMemberIntoGroupTable(Boolean.toString(responseJsonObject.getBoolean("isAccepted")), responseJsonObject.getString("groupName"), responseJsonObject.getString("groupMemberMobNo"));
-
+                Log.i("GroupCheckStatus..."," accepted...."+ responseJsonObject);
+                if(responseJsonObject.getBoolean("status")){
+                    JSONObject acceptJsonResponse = responseJsonObject.getJSONObject("info");
+                    groupName = acceptJsonResponse.getString("groupName");
+                    Log.i("into AcceptAsyncTask...: ", "response" + responseJsonObject);
+                    mydb = new SQLiteDatabase(context);
+                    mydb.updateStatusOfGroupMemberIntoGroupTable(Boolean.toString(acceptJsonResponse.getBoolean("isAccepted")), acceptJsonResponse.getString("groupName"), acceptJsonResponse.getString("groupMemberMobNo"));
+                }
+                else{
+                    Log.i("Error occured..."," "+responseJsonObject.getString("info"));
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (UnsupportedEncodingException e) {
@@ -174,9 +182,13 @@ class RejectAsyncTask extends AsyncTask<Void, Void, String> {
             mydb = new SQLiteDatabase(context.getApplicationContext());
             Log.i("inside onPostExecute.."," into RejectAsyncTask "+ s);
             Log.i("Admin Num...",""+groupAdminMobNo);
-            if(true){
+            JSONObject responseJsonReject = new JSONObject(s);
+            if(responseJsonReject.getBoolean("status")){
                 Log.i("inside if loog"," onPostExecute");
                 mydb.deleteGroupFromGroupTable(groupName,groupAdminMobNo);
+            }
+            else{
+                Toast.makeText(context,responseJsonReject.getString("info"),Toast.LENGTH_SHORT).show();
             }
             Intent intent = new Intent(context,GroupActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

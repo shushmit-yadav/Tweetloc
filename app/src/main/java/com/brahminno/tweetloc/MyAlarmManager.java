@@ -23,7 +23,7 @@ public class MyAlarmManager extends BroadcastReceiver {
         Log.i("size...","---> "+ groupMembersList);
         //Toast.makeText(context, "Alarm Triggered and SMS Sent", Toast.LENGTH_SHORT).show();
         if(!groupMembersList.isEmpty()){
-            //new GetGroupMemberLocation(context,groupMembersList).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new GetGroupMemberLocation(context,groupMembersList).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }else{
             Log.i("size...","there is not any group member....");
         }

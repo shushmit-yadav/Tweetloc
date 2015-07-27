@@ -755,6 +755,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     public void onBackPressed() {
         try{
             chatAlarmManager.cancel(getChatPendingIntent);
+            finish();
         }
         catch (Exception ex){
             ex.printStackTrace();

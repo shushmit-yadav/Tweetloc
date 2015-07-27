@@ -2,6 +2,7 @@ package com.brahminno.tweetloc;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -46,6 +47,7 @@ class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
     private String Mobile_Number;
     private String Email_ID;
     private String Device_Id;
+    private String responseResult;
 
     public RegistrationAsyncTask(Context con, String Mobile_Number, String Email_ID, String Device_Id) {
         this.Mobile_Number = Mobile_Number;
@@ -82,18 +84,23 @@ class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
                 //receive response from server as inputStream............
                 //inputStream = httpResponse.getEntity().getContent();
 
-                String responseResult = EntityUtils.toString(httpResponse.getEntity());
+                responseResult = EntityUtils.toString(httpResponse.getEntity());
                 //convert responseResult to jsonArray....
                 //JSONArray jsonArray = new JSONArray(responseResult);
                 JSONObject responseJsonObject = new JSONObject(responseResult);
-                if(responseJsonObject != null){
+                Log.i("status response..."," "+ responseJsonObject);
+                if(responseJsonObject.getBoolean("status")){
                     Log.i("inside if loop...: ", "if result not null...."+responseResult);
+                    JSONObject userInfoJsonObj = responseJsonObject.getJSONObject("userprofile");
                     //Store details in shared preferince.....
                     SharedPreferences.Editor editor = context.getSharedPreferences("MyPrefs", context.MODE_PRIVATE).edit();
-                    editor.putString("Mobile Number", responseJsonObject.getString("mobileNo"));
-                    editor.putString("Email Id",responseJsonObject.getString("emailID") );
-                    editor.putString("Device Id",responseJsonObject.getString("deviceID"));
+                    editor.putString("Mobile Number", userInfoJsonObj.getString("mobileNo"));
+                    editor.putString("Email Id",userInfoJsonObj.getString("emailID") );
+                    editor.putString("Device Id",userInfoJsonObj.getString("deviceID"));
                     editor.commit();
+                }
+                else{
+                    Log.i("status is not true.."," in registration....");
                 }
                 Log.i("responseResult...: ", responseResult);
             } catch (JSONException e) {
@@ -108,11 +115,33 @@ class RegistrationAsyncTask extends AsyncTask<Void, Void, String> {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return responseResult;
     }
     @Override
-    protected void onPostExecute(String s) {
-        super.onPostExecute(s);
+    protected void onPostExecute(String result) {
+        super.onPostExecute(result);
+        RegistrationActivity registrationActivity = new RegistrationActivity();
+        try {
+            JSONObject obj = new JSONObject(result);
+            if(obj.getBoolean("status")){
+                //call intent to open MyTrail Activity....
+                Intent intent = new Intent(context, MyTrail.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("Device_Id", Device_Id);
+                intent.putExtras(bundle);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                context.getApplicationContext().startActivity(intent);
+
+                //registrationActivity.this.getApplicationContext().finish();
+                //RegistrationActivity.getRegistratuionStatusResponse(obj.getBoolean("status"));
+            }else {
+                Toast.makeText(context,"Could not able to register, Please try after sometime!!!",Toast.LENGTH_SHORT).show();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }
 
@@ -135,6 +164,8 @@ public class RegistrationActivity extends ActionBarActivity {
     String countryCode;
     String standardMobileNumber;
     StandardMobileNumberFormat standardMobileNumberFormat;
+    public static Activity activity = null;
+    static String Device_ID = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,6 +173,7 @@ public class RegistrationActivity extends ActionBarActivity {
         //To hide header...
         getSupportActionBar().hide();
         setContentView(R.layout.activity_registration);
+        activity = this;
         tvTC = (TextView) findViewById(R.id.tvTC);
         ckBoxTC = (CheckBox) findViewById(R.id.ckBoxTC);
         btnRegister = (Button) findViewById(R.id.btnRegister);
@@ -161,18 +193,8 @@ public class RegistrationActivity extends ActionBarActivity {
                         //call StandardMobileNumberFormat class to make mobile number in standard format......
                         standardMobileNumber = standardMobileNumberFormat.getLocale(mobNum, countryCode);
                         Log.i("standardMobileNumber...", "" + standardMobileNumber);
-
                         //call method to store registration details on server
                         new RegistrationAsyncTask(getApplicationContext(), standardMobileNumber, primaryEmail, deviceID).execute();
-
-                        //call intent to open MyTrail Activity....
-                        Intent intent = new Intent(getBaseContext(), MyTrail.class);
-                        Bundle bundle = new Bundle();
-                        bundle.putString("Device_Id", deviceID);
-                        intent.putExtras(bundle);
-                        startActivity(intent);
-
-                        finish();
                     }
                 } else {
                     Toast.makeText(getApplicationContext(), "Accept Terms and Conditions", Toast.LENGTH_SHORT).show();
@@ -191,6 +213,7 @@ public class RegistrationActivity extends ActionBarActivity {
             //Retrieve Device Id...
             TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             deviceID = getDeviceID(telephonyManager);
+            Device_ID = deviceID;
             //Toast.makeText(getApplicationContext(),deviceID,Toast.LENGTH_SHORT).show();
 
             //call method to get email....
@@ -215,6 +238,20 @@ public class RegistrationActivity extends ActionBarActivity {
         } else {
             return false;
         }
+    }
+
+    //this methosd is used to get response from AsyncTask.....
+    public static void getRegistratuionStatusResponse(boolean status){
+        /*if(status){
+            //call intent to open MyTrail Activity....
+            Intent intent = new Intent(activity.getApplicationContext(), MyTrail.class);
+            Bundle bundle = new Bundle();
+            bundle.putString("Device_Id", Device_ID);
+            intent.putExtras(bundle);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            activity.getApplicationContext().startActivity(intent);
+            //activity.finish();
+        }*/
     }
 
     //To get the Unique Device Id...

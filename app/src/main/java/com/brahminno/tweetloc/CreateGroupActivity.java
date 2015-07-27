@@ -97,23 +97,29 @@ class GroupAsyncTask extends AsyncTask<Void,Void,String>{
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
         try{
-            Toast.makeText(context,responseResult,Toast.LENGTH_SHORT).show();
             mydb = new SQLiteDatabase(context);
             String isAccepted = "false";
-            for(int i = 0; i < Group_Member.length(); i++){
-                try {
-                    if(adminMobileNumber.equals(Group_Member.getString(i))){
-                        isAccepted = "true";
+            JSONObject jsonObject = new JSONObject(s);
+            if(jsonObject.getBoolean("status")){
+                Toast.makeText(context,jsonObject.getString("info"),Toast.LENGTH_SHORT).show();
+                for(int i = 0; i < Group_Member.length(); i++){
+                    try {
+                        if(adminMobileNumber.equals(Group_Member.getString(i))){
+                            isAccepted = "true";
+                        }
+                        mydb.insertGroups(Group_Name,adminMobileNumber,Group_Member.getString(i),isAccepted);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                    mydb.insertGroups(Group_Name,adminMobileNumber,Group_Member.getString(i),isAccepted);
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
+                Intent intent = new Intent(context,GroupActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                context.getApplicationContext().startActivity(intent);
             }
-            Intent intent = new Intent(context,GroupActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            context.getApplicationContext().startActivity(intent);
+            else{
+                Toast.makeText(context,jsonObject.getString("info"),Toast.LENGTH_SHORT).show();
+            }
         }
         catch(Exception ex){
             ex.printStackTrace();

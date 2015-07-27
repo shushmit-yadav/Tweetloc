@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -27,12 +28,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 //this asyncTask class will class when groupAdmin press DeleteGroup Button from options menu....
-class DeleteGroupAsyncClass extends AsyncTask<Void,Void,Boolean>{
+class DeleteGroupAsyncClass extends AsyncTask<Void,Void,JSONObject>{
     private Context context;
     private String groupName;
     private String groupAdminNum;
     private JSONArray groupMemberMobNo;
     private boolean responseBoolean;
+    private JSONObject responseJsonobj;
     SQLiteDatabase mydb;
     public DeleteGroupAsyncClass(Context context,String groupName,String groupAdminNo,JSONArray groupMemberMobNo){
         this.context = context;
@@ -42,7 +44,7 @@ class DeleteGroupAsyncClass extends AsyncTask<Void,Void,Boolean>{
     }
 
     @Override
-    protected Boolean doInBackground(Void... params) {
+    protected JSONObject doInBackground(Void... params) {
         try{
             //create HttpClient.....
             HttpClient httpClient = new DefaultHttpClient();
@@ -68,8 +70,8 @@ class DeleteGroupAsyncClass extends AsyncTask<Void,Void,Boolean>{
                 //receive response from server as inputStream............
                 String responseResult = EntityUtils.toString(httpResponse.getEntity());
                 Log.i("responseResult...: ", responseResult);
-                JSONObject obj = new JSONObject(responseResult);
-                responseBoolean = obj.getBoolean("status");
+                responseJsonobj = new JSONObject(responseResult);
+                //responseBoolean = obj.getBoolean("status");
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (UnsupportedEncodingException e) {
@@ -82,20 +84,25 @@ class DeleteGroupAsyncClass extends AsyncTask<Void,Void,Boolean>{
         }catch (Exception ex){
             ex.printStackTrace();
         }
-        return responseBoolean;
+        return responseJsonobj;
     }
 
     @Override
-    protected void onPostExecute(Boolean aBoolean) {
-        super.onPostExecute(aBoolean);
-        Log.i("inside onPostExecute.."," method "+ aBoolean);
+    protected void onPostExecute(JSONObject result) {
+        super.onPostExecute(result);
+        Log.i("inside onPostExecute.."," method "+ result);
         mydb = new SQLiteDatabase(context);
-        if(aBoolean){
-            mydb.deleteGroupFromGroupTable(groupName,groupAdminNum);
-            Intent intent = new Intent(context.getApplicationContext(),GroupActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            context.getApplicationContext().startActivity(intent);
+        try {
+            if(result.getBoolean("status")){
+                Toast.makeText(context,result.getString("info"),Toast.LENGTH_SHORT).show();
+                mydb.deleteGroupFromGroupTable(groupName,groupAdminNum);
+                Intent intent = new Intent(context.getApplicationContext(),GroupActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                context.getApplicationContext().startActivity(intent);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 }

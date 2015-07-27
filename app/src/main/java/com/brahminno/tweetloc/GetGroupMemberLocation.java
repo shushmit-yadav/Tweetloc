@@ -3,6 +3,7 @@ package com.brahminno.tweetloc;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -21,10 +22,11 @@ import java.io.UnsupportedEncodingException;
 /**
  * Created by Shushmit Yadav on 21-07-2015.
  */
-public class GetGroupMemberLocation extends AsyncTask<Void,Void,JSONArray> {
+public class GetGroupMemberLocation extends AsyncTask<Void,Void,String> {
     private Context context;
     private String groupMemberMobNo;
     private JSONArray responseJsonArray;
+    private String responseResult;
 
     public GetGroupMemberLocation(Context context,String groupMemberMobNo) {
         this.context = context;
@@ -32,7 +34,7 @@ public class GetGroupMemberLocation extends AsyncTask<Void,Void,JSONArray> {
     }
 
     @Override
-    protected JSONArray doInBackground(Void... params) {
+    protected String doInBackground(Void... params) {
         try{
             Log.i("groupMemberMobNo","---> "+ groupMemberMobNo);
             Log.i("inside GetGroupMemberLocation...", "GetGroupMemberLocation...");
@@ -52,7 +54,7 @@ public class GetGroupMemberLocation extends AsyncTask<Void,Void,JSONArray> {
                 httpPost.setHeader("Content-type", "application/json");
                 //execute POST request to the given server.....
                 HttpResponse httpResponse = httpClient.execute(httpPost);
-                String responseResult = EntityUtils.toString(httpResponse.getEntity());
+                responseResult = EntityUtils.toString(httpResponse.getEntity());
                 //convert responseResult to jsonObject....
                 JSONObject obj = new JSONObject(responseResult);
                 responseJsonArray = obj.getJSONArray("membersLocation");
@@ -72,12 +74,22 @@ public class GetGroupMemberLocation extends AsyncTask<Void,Void,JSONArray> {
         catch (Exception ex){
             ex.printStackTrace();
         }
-        return responseJsonArray;
+        return responseResult;
     }
 
     @Override
-    protected void onPostExecute(JSONArray jsonArray) {
-        super.onPostExecute(jsonArray);
-        Chat_Main_Fragment.getGroupMemberLocationResponse(context,jsonArray);
+    protected void onPostExecute(String result) {
+        super.onPostExecute(result);
+        try {
+            JSONObject responseJsonObject = new JSONObject(result);
+            if(responseJsonObject.getBoolean("status")){
+                Chat_Main_Fragment.getGroupMemberLocationResponse(context,responseJsonObject.getJSONArray("membersLocation"));
+            }
+            else{
+                Toast.makeText(context,responseJsonObject.getString("servererr"),Toast.LENGTH_SHORT).show();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }
