@@ -111,14 +111,12 @@ class AddNewMembersAsyncTask extends AsyncTask<Void, Void, JSONObject> {
                 for (int i = 0; i < groupmembers.size(); i++) {
                     mydb.insertGroups(groupName, groupAdminMobNo, groupmembers.get(i), Boolean.toString(isAccepted));
                 }
-                Intent intent = new Intent(context,GroupAccepted.class);
-                Bundle bundle = new Bundle();
-                bundle.putString("Group Name",groupName);
-                bundle.putString("GroupAdminMobNo", groupAdminMobNo);
+                Intent intent = new Intent(context.getApplicationContext(),GroupAcceptedAdmin.class);
+                intent.putExtra("Group Name", groupName);
+                intent.putExtra("GroupAdminMobNo", groupAdminMobNo);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-                context.getApplicationContext().startActivity(intent.putExtras(bundle));
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                context.getApplicationContext().startActivity(intent);
             }
             else{
                 Toast.makeText(context,jsonObject.getString("info"),Toast.LENGTH_SHORT).show();

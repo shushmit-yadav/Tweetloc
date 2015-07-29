@@ -222,7 +222,6 @@ public class GroupActivity extends ActionBarActivity {
                         userOwnGroupAcceptanceStatus = contactNameWithNumberArrayList.get(i).getMemberAcceptanceStatus();
                     }
                 }
-
                 if(userOwnGroupAcceptanceStatus.equals("false")){
                     Intent intent = new Intent(getApplicationContext(), GroupCheckStatusActivity.class);
                     Bundle bundle = new Bundle();
@@ -232,10 +231,12 @@ public class GroupActivity extends ActionBarActivity {
                 }
                 else if(Mobile_Number.equals(adminMobileNumber)){
                     Intent groupAcceptedIntent = new Intent(getApplicationContext(),GroupAcceptedAdmin.class);
-                    Bundle groupAcceptedBundle = new Bundle();
-                    groupAcceptedBundle.putString("Group Name", groupName);
-                    groupAcceptedBundle.putString("GroupAdminMobNo", adminMobileNumber);
-                    startActivity(groupAcceptedIntent.putExtras(groupAcceptedBundle));
+                    //Bundle groupAcceptedBundle = new Bundle();
+                    //groupAcceptedBundle.putString("Group Name", groupName);
+                    //groupAcceptedBundle.putString("GroupAdminMobNo", adminMobileNumber);
+                    groupAcceptedIntent.putExtra("Group Name", groupName);
+                    groupAcceptedIntent.putExtra("GroupAdminMobNo", adminMobileNumber);
+                    startActivity(groupAcceptedIntent);
                 }
                 else{
                     Intent groupAcceptedIntent = new Intent(getApplicationContext(),GroupAccepted.class);

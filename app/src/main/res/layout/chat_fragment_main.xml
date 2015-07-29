@@ -28,6 +28,12 @@
             android:id="@+id/slidingContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+            <View
+                android:id="@+id/transparentView"
+                android:visibility="gone"
+                android:layout_width="fill_parent"
+                android:layout_height="@dimen/map_height"
+                android:layout_alignParentTop="true"/>
 
             <com.brahminno.tweetloc.LockableListView
                 android:id="@android:id/list"
@@ -38,6 +44,7 @@
                 android:divider="@android:color/darker_gray"
                 android:dividerHeight="@dimen/divider_height"
                 android:drawSelectorOnTop="true"
+                android:layout_below="@id/transparentView"
                 android:smoothScrollbar="false" />
 
         </RelativeLayout>

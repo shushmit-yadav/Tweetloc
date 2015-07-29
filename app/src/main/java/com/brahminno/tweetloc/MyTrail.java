@@ -2,6 +2,7 @@ package com.brahminno.tweetloc;
 
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -17,6 +18,7 @@ import android.os.AsyncTask;
 import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -318,6 +320,7 @@ class FetchNotificationAsyncTask extends AsyncTask<Void, Void, String> {
     private String noteGroupAdminNo;
     SQLiteDatabase mydb;
     private static final String TAG = "responseJson into NumberSyncFromServer";
+    final static String GROUP_KEY_NOTIFICATION = "group_key_notification";
 
     public FetchNotificationAsyncTask(Context context, String userMobileNumber) {
         this.context = context;
@@ -376,18 +379,23 @@ class FetchNotificationAsyncTask extends AsyncTask<Void, Void, String> {
                         }
                     }
                 }
-                // Prepare intent which is triggered if the
-                // notification is selected
-                //Intent intent = new Intent(context, Chat_Main_Fragment.class);
-                PendingIntent pendingIntent = getActivity(context, 0, null, PendingIntent.FLAG_UPDATE_CURRENT);
-
-                // Build notification
-                // Actions are just fake
-                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_splash_256)
-                        .setContentTitle(notificationMessage).setContentIntent(pendingIntent);
-
-                NotificationManager manager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
-                manager.notify(0, mBuilder.build());
+                // Issue the notification
+                NotificationManagerCompat notificationManager =
+                        NotificationManagerCompat.from(context);
+                // Create an InboxStyle notification
+                NotificationCompat.Builder summaryNotification = new NotificationCompat.Builder(context)
+                        .setContentTitle(array.length() + " notification from TweetLoc")
+                        .setSmallIcon(R.drawable.ic_splash_256)
+                        .setGroupSummary(true)
+                        .setGroup(GROUP_KEY_NOTIFICATION);
+                NotificationCompat.InboxStyle inboxStyle =
+                        new NotificationCompat.InboxStyle();
+                for(int i = 0; i < array.length(); i++){
+                    JSONObject newJsonObject = (JSONObject) array.get(i);
+                    inboxStyle.addLine(newJsonObject.getString("noteMessage"));
+                }
+                summaryNotification.setStyle(inboxStyle);
+                notificationManager.notify(0,summaryNotification.build());
             }else{
                 Log.i("Notification...","there is not any notification...");
             }
@@ -755,6 +763,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
     public void onBackPressed() {
         try{
             chatAlarmManager.cancel(getChatPendingIntent);
+            alarmManager.cancel(pendingIntent);
             finish();
         }
         catch (Exception ex){

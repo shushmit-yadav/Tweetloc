@@ -121,9 +121,11 @@ public class GroupAcceptedAdmin extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_accepted_admin);
         Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
-        groupName = bundle.getString("Group Name");
-        groupAdminMobileNumber = bundle.getString("GroupAdminMobNo");
+        //Bundle bundle = intent.getExtras();
+        //groupName = bundle.getString("Group Name");
+        //groupAdminMobileNumber = bundle.getString("GroupAdminMobNo");
+        groupName = intent.getStringExtra("Group Name");
+        groupAdminMobileNumber = intent.getStringExtra("GroupAdminMobNo");
         getSupportActionBar().setTitle(groupName);
         //get User registered mobile_number from shared preference.......
         SharedPreferences prefs = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);

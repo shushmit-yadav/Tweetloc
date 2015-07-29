@@ -33,7 +33,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
     /**
      * Default peeking out panel height
      */
-    private static final int DEFAULT_PANEL_HEIGHT = 68; // dp;
+    private static final int DEFAULT_PANEL_HEIGHT = 150; // dp;
 
     /**
      * Default height of the shadow above the peeking out panel
@@ -88,7 +88,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
     /**
      * The size of the overhang in pixels.
      */
-    private int mPanelHeight = -1;
+    private int mPanelHeight = 10;
 
     /**
      * The size of the shadow in pixels.

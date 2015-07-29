@@ -43,8 +43,6 @@ public class GroupAccepted extends ActionBarActivity {
     private String userMobileNumber;
     private String groupAdminMobileNumber;
     ArrayList<ContactNameWithNumber> contactNameWithNumberArrayList;
-    AlarmManager alarmManager;
-    PendingIntent pendingIntent;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

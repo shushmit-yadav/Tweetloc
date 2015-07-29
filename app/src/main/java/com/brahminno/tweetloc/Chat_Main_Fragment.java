@@ -28,9 +28,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
-
-import com.brahminno.tweetloc.asyncClass.ChatMessageSendAsyncTask;
-import com.brahminno.tweetloc.asyncClass.GroupMemberLocationAsync;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -46,23 +43,12 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -71,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import com.brahminno.tweetloc.SlidingUpPanelLayout;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -83,10 +70,11 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         SlidingUpPanelLayout.PanelSlideListener, LocationListener {
 
     private static Marker marker;
-    private ListView mListView;
+    private LockableListView mListView;
     private SlidingUpPanelLayout mSlidingUpPanelLayout;
-
     private View mTransparentHeaderView;
+    private View mTransparentView;
+    private View mSpaceView;
     private LatLng mLocation;
     private LatLng destinationLatLng;
     private  LatLng sourceLatLng;
@@ -147,12 +135,11 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.chat_fragment_main, container, false);
 
+        mListView = (LockableListView) rootView.findViewById(android.R.id.list);
+        mListView.setOverScrollMode(ListView.OVER_SCROLL_NEVER);
+
         mSlidingUpPanelLayout = (SlidingUpPanelLayout) rootView.findViewById(R.id.slidingLayout);
         mSlidingUpPanelLayout.setEnableDragViewTouchEvents(true);
-
-        mListView = (ListView) rootView.findViewById(android.R.id.list);
-        //mListView.setOverScrollMode(ListView.OVER_SCROLL_ALWAYS);
-        mListView.setOverScrollMode(ListView.OVER_SCROLL_NEVER);
 
         int mapHeight = getResources().getDimensionPixelSize(R.dimen.map_height);
         mSlidingUpPanelLayout.setPanelHeight(mapHeight); // you can use different height here
@@ -160,8 +147,10 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
 
         mSlidingUpPanelLayout.setPanelSlideListener(this);
 
+        mTransparentView = rootView.findViewById(R.id.transparentView);
         //init header view for ListView
         mTransparentHeaderView = inflater.inflate(R.layout.transparent_header, mListView, false);
+        mSpaceView = mTransparentHeaderView.findViewById(R.id.space);
 
         //init EditText and Button.....
         etMessage = (EditText) rootView.findViewById(R.id.etMessage);
@@ -173,18 +162,11 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
             @Override
             public void onGlobalLayout() {
                 mSlidingUpPanelLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                mSlidingUpPanelLayout.onPanelDragged(0);
+                mSlidingUpPanelLayout.onPanelDragged(5);
             }
         });
-        //setHasOptionsMenu(true);
         return rootView;
     }
-
-    /*@Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
-    }*/
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -271,12 +253,12 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         }
         mListView.addHeaderView(mTransparentHeaderView);
         mListView.setAdapter(new ArrayAdapter<String>(getActivity(), R.layout.simple_list_item, testData));
-       /* mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 mSlidingUpPanelLayout.collapsePane();
             }
-        });*/
+        });
 
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addApi(LocationServices.API)
@@ -529,15 +511,21 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
     }
 
     private void collapseMap() {
+        mSpaceView.setVisibility(View.VISIBLE);
+        mTransparentView.setVisibility(View.GONE);
         if (mMap != null && mLocation != null) {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mLocation, 11f), 1000, null);
         }
+        mListView.setScrollingEnabled(true);
     }
 
     private void expandMap() {
+        mSpaceView.setVisibility(View.GONE);
+        mTransparentView.setVisibility(View.INVISIBLE);
         if (mMap != null) {
             mMap.animateCamera(CameraUpdateFactory.zoomTo(14f), 1000, null);
         }
+        mListView.setScrollingEnabled(false);
     }
 
     @Override
@@ -638,29 +626,4 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
         width = display.getWidth();
         height = display.getHeight();
     }
-   /* @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        getActivity().getMenuInflater().inflate(R.menu.menu_group_chat,menu);
-        return;
-    }
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // handle item selection
-        int id = item.getItemId();
-        if(id == R.id.action_settings){
-            Intent intent = new Intent(getActivity(), User_ProfileActivity.class);
-            startActivity(intent);
-            getActivity().finish();
-            return true;
-        }
-        if(id == R.id.action_addNewMember){
-            Intent intent = new Intent(getActivity(),AddNewMemberActivity.class);
-            Bundle bundle = new Bundle();
-            bundle.putString("Group Name",groupName);
-            startActivity(intent);
-            getActivity().finish();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }*/
 }

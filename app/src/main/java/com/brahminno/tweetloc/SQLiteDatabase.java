@@ -233,20 +233,22 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("Select a.Group_name as Group_name,a.Group_Members as Group_Members,a.Is_Accepted as Is_Accepted, b.Contact_Name as Contact_Name from Group_Table a left outer join Contacts_Table b  on a.Group_Members=b.Mobile_Number WHERE a.Group_Name = '" + groupName + "'", null);
         Log.i("Cursor count....", "getAllMembersUsingGroupNames" + cursor.getCount());
-        cursor.moveToFirst();
-        do {
-            ContactNameWithNumber contactNameWithNumber = new ContactNameWithNumber();
-            if (cursor.getString(cursor.getColumnIndex("Group_Members")).equals(MyMobileNumber)) {
-                contactNameWithNumber.setContact_name("You");
-            } else {
-                contactNameWithNumber.setContact_name(cursor.getString(cursor.getColumnIndex("Contact_Name")));
+        if(cursor.getCount() > 0){
+            cursor.moveToFirst();
+            do {
+                ContactNameWithNumber contactNameWithNumber = new ContactNameWithNumber();
+                if (cursor.getString(cursor.getColumnIndex("Group_Members")).equals(MyMobileNumber)) {
+                    contactNameWithNumber.setContact_name("You");
+                } else {
+                    contactNameWithNumber.setContact_name(cursor.getString(cursor.getColumnIndex("Contact_Name")));
+                }
+                contactNameWithNumber.setContact_number(cursor.getString(cursor.getColumnIndex("Group_Members")));
+                contactNameWithNumber.setMemberAcceptanceStatus(cursor.getString(cursor.getColumnIndex("Is_Accepted")));
+                Log.i("Value is....", "getAllMembersUsingGroupNames-->" + cursor.getString(cursor.getColumnIndex("Contact_Name")) + "-->" + cursor.getString(cursor.getColumnIndex("Group_Members")));
+                groupMembersUsingGroupName.add(contactNameWithNumber);
             }
-            contactNameWithNumber.setContact_number(cursor.getString(cursor.getColumnIndex("Group_Members")));
-            contactNameWithNumber.setMemberAcceptanceStatus(cursor.getString(cursor.getColumnIndex("Is_Accepted")));
-            Log.i("Value is....", "getAllMembersUsingGroupNames-->" + cursor.getString(cursor.getColumnIndex("Contact_Name")) + "-->" + cursor.getString(cursor.getColumnIndex("Group_Members")));
-            groupMembersUsingGroupName.add(contactNameWithNumber);
+            while (cursor.moveToNext());
         }
-        while (cursor.moveToNext());
         cursor.close();
         db.close();
         return groupMembersUsingGroupName;
