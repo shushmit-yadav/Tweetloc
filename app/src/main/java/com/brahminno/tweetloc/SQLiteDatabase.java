@@ -232,7 +232,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         String MyMobileNumber = prefs.getString("Mobile Number", null);
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("Select a.Group_name as Group_name,a.Group_Members as Group_Members,a.Is_Accepted as Is_Accepted, b.Contact_Name as Contact_Name from Group_Table a left outer join Contacts_Table b  on a.Group_Members=b.Mobile_Number WHERE a.Group_Name = '" + groupName + "'", null);
-        Log.i("Cursor count....", "getAllMembersUsingGroupNames" + cursor.getCount());
+        Log.i("Cursor count....", "getAllMembersUsingGroupNames --> " + cursor.getCount());
         if(cursor.getCount() > 0){
             cursor.moveToFirst();
             do {
@@ -248,9 +248,9 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
                 groupMembersUsingGroupName.add(contactNameWithNumber);
             }
             while (cursor.moveToNext());
+            cursor.close();
+            db.close();
         }
-        cursor.close();
-        db.close();
         return groupMembersUsingGroupName;
     }
 

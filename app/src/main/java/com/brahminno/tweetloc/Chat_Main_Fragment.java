@@ -27,6 +27,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -334,11 +335,42 @@ public class Chat_Main_Fragment extends Fragment implements GoogleApiClient.Conn
                         //double altitude = getElevatioFromGoogleMap(destinationLatitude,destinationLongitude);
                         String userMobNumber = marker.getTitle();
                         Log.i("userMobNumber on ","marker click is " + userMobNumber);
-                        double distance = calculateDistance(sourceLatitude, sourceLongitude,destinationLatitude,destinationLongitude);
+                        final double distance = calculateDistance(sourceLatitude, sourceLongitude,destinationLatitude,destinationLongitude);
+                        Log.i("data in "," infoWindowAdapter class -->"+" distance " + distance+" sourceLatitude "+ sourceLatitude+" sourceLongitude "+ sourceLongitude+"destinationLatitude "+destinationLatitude+" destinationLongitude "+destinationLongitude);
                         for(int i = 0; i < groupMemberMobNo.size(); i++){
                             if(userMobNumber.equals(groupMemberMobNo.get(i))){
-                                Log.i("inside if loop...."," value is true....");
-                                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater(),groupMemberAltitude.get(i),groupMemberSpeed.get(i),groupMemberLastUpdate.get(i),distance));
+                                Log.i("inside if loop....", " value is true....");
+                                //mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getActivity().getLayoutInflater(),groupMemberAltitude.get(i),groupMemberSpeed.get(i),groupMemberLastUpdate.get(i),distance));
+                                final int finalI = i;
+                                mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+                                    @Override
+                                    public View getInfoWindow(Marker marker) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public View getInfoContents(Marker marker) {
+                                        View view = getActivity().getLayoutInflater().inflate(R.layout.custom_info_window_for_chat_into_map, null);
+                                        TextView tvSpeed = (TextView) view.findViewById(R.id.tvSpeed);
+                                        TextView tvSpeedValue = (TextView) view.findViewById(R.id.tvSpeed);
+                                        TextView tvAltitude = (TextView) view.findViewById(R.id.tvAltitude);
+                                        TextView tvAltitudeValue = (TextView) view.findViewById(R.id.tvAltitudeValue);
+                                        TextView tvLastUpdate = (TextView) view.findViewById(R.id.tvLastUpdatedTime);
+                                        TextView tvLastUpdateValue = (TextView) view.findViewById(R.id.tvLastUpdateValue);
+                                        TextView tvDistance = (TextView) view.findViewById(R.id.tvDistance);
+                                        TextView tvDistanceValue = (TextView) view.findViewById(R.id.tvDistanceValue);
+
+                                        tvSpeedValue.setText(""+groupMemberSpeed.get(finalI));
+                                        Log.i("speed is ", " " + groupMemberSpeed.get(finalI));
+                                        tvAltitudeValue.setText("" + groupMemberAltitude.get(finalI));
+                                        Log.i("altitude is ", " " + groupMemberAltitude.get(finalI));
+                                        tvDistanceValue.setText("" + distance);
+                                        Log.i("distance is ", " " + distance);
+                                        tvLastUpdateValue.setText("" + groupMemberLastUpdate.get(finalI));
+                                        Log.i("lastUpdate is ", " " + groupMemberLastUpdate.get(finalI));
+                                        return view;
+                                    }
+                                });
                             }
                         }
                         if (!isTraveling) {

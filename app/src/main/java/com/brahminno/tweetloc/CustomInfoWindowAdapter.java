@@ -1,6 +1,7 @@
 package com.brahminno.tweetloc;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -46,9 +47,13 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         TextView tvDistanceValue = (TextView) view.findViewById(R.id.tvDistanceValue);
 
         tvSpeedValue.setText(""+speed);
-        tvAltitudeValue.setText(""+altitude);
-        tvDistanceValue.setText(""+distance);
-        tvLastUpdateValue.setText(""+lastUpdate);
+        Log.i("speed is ", " " + speed);
+        tvAltitudeValue.setText("" + altitude);
+        Log.i("altitude is ", " " + altitude);
+        tvDistanceValue.setText("" + distance);
+        Log.i("distance is ", " " + distance);
+        tvLastUpdateValue.setText("" + lastUpdate);
+        Log.i("lastUpdate is ", " " + lastUpdate);
         return view;
     }
 }
