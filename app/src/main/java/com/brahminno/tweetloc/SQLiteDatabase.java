@@ -231,7 +231,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         SharedPreferences prefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         String MyMobileNumber = prefs.getString("Mobile Number", null);
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("Select a.Group_name as Group_name,a.Group_Members as Group_Members,a.Is_Accepted as Is_Accepted, b.Contact_Name as Contact_Name from Group_Table a left outer join Contacts_Table b  on a.Group_Members=b.Mobile_Number WHERE a.Group_Name = '" + groupName + "'", null);
+        Cursor cursor = db.rawQuery("Select a.Group_Name as Group_Name,a.Group_Members as Group_Members,a.Is_Accepted as Is_Accepted, b.Contact_Name as Contact_Name from Group_Table a left outer join Contacts_Table b  on a.Group_Members=b.Mobile_Number WHERE a.Group_Name = '" + groupName + "'", null);
         Log.i("Cursor count....", "getAllMembersUsingGroupNames --> " + cursor.getCount());
         if(cursor.getCount() > 0){
             cursor.moveToFirst();
@@ -299,8 +299,8 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
     //method to delete group from app db when user reject group........
     public void deleteGroupFromGroupTable(String groupName,String groupAdminMobNo) {
         android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
-        Log.i("inside deleteGroupFromGroupTable..","Group_Name is "+groupName+" and Group_Admin_No is "+ groupAdminMobNo);
-        db.delete(GROUP_TABLE,"Group_Name =? and Group_Admin_Number =?", new String[]{groupName,groupAdminMobNo});
+        Log.i("inside deleteGroupFromGroupTable..", "Group_Name is " + groupName + " and Group_Admin_No is " + groupAdminMobNo);
+        db.delete(GROUP_TABLE, "Group_Name =? and Group_Admin_Number =?", new String[]{groupName, groupAdminMobNo});
         //db.execSQL("delete from Group_Table where Group_Name = 'PraABC' and Group_Admin_Number = '+919654023769'");
         Log.i("Group Deleted.....", "succussfully");
         db.close();
@@ -346,7 +346,7 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
 
     //this method is used to skip same group name. if groupName is already exist inwhich member is added then existing member will not allow to create new group with same name....
     public boolean checkGroupNameDuplicacy(String groupName){
-        Log.i("Inside : ","checkGroupNameDuplicacy method..");
+        Log.i("Inside : ", "checkGroupNameDuplicacy method..");
         android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("select distinct Group_Name from Group_Table where Group_Name = '" + groupName + "'", null);
         if(cursor.getCount() > 0){
@@ -361,6 +361,23 @@ public class SQLiteDatabase extends SQLiteOpenHelper {
         }
     }
 
+    //this method is used to get groupMember douplicacy into group.....
+    public boolean checkGroupMemberExistanceIntoGroup(String groupName,String groupAdminMobNo,String groupMember){
+        Log.i("Inside : ","checkGroupMemberDuplicacyIntoGroup method..");
+        android.database.sqlite.SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select * from Group_Table where Group_Name = '" + groupName + "' and Group_Admin_Number = '"+groupAdminMobNo+"' and Group_Members = '"+groupMember+"'",null);
+        Log.i("cursor count is..","--> "+ cursor.getCount());
+        if(cursor.getCount() > 0){
+            cursor.close();
+            db.close();
+            return false;
+        }
+        else{
+            cursor.close();
+            db.close();
+            return true;
+        }
+    }
 }
 
 

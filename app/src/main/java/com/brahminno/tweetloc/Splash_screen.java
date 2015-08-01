@@ -32,19 +32,6 @@ public class Splash_screen extends ActionBarActivity {
         //Remove title...
         getSupportActionBar().hide();
         setContentView(R.layout.splash_screen);
-        /*//generate SHA1 key.....
-        try{
-            Log.i("Inside PackageInfo","....");
-            PackageInfo info = getPackageManager().getPackageInfo("com.brahminno.tweetloc", PackageManager.GET_SIGNATURES);
-            for(android.content.pm.Signature signature : info.signatures){
-                MessageDigest md = MessageDigest.getInstance("SHA1");
-                md.update(signature.toByteArray());
-                Log.i("SHA1 Key is...", Base64.encodeToString(md.digest(), Base64.DEFAULT));
-            }
-        }
-        catch (Exception ex){
-            ex.printStackTrace();
-        }*/
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {

@@ -375,7 +375,11 @@ class FetchNotificationAsyncTask extends AsyncTask<Void, Void, String> {
                             if (groupMemberMobNo.equals(groupAdminMobNo)) {
                                 isAccepted = true;
                             }
-                            mydb.insertGroups(noteGroupName, noteGroupAdminNo, groupMemberMobNo, Boolean.toString(isAccepted));
+                            if(mydb.checkGroupMemberExistanceIntoGroup(noteGroupName,noteGroupAdminNo,groupMemberMobNo)){
+                                mydb.insertGroups(noteGroupName, noteGroupAdminNo, groupMemberMobNo, Boolean.toString(isAccepted));
+                            }else{
+                                Log.i("In Notification..."," User is already exist into group");
+                            }
                         }
                     }
                 }
@@ -596,7 +600,7 @@ public class MyTrail extends ActionBarActivity implements LocationListener, com.
         boolean isFirstTime = prefs.getBoolean("isFirstTime",false);
         if(!isFirstTime){
             SharedPreferences.Editor editor = getApplicationContext().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE).edit();
-            editor.putBoolean("isFirstTime",false);
+            editor.putBoolean("isFirstTime",true);
             editor.commit();
 
             contacts = new FetchContacts();
